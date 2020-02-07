@@ -149,10 +149,11 @@ class SequenceGenerator(object):
             )
 
         # compute the encoder output for each beam
-        encoder_outs = model.forward_encoder(encoder_input)
+        encoder_outs = model.forward_encoder(encoder_input)    ############### encoder_input sind die indices???
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
         new_order = new_order.to(src_tokens.device).long()
-        encoder_outs = model.reorder_encoder_out(encoder_outs, new_order)
+        encoder_outs = model.reorder_encoder_out(encoder_outs, new_order) ###############################       ???????????????????
+        #print("\n\n >>> Encoder outs in sequence_generator ", encoder_outs[0])   #### Encoder outs in sequence_generator  TransformerEncoderOut(encoder_out=tensor([[[ 2.9137, -0.7925, -0.7197,  ..., -0.1992,
 
         # initialize buffers
         scores = src_tokens.new(bsz * beam_size, max_len + 1).float().fill_(0)
@@ -218,6 +219,7 @@ class SequenceGenerator(object):
             assert bbsz_idx.numel() == eos_scores.numel()
 
             # clone relevant token and attention tensors
+            #print("seq gen tokens", tokens)
             tokens_clone = tokens.index_select(0, bbsz_idx)
             tokens_clone = tokens_clone[:, 1:step + 2]  # skip the first index, which is EOS
             assert not tokens_clone.eq(self.eos).any()
@@ -281,19 +283,30 @@ class SequenceGenerator(object):
 
         reorder_state = None
         batch_idxs = None
+
+        #test_features_0, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])
+        #test_features_0_1 = test_features_0.clone().detach()
+        #print("0th features", test_features_0.shape)
+        #print("prev out tokens 0", sample['net_input']['prev_output_tokens'])
+
+        ###############################################################################################################################################################################################
         for step in range(max_len + 1):  # one extra step for EOS marker
             # reorder decoder internal states based on the prev choice of beams
+            #print("reorder state", reorder_state) 1st is None
             if reorder_state is not None:
                 if batch_idxs is not None:
                     # update beam indices to take into account removed sentences
                     corr = batch_idxs - torch.arange(batch_idxs.numel()).type_as(batch_idxs)
                     reorder_state.view(-1, beam_size).add_(corr.unsqueeze(-1) * beam_size)
                 model.reorder_incremental_state(reorder_state)
-                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)
+                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)     ###########################################################
 
-            lprobs, avg_attn_scores = model.forward_decoder(
+            lprobs, avg_attn_scores = model.forward_decoder(                  ###################################################################    Decoder ################
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             )
+
+            #print("avrg att score", avg_attn_scores.shape)   # (bs, dec_maxlen)
+            #print("Lprobs", lprobs.shape, "\n", lprobs)     # shape 30 (batch size) x 1488 (vocab size/dim)
 
             lprobs[:, self.pad] = -math.inf  # never select pad
             lprobs[:, self.unk] -= self.unk_penalty  # apply unk penalty
@@ -328,7 +341,7 @@ class SequenceGenerator(object):
                         return tensor.view(-1, tensor.size(-1))
 
                     # copy tokens, scores and lprobs from the first beam to all beams
-                    tokens = replicate_first_beam(tokens, eos_mask_batch_dim)
+                    tokens = replicate_first_beam(tokens, eos_mask_batch_dim)                   ####################################################
                     scores = replicate_first_beam(scores, eos_mask_batch_dim)
                     lprobs = replicate_first_beam(lprobs, eos_mask_batch_dim)
             elif step < self.min_len:
@@ -411,6 +424,7 @@ class SequenceGenerator(object):
                 break
             assert step < max_len
 
+            #print("Finalized sents", finalized_sents)
             if len(finalized_sents) > 0:
                 new_bsz = bsz - len(finalized_sents)
 
@@ -513,8 +527,49 @@ class SequenceGenerator(object):
             # reorder incremental state in decoder
             reorder_state = active_bbsz_idx
 
+        #### Each element of the sentence/step ready        ################################################################################################
+        ##### TEST #########################
+
+        print("Encoder Emb", encoder_outs[0].encoder_embedding.shape)
+        #print("Encoder States", encoder_outs[0].encoder_embedding[1].size())
+        encoder_out_emb_orig = encoder_outs[0].encoder_out
+        print("Encoder Out orig", encoder_out_emb_orig.shape)
+        encoder_out_emb = encoder_out_emb_orig.transpose(0, 1)
+        print("Encoder Out", encoder_out_emb.shape)
+
+        '''
+        extract_features ->  Returns:
+            tuple:
+                - the decoder's features of shape `(batch, tgt_len, embed_dim)`
+                - a dictionary with any model-specific outputs
+        '''
+        test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
+        #print("Out prev out tokens", sample['net_input']['prev_output_tokens'])
+        print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
+        #print("out test features", test_features)
+        #out_layer = model.models[0].output_layer(test_features)
+        #print("Decoder OUT_LAYER", out_layer.shape)
+
+
+
+        for tb in range(test_features.shape[0]):
+            #print("tb", tb)
+            dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
+            #dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
+            dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
+            #print("Shapes", dist_0.shape, dist_1.shape)
+            dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
+            #print("Dist shape", dist.shape)
+            print("Dist:", dist)
+
+
+
+        ####################################
+
+
         # sort by score descending
         for sent in range(len(finalized)):
+            #print("Sent", finalized[sent]) # hypos 10 sents
             finalized[sent] = sorted(finalized[sent], key=lambda r: r['score'], reverse=True)
         return finalized
 

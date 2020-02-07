@@ -347,6 +347,7 @@ class TransformerEncoder(FairseqEncoder):
         return x, embed
 
     def forward(self, src_tokens, src_lengths, cls_input=None, return_all_hiddens=False, **unused):
+    #def forward(self, src_tokens, src_lengths, cls_input=None, return_all_hiddens=True, **unused):
         """
         Args:
             src_tokens (LongTensor): tokens in the source language of shape
@@ -871,3 +872,16 @@ def transformer_wmt_en_de_big_align(args):
     args.alignment_heads = getattr(args, 'alignment_heads', 1)
     args.alignment_layer = getattr(args, 'alignment_layer', 4)
     transformer_wmt_en_de_big(args)
+
+
+@register_model_architecture('transformer', 'transformer_small_test')
+def transformer_small_test(args):
+    args.encoder_embed_dim = getattr(args, 'encoder_embed_dim', 64)
+    args.encoder_ffn_embed_dim = getattr(args, 'encoder_ffn_embed_dim', 128)
+    args.encoder_attention_heads = getattr(args, 'encoder_attention_heads', 4)
+    args.encoder_layers = getattr(args, 'encoder_layers', 6)
+    args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 64)
+    args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 128)
+    args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 4)
+    args.decoder_layers = getattr(args, 'decoder_layers', 6)
+    base_architecture(args)

@@ -1,10 +1,9 @@
 #!/bin/bash
 
 
-#training_data="/raid/data/daga01/fairseq_train/data-bin-32k-red-lazy"
-training_data="/raid/data/daga01/fairseq_train/data-bin-50k-red-lazy_7"
+training_data="data/data-bin-toyset"
 
-checkpoints="/raid/data/daga01/fairseq_train/checkpoints/fconv"
+checkpoints="checkpoints/fconv"
 
 
 
@@ -31,6 +30,26 @@ CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-train "$training_data" \
     --arch fconv_iwslt_de_en --save-dir "$checkpoints"
 }
 
+call_simplest_small(){
+fairseq-train "$training_data" \
+    --lr 0.25 --clip-norm 0.1 --dropout 0.2 --max-tokens 100 \
+    --arch fconv_iwslt_de_en --save-dir "$checkpoints" --cpu --max-epoch 2 --dataset-impl raw
+}
+
+call_train_small(){
+# 8 GPU cumul/update-freq 16 ?= 4 GPU update-freq 32
+# lr=5e-4 - orig; here I'll change to 2xlr=1e-3 as stated in the paper
+
+fairseq-train ${training_data} \
+    --arch transformer_vaswani_wmt_en_de_big --share-all-embeddings \
+    --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \
+    --lr-scheduler inverse_sqrt --warmup-init-lr 1e-07 --warmup-updates 1 \
+    --lr 0.001 --min-lr 1e-09 \
+    --dropout 0.3 --weight-decay 0.0 --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+    --max-tokens 100  --save-dir ${checkpoints} --keep-last-epochs 3  \
+    --dataset-impl raw  --cpu --max-epoch 3
+    #--ddp-backend no_c10d --update-freq 32
+}
 
 call_train_big(){
 # 8 GPU cumul/update-freq 16 ?= 4 GPU update-freq 32 
@@ -67,8 +86,8 @@ CUDA_VISIBLE_DEVICES=1,2,3,4  $(which fairseq-train) ${training_data} \
 
 echo $(which python)
 
-LOG0="/raid/data/daga01/fairseq_train/LOG_test"
-time -p call_train_big > $LOG0 2>&1
+LOG0="checkpoints/LOG"
+time -p call_simplest_small
 
 #LOG="/raid/data/daga01/fairseq_train/LOG_R2_32k_wide"
 #time -p call_train_big_wide > $LOG 2>&1

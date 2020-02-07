@@ -198,7 +198,7 @@ class FairseqTask(object):
         from fairseq import criterions
         return criterions.build_criterion(args, self)
 
-    def build_generator(self, args):
+    def build_generator(self, args): #####################################################################
         if getattr(args, 'score_reference', False):
             from fairseq.sequence_scorer import SequenceScorer
             return SequenceScorer(self.target_dictionary)
@@ -258,10 +258,14 @@ class FairseqTask(object):
         model.eval()
         with torch.no_grad():
             loss, sample_size, logging_output = criterion(model, sample)
+            #print("#### Task: ", "\tmodel: ", model, "\tlogging output: ", logging_output)
+            #print("MODEL", model)
+            #print("Sample", sample.keys(), sample)
         return loss, sample_size, logging_output
 
     def inference_step(self, generator, models, sample, prefix_tokens=None):
         with torch.no_grad():
+            #print("\n\n\n ###### MODELS", models)
             return generator.generate(models, sample, prefix_tokens=prefix_tokens)
 
     def update_step(self, num_updates):

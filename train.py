@@ -50,7 +50,6 @@ def main(args, init_distributed=False):
     # Build model and criterion
     model = task.build_model(args)
     criterion = task.build_criterion(args)
-    print(model)
     print('| model {}, criterion {}'.format(args.arch, criterion.__class__.__name__))
     print('| num. model params: {} (num. trained: {})'.format(
         sum(p.numel() for p in model.parameters()),
@@ -121,6 +120,7 @@ def train(args, trainer, task, epoch_itr):
     )
 
     extra_meters = collections.defaultdict(lambda: AverageMeter())
+    #print("Extra Meters", extra_meters)
     valid_subsets = args.valid_subset.split(',')
     max_update = args.max_update or math.inf
     for i, samples in enumerate(progress, start=epoch_itr.iterations_in_epoch):
@@ -128,8 +128,10 @@ def train(args, trainer, task, epoch_itr):
         if log_output is None:
             continue
 
-        # log mid-epoch stats
+        # log mid-epoch stats ##############################################################
         stats = get_training_stats(trainer)
+        #print("stats", stats)
+        #print("log output items", log_output.items() )
         for k, v in log_output.items():
             if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                 continue  # these are already logged above
@@ -152,7 +154,7 @@ def train(args, trainer, task, epoch_itr):
             and num_updates % args.save_interval_updates == 0
             and num_updates > 0
         ):
-            valid_losses = validate(args, trainer, task, epoch_itr, valid_subsets)
+            valid_losses = validate(args, trainer, task, epoch_itr, valid_subsets) ############################################
             checkpoint_utils.save_checkpoint(args, trainer, epoch_itr, valid_losses[0])
 
         if num_updates >= max_update:
@@ -234,27 +236,34 @@ def validate(args, trainer, task, epoch_itr, subsets):
             meter = trainer.get_meter(k)
             if meter is not None:
                 meter.reset()
-        extra_meters = collections.defaultdict(lambda: AverageMeter())
+        extra_meters = collections.defaultdict(lambda: AverageMeter())  ############################# !!!!!!!!!!! Extra Meters initialized
 
         for sample in progress:
             log_output = trainer.valid_step(sample)
+            ###print("log validation output", log_output)
 
             for k, v in log_output.items():
                 if k in ['loss', 'nll_loss', 'ntokens', 'nsentences', 'sample_size']:
                     continue
                 extra_meters[k].update(v)
 
-        # log validation stats
+        # log validation stats ####################################################### !!!!!!!!!!!!!!!!!
         stats = get_valid_stats(trainer, args, extra_meters)
         for k, meter in extra_meters.items():
             stats[k] = meter.avg
         progress.print(stats, tag=subset, step=trainer.get_num_updates())
 
-        valid_losses.append(
+
+        ###print("args.best_checkpoint_metric:", args.best_checkpoint_metric)
+        ###print("stats", stats)
+
+
+        valid_losses.append(                            ################################ !!!!!!!!
             stats[args.best_checkpoint_metric].avg
             if args.best_checkpoint_metric == 'loss'
             else stats[args.best_checkpoint_metric]
         )
+    print("Valid losses:", valid_losses, "\t best checkpoint mertric:", args.best_checkpoint_metric)
     return valid_losses
 
 
@@ -273,6 +282,7 @@ def get_valid_stats(trainer, args, extra_meters=None):
         best_function = max if args.maximize_best_checkpoint_metric else min
 
         current_metric = None
+        ###print("Extra Meters:",extra_meters, "\t Stats:", stats)
         if args.best_checkpoint_metric == 'loss':
             current_metric = stats['loss'].avg
         elif args.best_checkpoint_metric in extra_meters:

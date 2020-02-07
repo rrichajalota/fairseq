@@ -457,7 +457,7 @@ class Trainer(object):
 
         return logging_output
 
-    def valid_step(self, sample, raise_oom=False):
+    def valid_step(self, sample, raise_oom=False):   ##########################################################################################
         """Do forward pass in evaluation mode."""
         with torch.no_grad():
             self.model.eval()
@@ -471,7 +471,7 @@ class Trainer(object):
                 ignore_results = False
 
             try:
-                _loss, sample_size, logging_output = self.task.valid_step(
+                _loss, sample_size, logging_output = self.task.valid_step(    ############################################################################ !!!!!!!!!!!!!!!!
                     sample, self.model, self.criterion
                 )
             except RuntimeError as e:
@@ -490,7 +490,7 @@ class Trainer(object):
             if ignore_results:
                 logging_output, sample_size = {}, 0
 
-        # gather logging outputs from all replicas
+        # gather logging outputs from all replicas           ###############################################################################
         if self.args.distributed_world_size > 1:
             logging_output, sample_size = zip(*distributed_utils.all_gather_list(
                 [logging_output, sample_size],
@@ -511,8 +511,12 @@ class Trainer(object):
 
         # update meters for validation
         ntokens = logging_output.get('ntokens', 0)
-        self.meters['valid_loss'].update(logging_output.get('loss', 0), sample_size)
-        if 'valid_acc' in self.meters:
+        self.meters['valid_loss'].update(logging_output.get('loss', 0), sample_size) #####################################
+
+        #print("Trainer validation meters: ", self.meters )
+
+
+        if 'valid_acc' in self.meters:                       ##################################################################################  ????????????????????
             self.meters['valid_acc'].update(
                 logging_output.get('acc', 0), sample_size)
 

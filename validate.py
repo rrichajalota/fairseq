@@ -92,6 +92,7 @@ def cli_main():
     override_parser = options.get_validation_parser()
     override_args = options.parse_args_and_arch(override_parser, suppress_defaults=True)
 
+    print("VALIDATE!!!!!!") ############################ GD#
     main(args, override_args)
 
 

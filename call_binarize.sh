@@ -1,15 +1,13 @@
 #!/bin/bash
 
+TEXT="data/toyset"
+dest="data/data-bin-toyset/"
+mkdir -p $dest
 
 binarize_example_small() {
-TEXT="/raid/data/daga01/data/mt_testing_small/iwslt14.tokenized.de-en"
-dest="/raid/data/daga01/fairseq_train/data-bin-small-test/"
-mkdir -p $dest
-CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess --source-lang de --target-lang en \
+fairseq-preprocess --source-lang de --target-lang en \
  --trainpref $TEXT/train --validpref $TEXT/valid --testpref $TEXT/test \
- --destdir $dest --joined-dictionary --workers 20
-
- # --dataset-impl lazy
+ --destdir $dest --joined-dictionary --workers 20 --dataset-impl raw
 
 }
 
@@ -47,6 +45,6 @@ echo "Done binarizing"
 
 
 
-binarize_big_lazy
-#binarize_example_small
+#binarize_big_lazy
+binarize_example_small
 #binarize_test

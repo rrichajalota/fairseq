@@ -81,6 +81,7 @@ def main(args):
     # Initialize generator
     gen_timer = StopwatchMeter()
     generator = task.build_generator(args)
+    print(" #### Generator", generator)
 
     # Generate and compute BLEU score
     if args.sacrebleu:
@@ -101,7 +102,8 @@ def main(args):
                 prefix_tokens = sample['target'][:, :args.prefix_size]
 
             gen_timer.start()
-            hypos = task.inference_step(generator, models, sample, prefix_tokens)
+            hypos = task.inference_step(generator, models, sample, prefix_tokens)   ############################## Here!!!!!!!!!!!!!!!!!!
+            #print("\n\n\n ###### HYPOS", len(hypos[1][0]), "\n", hypos)
             num_generated_tokens = sum(len(h[0]['tokens']) for h in hypos)
             gen_timer.stop(num_generated_tokens)
 
@@ -110,9 +112,13 @@ def main(args):
 
                 # Remove padding
                 src_tokens = utils.strip_pad(sample['net_input']['src_tokens'][i, :], tgt_dict.pad())
+                #print("SRC tokens", "shape: ", src_tokens.shape, "\n", src_tokens)
                 target_tokens = None
                 if has_target:
+                    #print("\n # Sample->target", 'shape: ',sample['target'].shape, '\n', sample['target'])
+                    #print("\n ### sample-target-i", "i: ", i, "shape: ", sample['target'][i: , :].shape, "\n", sample['target'][i: , :])
                     target_tokens = utils.strip_pad(sample['target'][i, :], tgt_dict.pad()).int().cpu()
+                    #print("\n>>> target tokens", "shape: ", target_tokens.shape, "\n", target_tokens)
 
                 # Either retrieve the original sentences or regenerate them from tokens.
                 if align_dict is not None:
@@ -125,6 +131,7 @@ def main(args):
                         src_str = ""
                     if has_target:
                         target_str = tgt_dict.string(target_tokens, args.remove_bpe, escape_unk=True)
+                        #print("target tokens in print formatting", target_tokens)
 
                 if not args.quiet:
                     if src_dict is not None:
@@ -133,8 +140,8 @@ def main(args):
                         print('T-{}\t{}'.format(sample_id, target_str))
 
                 # Process top predictions
-                for j, hypo in enumerate(hypos[i][:args.nbest]):
-                    hypo_tokens, hypo_str, alignment = utils.post_process_prediction(
+                for j, hypo in enumerate(hypos[i][:args.nbest]):                    ##########################################################
+                    hypo_tokens, hypo_str, alignment = utils.post_process_prediction(       ################################   Printed Hypothesis H generated here
                         hypo_tokens=hypo['tokens'].int().cpu(),
                         src_str=src_str,
                         alignment=hypo['alignment'],
@@ -142,6 +149,7 @@ def main(args):
                         tgt_dict=tgt_dict,
                         remove_bpe=args.remove_bpe,
                     )
+                    #print("Hypo tokens: ", hypo_tokens)
 
                     if not args.quiet:
                         print('H-{}\t{}\t{}'.format(sample_id, hypo['score'], hypo_str))
@@ -160,7 +168,7 @@ def main(args):
                             ))
 
                         if args.print_step:
-                            print('I-{}\t{}'.format(sample_id, hypo['steps']))
+                            print('I-{}\t{}'.format(sample_id, hypo['steps']))  ### hypo doesn't have steps, is it about sving hidden = True?
 
                         if getattr(args, 'retain_iter_history', False):
                             print("\n".join([
@@ -171,15 +179,22 @@ def main(args):
                                             src_str, None, None, tgt_dict, None)[1])
                                         for step, h in enumerate(hypo['history'])]))
 
+                    #print("has target", has_target, "align_dict not none", align_dict is not None)
                     # Score only the top hypothesis
                     if has_target and j == 0:
                         if align_dict is not None or args.remove_bpe is not None:
                             # Convert back to tokens for evaluation with unk replacement and/or without BPE
-                            target_tokens = tgt_dict.encode_line(target_str, add_if_not_exist=True)
+                            target_tokens = tgt_dict.encode_line(target_str, add_if_not_exist=True)      #####################################
+                            #print("target_tokens", target_tokens)
                         if hasattr(scorer, 'add_string'):
                             scorer.add_string(target_str, hypo_str)
+                            #print("hypo string", hypo_str)
                         else:
                             scorer.add(target_tokens, hypo_tokens)
+                            print("target_tokens real: ", target_tokens)
+                            print("hypo tokens real: ", hypo_tokens)   #################
+                            #hypo_str = tgt_dict.string(hypo_tokens, args.remove_bpe, escape_unk=False)
+                            #print("Hypo String: ", hypo_str)
 
             wps_meter.update(num_generated_tokens)
             t.log({'wps': round(wps_meter.avg)})
