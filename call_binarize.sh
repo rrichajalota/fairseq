@@ -31,13 +31,13 @@ echo "Done binarizing"
 
 
 binarize_test() {
-    p="/raid/data/daga01/data/test2"
+    p="/raid/data/daga01/fairseq_train/mini_test"
 
-    dest="/raid/data/daga01/fairseq_train/test/"
+    dest="/raid/data/daga01/fairseq_train/mini-test-bin/"
 
     mkdir -p $dest
 
-    CUDA_VISIBLE_DEVICES=1,2,3,4  fairseq-preprocess --source-lang en --target-lang de --trainpref $p/test --validpref $p/dev --destdir $dest --joined-dictionary --dataset-impl lazy --workers 16
+    fairseq-preprocess --cpu --source-lang src --target-lang tgt --trainpref $p/mini_test  --destdir $dest --joined-dictionary --dataset-impl lazy --workers 16
 
 echo "Done binarizing"
 }
@@ -46,5 +46,5 @@ echo "Done binarizing"
 
 
 #binarize_big_lazy
-binarize_example_small
-#binarize_test
+#binarize_example_small
+binarize_test

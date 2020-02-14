@@ -556,11 +556,11 @@ class SequenceGenerator(object):
 
 
         for tb in range(test_features.shape[0]):
-            #print("tb", tb)
-            dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
-            #dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
+            print("tb", tb)
+            #dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
+            dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
             dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
-            #print("Shapes", dist_0.shape, dist_1.shape)
+            print("Shapes", dist_0.shape, dist_1.shape)
             dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
             #print("Dist shape", dist.shape)
             print("Dist:", dist)
