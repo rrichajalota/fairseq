@@ -307,6 +307,8 @@ class SequenceGenerator(object):
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             )
 
+            #print("Tokens of forward_decoder ", tokens.shape, tokens[:, :step+1])
+
             #print("avrg att score", avg_attn_scores.shape)   # (bs, dec_maxlen)
             #print("Lprobs", lprobs.shape, "\n", lprobs)     # shape 30 (batch size) x 1488 (vocab size/dim)
 
@@ -548,17 +550,17 @@ class SequenceGenerator(object):
         test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
         #print("Out prev out tokens", sample['net_input']['prev_output_tokens'])
         print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
-        out_first_el = test_features[0][0]
+        out_first_el = test_features[0][1]
         print("out test features, first element", out_first_el.shape)
         #out_layer = model.models[0].output_layer(test_features)
         #print("Decoder OUT_LAYER", out_layer.shape)
 
 
-
-        for tb in range(test_features.shape[0]):
+        #print("bsz", bsz)
+        for tb in range(bsz):
             #print("tb", tb)
-            dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
-            #dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
+            #dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
+            dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
             dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
             #print("Shapes", dist_0.shape, dist_1.shape)
             dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
