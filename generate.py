@@ -47,6 +47,8 @@ def main(args):
         task=task,
     )
 
+    #print("Model ", type(models[0].decoder)) ###airseq.models.transformer.TransformerDecoder'
+
     # Optimize ensemble for generation
     for model in models:
         model.make_generation_fast_(

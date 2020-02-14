@@ -171,8 +171,12 @@ class TransformerModel(FairseqEncoderDecoderModel):
             num_embeddings = len(dictionary)
             padding_idx = dictionary.pad()
             emb = Embedding(num_embeddings, embed_dim, padding_idx)
+            #print("embedding built: ", type(emb))
+            #test_idx = torch.LongTensor([4])
+            #print("Embedding indexing in transformer", emb(test_idx))
             # if provided, load from preloaded dictionaries
             if path:
+                #print("path for dictionaries provided") #nicht
                 embed_dict = utils.parse_embedding(path)
                 utils.load_embedding(embed_dict, dictionary, emb)
             return emb
@@ -496,7 +500,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.padding_idx = embed_tokens.padding_idx
         self.max_target_positions = args.max_target_positions
 
-        self.embed_tokens = embed_tokens
+        self.embed_tokens = embed_tokens       ############################################
 
         self.embed_scale = 1.0 if args.no_scale_embedding else math.sqrt(embed_dim)
 

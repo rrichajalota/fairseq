@@ -65,6 +65,8 @@ class SequenceGenerator(object):
             match_source_len (bool, optional): outputs should match the source
                 length (default: False)
         """
+        #tgt dict für testen
+        self.tgt_dict = tgt_dict
         self.pad = tgt_dict.pad()
         self.unk = tgt_dict.unk()
         self.eos = tgt_dict.eos()
@@ -131,7 +133,7 @@ class SequenceGenerator(object):
             if k != 'prev_output_tokens'
         }
 
-        src_tokens = encoder_input['src_tokens']
+        src_tokens = encoder_input['src_tokens']                        ################################################# src tokens
         src_lengths = (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
         input_size = src_tokens.size()
         # batch dimension goes first followed by source lengths
@@ -546,7 +548,8 @@ class SequenceGenerator(object):
         test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
         #print("Out prev out tokens", sample['net_input']['prev_output_tokens'])
         print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
-        #print("out test features", test_features)
+        out_first_el = test_features[0][0]
+        print("out test features, first element", out_first_el.shape)
         #out_layer = model.models[0].output_layer(test_features)
         #print("Decoder OUT_LAYER", out_layer.shape)
 
@@ -561,6 +564,21 @@ class SequenceGenerator(object):
             dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
             #print("Dist shape", dist.shape)
             print("Dist:", dist)
+
+        #################################
+        # decoder Embeddings
+
+        test_decoder_embed_tokens = model.models[0].decoder.embed_tokens
+        print("here test decoder", type(test_decoder_embed_tokens))
+        test_idx = torch.LongTensor([4])
+        four_emb = test_decoder_embed_tokens(test_idx).squeeze(0)
+        print("four emb", four_emb.shape)
+        td0 = four_emb.sum(0)
+        td1 = out_first_el.sum(0)
+        td = torch.nn.functional.cosine_similarity(td1, td0, dim=0)
+        print("TD for index 4 , ", td)
+        print("tgt dict string for 4", self.tgt_dict.string([test_idx]))
+        print("tgt dict index for , ", self.tgt_dict.index(","))
 
 
 
