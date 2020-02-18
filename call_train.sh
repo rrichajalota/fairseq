@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-training_data="data/data-bin-32k-red-lazy-new"
+training_data="/raid/data/daga01/fairseq_train/data-bin-32k-red-lazy-new"
 
 checkpoints="checkpoints/basic-transf"
 
@@ -88,7 +88,8 @@ CUDA_VISIBLE_DEVICES=1,2,3,4  $(which fairseq-train) ${training_data} \
 
 call_train_basic(){
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  $(which fairseq-train) ${training_data} \
+#CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 
+$(which fairseq-train) ${training_data}  --cpu \
     --arch transformer --share-all-embeddings \
     --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \
     --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
@@ -99,8 +100,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  $(which fairseq-train) ${training_data} \
     --eval-bleu-detok moses \
     --eval-bleu-remove-bpe \
     --eval-bleu-print-samples \
+    --best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
     --save-dir ${checkpoints}  --dataset-impl lazy 
-# --best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
 }
 
 echo $(which python)
