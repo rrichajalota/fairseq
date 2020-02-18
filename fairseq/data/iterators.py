@@ -18,16 +18,22 @@ class CountingIterator(object):
 
     Args:
         iterable (iterable): iterable to wrap
+        start (int): starting iteration count
+        override_len (int): override the iterator length
+            returned by ``__len__``
 
     Attributes:
         count (int): number of elements consumed from this iterator
     """
 
-    def __init__(self, iterable, start=0):
+    def __init__(self, iterable, start=0, override_len=None):
         self.iterable = iterable
         self.count = start
         self.itr = iter(self)
-        self.len = start + len(iterable)
+        if override_len is None:
+            self.len = start + len(iterable)
+        else:
+            self.len = override_len
 
     def __len__(self):
         return self.len
@@ -176,6 +182,7 @@ class EpochBatchIterator(EpochBatchIterating):
         self.num_workers = num_workers
 
         self.epoch = epoch
+        self.shuffle = True
         self._cur_epoch_itr = None
         self._next_epoch_itr = None
         self._supports_prefetch = getattr(dataset, 'supports_prefetch', False)
@@ -202,6 +209,7 @@ class EpochBatchIterator(EpochBatchIterating):
                 self.epoch, shuffle, fix_batches_to_gpus=fix_batches_to_gpus,
             )
         self.dataset.set_epoch(self.epoch)
+        self.shuffle = shuffle
         return self._cur_epoch_itr
 
     def end_of_epoch(self) -> bool:
@@ -222,6 +230,7 @@ class EpochBatchIterator(EpochBatchIterating):
         return {
             'epoch': self.epoch,
             'iterations_in_epoch': self.iterations_in_epoch,
+            'shuffle': self.shuffle,
         }
 
     def load_state_dict(self, state_dict):
@@ -239,8 +248,6 @@ class EpochBatchIterator(EpochBatchIterating):
     def _get_iterator_for_epoch(self, epoch, shuffle, fix_batches_to_gpus=False, offset=0):
 
         def shuffle_batches(batches, seed):
-            # set seed based on the seed and epoch number so that we get
-            # reproducible results when resuming from checkpoints
             with data_utils.numpy_seed(seed):
                 np.random.shuffle(batches)
             return batches
