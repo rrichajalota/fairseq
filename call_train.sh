@@ -1,10 +1,11 @@
 #!/bin/bash
 
 
-training_data="data/data-bin-toyset"
+training_data="data/data-bin-32k-red-lazy-new"
 
-checkpoints="checkpoints/fconv"
+checkpoints="checkpoints/basic-transf"
 
+mkdir -p $checkpoints
 
 
 #call_train_distributed() {
@@ -84,10 +85,28 @@ CUDA_VISIBLE_DEVICES=1,2,3,4  $(which fairseq-train) ${training_data} \
 }
 
 
+
+call_train_basic(){
+
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  $(which fairseq-train) ${training_data} \
+    --arch transformer --share-all-embeddings \
+    --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \
+    --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
+    --dropout 0.3 --weight-decay 0.0001 --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+    --max-tokens 4096 \
+ 	--eval-bleu \
+    --eval-bleu-args '{"beam": 5, "max_len_a": 1.2, "max_len_b": 10}' \
+    --eval-bleu-detok moses \
+    --eval-bleu-remove-bpe \
+    --eval-bleu-print-samples \
+    --save-dir ${checkpoints}  --dataset-impl lazy 
+# --best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
+}
+
 echo $(which python)
 
 LOG0="checkpoints/LOG"
-time -p call_simplest_small
+time -p call_train_basic
 
 #LOG="/raid/data/daga01/fairseq_train/LOG_R2_32k_wide"
 #time -p call_train_big_wide > $LOG 2>&1
