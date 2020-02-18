@@ -88,7 +88,7 @@ CUDA_VISIBLE_DEVICES=1,2,3,4  $(which fairseq-train) ${training_data} \
 
 call_train_basic(){
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 $(which fairseq-train) ${training_data}  --cpu \
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 $(which fairseq-train) ${training_data} \
     --arch transformer --share-all-embeddings \
     --optimizer adam --adam-betas '(0.9, 0.98)' --clip-norm 0.0 \
     --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
