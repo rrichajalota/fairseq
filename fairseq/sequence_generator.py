@@ -24,10 +24,14 @@ class SequenceGenerator(object):
         len_penalty=1.,
         unk_penalty=0.,
         retain_dropout=False,
+        sampling=False,
+        sampling_topk=-1,
+        sampling_topp=-1.0,
         temperature=1.,
+        diverse_beam_groups=-1,
+        diverse_beam_strength=0.5,
         match_source_len=False,
         no_repeat_ngram_size=0,
-        search_strategy=None,
     ):
         """Generates translations of a given source sentence.
 
@@ -46,12 +50,23 @@ class SequenceGenerator(object):
                 produces more unks, >0 produces fewer (default: 0.0)
             retain_dropout (bool, optional): use dropout when generating
                 (default: False)
+            sampling (bool, optional): sample outputs instead of beam search
+                (default: False)
+            sampling_topk (int, optional): only sample among the top-k choices
+                at each step (default: -1)
+            sampling_topp (float, optional): only sample among the smallest set
+                of words whose cumulative probability mass exceeds p
+                at each step (default: -1.0)
             temperature (float, optional): temperature, where values
                 >1.0 produce more uniform samples and values <1.0 produce
                 sharper samples (default: 1.0)
+            diverse_beam_groups/strength (float, optional): parameters for
+                Diverse Beam Search sampling
             match_source_len (bool, optional): outputs should match the source
                 length (default: False)
         """
+        #tgt dict für testen
+        self.tgt_dict = tgt_dict
         self.pad = tgt_dict.pad()
         self.unk = tgt_dict.unk()
         self.eos = tgt_dict.eos()
@@ -69,12 +84,20 @@ class SequenceGenerator(object):
         self.temperature = temperature
         self.match_source_len = match_source_len
         self.no_repeat_ngram_size = no_repeat_ngram_size
+        assert sampling_topk < 0 or sampling, '--sampling-topk requires --sampling'
+        assert sampling_topp < 0 or sampling, '--sampling-topp requires --sampling'
         assert temperature > 0, '--temperature must be greater than 0'
 
-        self.search = (
-            search.BeamSearch(tgt_dict) if search_strategy is None else search_strategy
-        )
-
+        if sampling:
+            self.search = search.Sampling(tgt_dict, sampling_topk, sampling_topp)
+        elif diverse_beam_groups > 0:
+            self.search = search.DiverseBeamSearch(tgt_dict, diverse_beam_groups, diverse_beam_strength)
+        elif match_source_len:
+            self.search = search.LengthConstrainedBeamSearch(
+                tgt_dict, min_len_a=1, min_len_b=0, max_len_a=1, max_len_b=0,
+            )
+        else:
+            self.search = search.BeamSearch(tgt_dict)
 
     @torch.no_grad()
     def generate(self, models, sample, **kwargs):
@@ -110,7 +133,7 @@ class SequenceGenerator(object):
             if k != 'prev_output_tokens'
         }
 
-        src_tokens = encoder_input['src_tokens']
+        src_tokens = encoder_input['src_tokens']                        ################################################# src tokens
         src_lengths = (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
         input_size = src_tokens.size()
         # batch dimension goes first followed by source lengths
@@ -126,13 +149,13 @@ class SequenceGenerator(object):
                 # exclude the EOS marker
                 model.max_decoder_positions() - 1,
             )
-        assert self.min_len <= max_len, 'min_len cannot be larger than max_len, please adjust these!'
 
         # compute the encoder output for each beam
-        encoder_outs = model.forward_encoder(encoder_input)
+        encoder_outs = model.forward_encoder(encoder_input)    ############### encoder_input sind die indices???
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
         new_order = new_order.to(src_tokens.device).long()
-        encoder_outs = model.reorder_encoder_out(encoder_outs, new_order)
+        encoder_outs = model.reorder_encoder_out(encoder_outs, new_order) ###############################       ???????????????????
+        #print("\n\n >>> Encoder outs in sequence_generator ", encoder_outs[0])   #### Encoder outs in sequence_generator  TransformerEncoderOut(encoder_out=tensor([[[ 2.9137, -0.7925, -0.7197,  ..., -0.1992,
 
         # initialize buffers
         scores = src_tokens.new(bsz * beam_size, max_len + 1).float().fill_(0)
@@ -198,6 +221,7 @@ class SequenceGenerator(object):
             assert bbsz_idx.numel() == eos_scores.numel()
 
             # clone relevant token and attention tensors
+            #print("seq gen tokens", tokens)
             tokens_clone = tokens.index_select(0, bbsz_idx)
             tokens_clone = tokens_clone[:, 1:step + 2]  # skip the first index, which is EOS
             assert not tokens_clone.eq(self.eos).any()
@@ -261,20 +285,32 @@ class SequenceGenerator(object):
 
         reorder_state = None
         batch_idxs = None
+
+        #test_features_0, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])
+        #test_features_0_1 = test_features_0.clone().detach()
+        #print("0th features", test_features_0.shape)
+        #print("prev out tokens 0", sample['net_input']['prev_output_tokens'])
+
+        ###############################################################################################################################################################################################
         for step in range(max_len + 1):  # one extra step for EOS marker
             # reorder decoder internal states based on the prev choice of beams
+            #print("reorder state", reorder_state) 1st is None
             if reorder_state is not None:
                 if batch_idxs is not None:
                     # update beam indices to take into account removed sentences
                     corr = batch_idxs - torch.arange(batch_idxs.numel()).type_as(batch_idxs)
                     reorder_state.view(-1, beam_size).add_(corr.unsqueeze(-1) * beam_size)
                 model.reorder_incremental_state(reorder_state)
-                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)
+                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)     ###########################################################
 
-            lprobs, avg_attn_scores = model.forward_decoder(
+            lprobs, avg_attn_scores = model.forward_decoder(                  ###################################################################    Decoder ################
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             )
-            lprobs[lprobs != lprobs] = -math.inf
+
+            #print("Tokens of forward_decoder ", tokens.shape, tokens[:, :step+1])
+
+            #print("avrg att score", avg_attn_scores.shape)   # (bs, dec_maxlen)
+            #print("Lprobs", lprobs.shape, "\n", lprobs)     # shape 30 (batch size) x 1488 (vocab size/dim)
 
             lprobs[:, self.pad] = -math.inf  # never select pad
             lprobs[:, self.unk] -= self.unk_penalty  # apply unk penalty
@@ -309,7 +345,7 @@ class SequenceGenerator(object):
                         return tensor.view(-1, tensor.size(-1))
 
                     # copy tokens, scores and lprobs from the first beam to all beams
-                    tokens = replicate_first_beam(tokens, eos_mask_batch_dim)
+                    tokens = replicate_first_beam(tokens, eos_mask_batch_dim)                   ####################################################
                     scores = replicate_first_beam(scores, eos_mask_batch_dim)
                     lprobs = replicate_first_beam(lprobs, eos_mask_batch_dim)
             elif step < self.min_len:
@@ -326,8 +362,6 @@ class SequenceGenerator(object):
                                 gen_ngrams[bbsz_idx].get(tuple(ngram[:-1]), []) + [ngram[-1]]
 
             # Record attention scores
-            if type(avg_attn_scores) is list:
-                avg_attn_scores = avg_attn_scores[0]
             if avg_attn_scores is not None:
                 if attn is None:
                     attn = scores.new(bsz * beam_size, src_tokens.size(1), max_len + 2)
@@ -394,6 +428,7 @@ class SequenceGenerator(object):
                 break
             assert step < max_len
 
+            #print("Finalized sents", finalized_sents)
             if len(finalized_sents) > 0:
                 new_bsz = bsz - len(finalized_sents)
 
@@ -496,8 +531,65 @@ class SequenceGenerator(object):
             # reorder incremental state in decoder
             reorder_state = active_bbsz_idx
 
+        #### Each element of the sentence/step ready        ################################################################################################
+        ##### TEST #########################
+
+        print("Encoder Emb", encoder_outs[0].encoder_embedding.shape)
+        #print("Encoder States", encoder_outs[0].encoder_embedding[1].size())
+        encoder_out_emb_orig = encoder_outs[0].encoder_out
+        print("Encoder Out orig", encoder_out_emb_orig.shape)
+        encoder_out_emb = encoder_out_emb_orig.transpose(0, 1)
+        print("Encoder Out", encoder_out_emb.shape)
+
+        '''
+        extract_features ->  Returns:
+            tuple:
+                - the decoder's features of shape `(batch, tgt_len, embed_dim)`
+                - a dictionary with any model-specific outputs
+        '''
+        test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
+        #print("Out prev out tokens", sample['net_input']['prev_output_tokens'])
+        print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
+        out_first_el = test_features[0][0]
+        print("out test features, first element", out_first_el.shape)
+        #out_layer = model.models[0].output_layer(test_features)
+        #print("Decoder OUT_LAYER", out_layer.shape)
+
+
+        #print("bsz", bsz)
+        for tb in range(bsz):
+            #print("tb", tb)
+            #dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
+            dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
+            dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
+            print("Shapes", dist_0.shape, dist_1.shape)
+            dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
+            #print("Dist shape", dist.shape)
+            print("Dist:", dist)
+
+        #################################
+        # decoder Embeddings
+
+        test_decoder_embed_tokens = model.models[0].decoder.embed_tokens
+        print("here test decoder", type(test_decoder_embed_tokens))
+        test_idx = torch.LongTensor([4])
+        four_emb = test_decoder_embed_tokens(test_idx).squeeze(0)
+        print("four emb", four_emb.shape)
+        td0 = four_emb.sum(0)
+        td1 = out_first_el.sum(0)
+        td = torch.nn.functional.cosine_similarity(td1, td0, dim=0)
+        print("TD for index 4 , ", td)
+        print("tgt dict string for 4", self.tgt_dict.string([test_idx]))
+        print("tgt dict index for , ", self.tgt_dict.index(","))
+
+
+
+        ####################################
+
+
         # sort by score descending
         for sent in range(len(finalized)):
+            #print("Sent", finalized[sent]) # hypos 10 sents
             finalized[sent] = sorted(finalized[sent], key=lambda r: r['score'], reverse=True)
         return finalized
 
@@ -509,7 +601,7 @@ class EnsembleModel(torch.nn.Module):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
         self.incremental_states = None
-        if all(hasattr(m, 'decoder') and isinstance(m.decoder, FairseqIncrementalDecoder) for m in models):
+        if all(isinstance(m.decoder, FairseqIncrementalDecoder) for m in models):
             self.incremental_states = {m: {} for m in models}
 
     def has_encoder(self):
@@ -574,8 +666,6 @@ class EnsembleModel(torch.nn.Module):
         attn = decoder_out[1]
         if type(attn) is dict:
             attn = attn.get('attn', None)
-        if type(attn) is list:
-            attn = attn[0]
         if attn is not None:
             attn = attn[:, -1, :]
         probs = model.get_normalized_probs(decoder_out, log_probs=log_probs)
@@ -691,8 +781,6 @@ class EnsembleModelWithAlignment(EnsembleModel):
         attn = decoder_out[1]
         if type(attn) is dict:
             attn = attn.get('attn', None)
-        if type(attn) is list:
-            attn = attn[0]
         if attn is not None:
             attn = attn[:, -1, :]
         probs = model.get_normalized_probs(decoder_out, log_probs=log_probs)
