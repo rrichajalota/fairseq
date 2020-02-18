@@ -5,7 +5,6 @@
 
 import warnings
 
-import numpy as np
 import torch
 
 from fairseq import metrics, search, tokenizer, utils
@@ -27,6 +26,15 @@ class FairseqTask(object):
     def add_args(parser):
         """Add task-specific arguments to the parser."""
         pass
+
+    @staticmethod
+    def logging_outputs_can_be_summed(criterion) -> bool:
+        """
+        Whether the logging outputs returned by `train_step` and `valid_step` can
+        be summed across workers prior to calling `aggregate_logging_outputs`.
+        Setting this to True will improves distributed training speed.
+        """
+        return criterion.logging_outputs_can_be_summed()
 
     def __init__(self, args):
         self.args = args
@@ -348,14 +356,14 @@ class FairseqTask(object):
         if not any('ntokens' in log for log in logging_outputs):
             warnings.warn('ntokens not found in Criterion logging outputs, cannot log wpb or wps')
         else:
-            ntokens = sum(log.get('ntokens', 0) for log in logging_outputs)
+            ntokens = utils.item(sum(log.get('ntokens', 0) for log in logging_outputs))
             metrics.log_scalar('wpb', ntokens, priority=180, round=1)
-            metrics.log_speed('wps', ntokens, priority=90, round=1)
+            metrics.log_speed('wps', ntokens, ignore_first=10, priority=90, round=1)
 
         if not any('nsentences' in log for log in logging_outputs):
             warnings.warn('nsentences not found in Criterion logging outputs, cannot log bsz')
         else:
-            nsentences = sum(log.get('nsentences', 0) for log in logging_outputs)
+            nsentences = utils.item(sum(log.get('nsentences', 0) for log in logging_outputs))
             metrics.log_scalar('bsz', nsentences, priority=190, round=1)
 
         criterion.__class__.reduce_metrics(logging_outputs)

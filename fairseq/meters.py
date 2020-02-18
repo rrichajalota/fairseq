@@ -85,17 +85,29 @@ class AverageMeter(Meter):
 class TimeMeter(Meter):
     """Computes the average occurrence of some event per second"""
 
-    def __init__(self, init: int = 0, n: int = 0, round: Optional[int] = None):
+    def __init__(
+        self,
+        init: int = 0,
+        n: int = 0,
+        ignore_first: int = 0,
+        round: Optional[int] = None,
+    ):
+        self.ignore_first = ignore_first
         self.round = round
         self.reset(init, n)
 
     def reset(self, init=0, n=0):
         self.init = init
-        self.start = time.time()
+        self.start = time.perf_counter()
         self.n = n
+        self.i = 0
 
     def update(self, val=1):
-        self.n += val
+        self.i += 1
+        if self.i > self.ignore_first:
+            self.n += val
+        else:
+            self.start = time.perf_counter()
 
     def state_dict(self):
         return {
@@ -118,7 +130,7 @@ class TimeMeter(Meter):
 
     @property
     def elapsed_time(self):
-        return self.init + (time.time() - self.start)
+        return self.init + (time.perf_counter() - self.start)
 
     @property
     def smoothed_value(self) -> float:
@@ -138,11 +150,11 @@ class StopwatchMeter(Meter):
         self.start_time = None
 
     def start(self):
-        self.start_time = time.time()
+        self.start_time = time.perf_counter()
 
     def stop(self, n=1):
         if self.start_time is not None:
-            delta = time.time() - self.start_time
+            delta = time.perf_counter() - self.start_time
             self.sum += delta
             self.n += n
 
@@ -172,7 +184,7 @@ class StopwatchMeter(Meter):
     def elapsed_time(self):
         if self.start_time is None:
             return 0.
-        return time.time() - self.start_time
+        return time.perf_counter() - self.start_time
 
     @property
     def smoothed_value(self) -> float:
