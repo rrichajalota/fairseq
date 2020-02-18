@@ -24,7 +24,8 @@ binarize_big_lazy() {
     
     mkdir -p $dest
 
-    CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess --source-lang src --target-lang tgt --trainpref $p/corpus --validpref $p/dev  --testpref $p/test --destdir $dest --joined-dictionary --dataset-impl lazy --workers 16
+    #CUDA_VISIBLE_DEVICES=1,2,3,4 
+    fairseq-preprocess --cpu --source-lang src --target-lang tgt --trainpref $p/corpus --validpref $p/dev  --testpref $p/test --destdir $dest --joined-dictionary --dataset-impl lazy --workers 16
 
 
 echo "Done binarizing"

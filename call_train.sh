@@ -105,8 +105,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 $(which fairseq-train) ${training_data} \
 
 echo $(which python)
 
-LOG0="checkpoints/LOG"
-time -p call_train_basic
+LOG="checkpoints/LOG"
+time -p call_train_basic > $LOG 2>&1
 
 #LOG="/raid/data/daga01/fairseq_train/LOG_R2_32k_wide"
 #time -p call_train_big_wide > $LOG 2>&1
