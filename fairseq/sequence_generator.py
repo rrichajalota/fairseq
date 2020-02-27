@@ -555,15 +555,15 @@ class SequenceGenerator(object):
 
         test_decoder_embed_tokens = model.models[0].decoder.embed_tokens
         print("here test decoder", type(test_decoder_embed_tokens))
-        test_idx = torch.LongTensor([4])
+        test_idx = torch.LongTensor([7])
         four_emb = test_decoder_embed_tokens(test_idx).squeeze(0)
-        print("four emb", four_emb.shape)
+        print("seven emb", four_emb.shape)
         td0 = four_emb.sum(0)
         td1 = out_first_el.sum(0)
         td = torch.nn.functional.cosine_similarity(td1, td0, dim=0)
-        print("TD for index 4 , ", td)
+        print("TD for index 7 ", td)
         print("tgt dict string for 4", self.tgt_dict.string([test_idx]))
-        print("tgt dict index for , ", self.tgt_dict.index(","))
+        print("tgt dict index for the ", self.tgt_dict.index("the"))
 
 
 
