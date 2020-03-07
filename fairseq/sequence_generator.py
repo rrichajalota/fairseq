@@ -117,6 +117,7 @@ class SequenceGenerator(object):
         input_size = src_tokens.size()
         # batch dimension goes first followed by source lengths
         bsz = input_size[0]
+        print(">>## bsz1", bsz)
         src_len = input_size[1]
         beam_size = self.beam_size
 
@@ -281,8 +282,10 @@ class SequenceGenerator(object):
                     corr = batch_idxs - torch.arange(batch_idxs.numel()).type_as(batch_idxs)
                     reorder_state.view(-1, beam_size).add_(corr.unsqueeze(-1) * beam_size)
                 model.reorder_incremental_state(reorder_state)
-                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state)     ###########################################################
-
+                encoder_outs = model.reorder_encoder_out(encoder_outs, reorder_state) 
+                print(">>## Enc Outs Iter", encoder_outs[0].encoder_out.shape)
+                ###########################################################
+    
             lprobs, avg_attn_scores = model.forward_decoder(                  ###################################################################    Decoder ################
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             )
@@ -413,6 +416,7 @@ class SequenceGenerator(object):
 
             #print("Finalized sents", finalized_sents)
             if len(finalized_sents) > 0:
+                print(">>entering finalized")
                 new_bsz = bsz - len(finalized_sents)
 
                 # construct batch_idxs which holds indices of batches to keep for the next pass
@@ -439,6 +443,7 @@ class SequenceGenerator(object):
                     attn = attn.view(bsz, -1)[batch_idxs].view(new_bsz * beam_size, attn.size(1), -1)
                     attn_buf.resize_as_(attn)
                 bsz = new_bsz
+                print(">>##bsz2", bsz)
             else:
                 batch_idxs = None
 
@@ -531,7 +536,10 @@ class SequenceGenerator(object):
                 - a dictionary with any model-specific outputs
         '''
         test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
-        #print("Out prev out tokens", sample['net_input']['prev_output_tokens'])
+        print("Out prev out tokens", sample["id"], sample['net_input']['prev_output_tokens'])
+        print("Out target", sample["id"], sample['target'])
+        #print("sample keys", sample.keys())
+        #print("sample net_input keys", sample['net_input'].keys())
         print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
         out_first_el = test_features[0][1]
         print("out test features, first element", out_first_el.shape)
@@ -539,9 +547,11 @@ class SequenceGenerator(object):
         #print("Decoder OUT_LAYER", out_layer.shape)
 
 
-        #print("bsz", bsz)
-        for tb in range(bsz):
-            #print("tb", tb)
+        bszt = input_size[0]
+        print(">>##bsz3", bsz)
+        print(">>##bszt", bszt)
+        for tb in range(bszt):
+            print("tb", tb)
             #dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
             dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
             dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
@@ -555,17 +565,30 @@ class SequenceGenerator(object):
 
         test_decoder_embed_tokens = model.models[0].decoder.embed_tokens
         print("here test decoder", type(test_decoder_embed_tokens))
-        test_idx = torch.LongTensor([7])
-        four_emb = test_decoder_embed_tokens(test_idx).squeeze(0)
-        print("seven emb", four_emb.shape)
-        td0 = four_emb.sum(0)
-        td1 = out_first_el.sum(0)
-        td = torch.nn.functional.cosine_similarity(td1, td0, dim=0)
-        print("TD for index 7 ", td)
-        print("tgt dict string for 4", self.tgt_dict.string([test_idx]))
-        print("tgt dict index for the ", self.tgt_dict.index("the"))
+        test_idx = torch.LongTensor([1])
+        word_emb = test_decoder_embed_tokens(test_idx).squeeze(0)
+        print("word emb", word_emb.shape)
+        #td0 = four_emb.sum(0)
+        #td1 = out_first_el.sum(0)
+        #td = torch.nn.functional.cosine_similarity(td1, td0, dim=0)
+        td = torch.nn.functional.cosine_similarity(word_emb, out_first_el, dim=0)
+        print("TD for index ", test_idx, td)
+        tgt_str = self.tgt_dict.string([test_idx])
+        print("tgt dict string for ", test_idx, "###", tgt_str, "###")
+        print("tgt dict index for ",tgt_str, self.tgt_dict.index(tgt_str))
 
-
+        for tb in range(bszt):
+            v0 = test_features[tb, :]#.mean(0)
+            print(">>>test ft shape ", v0.shape)
+            idxs = torch.LongTensor(sample['target'][tb, :])
+            print(">>>idxs",idxs)
+            v1 = test_decoder_embed_tokens(idxs)
+            print(">>>shape test decoder idxs", v1.shape)
+            d0 = v0.mean(0)
+            d1 = v1.mean(0)
+            print(">>>decoder emb shapes")
+            td2 = torch.nn.functional.cosine_similarity(d0, d1, dim=0)
+            print(">>>Dist2", td2)
 
         ####################################
 

@@ -19,8 +19,9 @@ binarize_big_lazy() {
     #p="/raid/data/daga01/fairseq_train/BPE_32k_red"
     #dest="/raid/data/daga01/fairseq_train/data-bin-32k-red-lazy"
 
-    p="/raid/data/daga01/fairseq_train/BPE_32k_red_new"
-    dest="/raid/data/daga01/fairseq_train/data-bin-32k-red-lazy-new-2"
+    p="/raid/data/daga01/fairseq_train/data/BPE_32k_red_new"
+    #dest="/raid/data/daga01/fairseq_train/data/data-bin-32k-red-lazy-new-2"
+    dest="/raid/data/daga01/fairseq_train/data/data-bin-32k-red-lazy-new-short"
     
     mkdir -p $dest
 
