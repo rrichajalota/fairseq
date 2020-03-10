@@ -121,6 +121,7 @@ class SequenceGenerator(object):
         src_len = input_size[1]
         beam_size = self.beam_size
 
+        print("match source len", self.match_source_len)
         if self.match_source_len:
             max_len = src_lengths.max().item()
         else:
