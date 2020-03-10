@@ -521,20 +521,18 @@ class SequenceGenerator(object):
 
         #### Each element of the sentence/step ready        ################################################################################################
         ##### TEST #########################
-
+        '''
         print("Encoder Emb", encoder_outs[0].encoder_embedding.shape)
         #print("Encoder States", encoder_outs[0].encoder_embedding[1].size())
         encoder_out_emb_orig = encoder_outs[0].encoder_out
         print("Encoder Out orig", encoder_out_emb_orig.shape)
         encoder_out_emb = encoder_out_emb_orig.transpose(0, 1)
         print("Encoder Out", encoder_out_emb.shape)
-
-        '''
-        extract_features ->  Returns:
-            tuple:
-                - the decoder's features of shape `(batch, tgt_len, embed_dim)`
-                - a dictionary with any model-specific outputs
-        '''
+        #extract_features ->  Returns:
+        #    tuple:
+        #        - the decoder's features of shape `(batch, tgt_len, embed_dim)`
+        #       - a dictionary with any model-specific outputs
+        
         test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
         print("Out prev out tokens", sample["id"], sample['net_input']['prev_output_tokens'])
         print("Out target", sample["id"], sample['target'])
@@ -545,8 +543,7 @@ class SequenceGenerator(object):
         print("out test features, first element", out_first_el.shape)
         #out_layer = model.models[0].output_layer(test_features)
         #print("Decoder OUT_LAYER", out_layer.shape)
-
-
+        
         bszt = input_size[0]
         print(">>##bsz3", bsz)
         print(">>##bszt", bszt)
@@ -591,7 +588,7 @@ class SequenceGenerator(object):
             print(">>>Dist2", td2)
 
         ####################################
-
+        '''
 
         # sort by score descending
         for sent in range(len(finalized)):
