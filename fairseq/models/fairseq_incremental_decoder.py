@@ -3,8 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
+from typing import Dict, Optional
+
+from torch import Tensor
+
 from fairseq.models import FairseqDecoder
 from fairseq.incremental_decoding_utils import with_incremental_state
+
+
+logger = logging.getLogger(__name__)
 
 
 @with_incremental_state
@@ -59,21 +67,32 @@ class FairseqIncrementalDecoder(FairseqDecoder):
         """
         raise NotImplementedError
 
-    def reorder_incremental_state(self, incremental_state, new_order):
+    def reorder_incremental_state(
+        self,
+        incremental_state: Dict[str, Dict[str, Optional[Tensor]]],
+        new_order: Tensor,
+    ):
         """Reorder incremental state.
 
-        This should be called when the order of the input has changed from the
+        This will be called when the order of the input has changed from the
         previous time step. A typical use case is beam search, where the input
         order changes between time steps based on the selection of beams.
         """
-        seen = set()
+        pass
+
+    def reorder_incremental_state_scripting(
+        self,
+        incremental_state: Dict[str, Dict[str, Optional[Tensor]]],
+        new_order: Tensor,
+    ):
+        """Main entry point for reordering the incremental state.
+
+        Due to limitations in TorchScript, we call this function in
+        :class:`fairseq.sequence_generator.SequenceGenerator` instead of
+        calling :func:`reorder_incremental_state` directly.
+        """
         for module in self.modules():
-            if (
-                module != self
-                and hasattr(module, 'reorder_incremental_state')
-                and module not in seen
-            ):
-                seen.add(module)
+            if hasattr(module, 'reorder_incremental_state'):
                 result = module.reorder_incremental_state(incremental_state, new_order)
                 if result is not None:
                     incremental_state = result

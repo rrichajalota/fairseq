@@ -3,11 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
+
 import numpy as np
 import torch
 
 from fairseq.data import Dictionary, FairseqDataset
 from fairseq.tasks import FairseqTask, register_task
+
+
+logger = logging.getLogger(__name__)
 
 
 @register_task('dummy_masked_lm')
@@ -16,7 +21,7 @@ class DummyMaskedLMTask(FairseqTask):
     @staticmethod
     def add_args(parser):
         """Add task-specific arguments to the parser."""
-        parser.add_argument('--dict-size', default=50000, type=int)
+        parser.add_argument('--dict-size', default=49995, type=int)
         parser.add_argument('--dataset-size', default=100000, type=int)
         parser.add_argument('--tokens-per-sample', default=512, type=int,
                             help='max number of total tokens over all segments '
@@ -29,7 +34,7 @@ class DummyMaskedLMTask(FairseqTask):
 
         # add mask token
         self.mask_idx = dictionary.add_symbol('<mask>')
-        assert len(dictionary) % 8 == 0
+        dictionary.pad_to_multiple_(8)  # often faster if divisible by 8
 
         mask_idx = 0
         pad_idx = 1
@@ -49,22 +54,26 @@ class DummyMaskedLMTask(FairseqTask):
         dictionary = Dictionary()
         for i in range(args.dict_size):
             dictionary.add_symbol('word{}'.format(i))
-        print('| dictionary: {} types'.format(len(dictionary)))
-
+        logger.info('dictionary: {} types'.format(len(dictionary)))
         return cls(args, dictionary)
 
-    def load_dataset(self, split, epoch=0, combine=False, **kwargs):
+    def load_dataset(self, split, epoch=1, combine=False, **kwargs):
         """Load a given dataset split.
         Args:
             split (str): name of the split (e.g., train, valid, test)
         """
-        bsz = self.args.max_sentences
+        if self.args.max_sentences is not None:
+            bsz = self.args.max_sentences
+        else:
+            bsz = max(1, self.args.max_tokens // self.args.tokens_per_sample)
         self.datasets[split] = DummyDataset(
             {
                 'id': 1,
                 'net_input': {
                     'src_tokens': torch.stack([self.dummy_src for _ in range(bsz)]),
-                    'src_lengths': torch.full((bsz, ), self.args.tokens_per_sample),
+                    'src_lengths': torch.full(
+                        (bsz, ), self.args.tokens_per_sample, dtype=torch.long
+                    ),
                 },
                 'target': torch.stack([self.dummy_tgt for _ in range(bsz)]),
                 'nsentences': bsz,

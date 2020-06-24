@@ -8,19 +8,22 @@ from io import StringIO
 import logging
 import os
 import random
-import sys
 import tempfile
 import unittest
 
 import torch
 
 from fairseq import options
-from fairseq_cli import preprocess
 from fairseq_cli import train
-from fairseq_cli import generate
-from fairseq_cli import interactive
 from fairseq_cli import eval_lm
 from fairseq_cli import validate
+from tests.utils import (
+    create_dummy_data,
+    preprocess_lm_data,
+    preprocess_translation_data,
+    train_translation_model,
+    generate_main,
+)
 
 
 class TestTranslation(unittest.TestCase):
@@ -46,24 +49,6 @@ class TestTranslation(unittest.TestCase):
                 preprocess_translation_data(data_dir, ['--dataset-impl', 'raw'])
                 train_translation_model(data_dir, 'fconv_iwslt_de_en', ['--dataset-impl', 'raw'])
                 generate_main(data_dir, ['--dataset-impl', 'raw'])
-
-    @unittest.skipIf(not torch.cuda.is_available(), 'test requires a GPU')
-    def test_fp16(self):
-        with contextlib.redirect_stdout(StringIO()):
-            with tempfile.TemporaryDirectory('test_fp16') as data_dir:
-                create_dummy_data(data_dir)
-                preprocess_translation_data(data_dir)
-                train_translation_model(data_dir, 'fconv_iwslt_de_en', ['--fp16'])
-                generate_main(data_dir)
-
-    @unittest.skipIf(not torch.cuda.is_available(), 'test requires a GPU')
-    def test_memory_efficient_fp16(self):
-        with contextlib.redirect_stdout(StringIO()):
-            with tempfile.TemporaryDirectory('test_memory_efficient_fp16') as data_dir:
-                create_dummy_data(data_dir)
-                preprocess_translation_data(data_dir)
-                train_translation_model(data_dir, 'fconv_iwslt_de_en', ['--memory-efficient-fp16'])
-                generate_main(data_dir)
 
     def test_update_freq(self):
         with contextlib.redirect_stdout(StringIO()):
@@ -233,7 +218,6 @@ class TestTranslation(unittest.TestCase):
                     '--decoder-embed-dim', '8',
                     '--no-cross-attention',
                     '--cross-self-attention',
-                    '--layer-wise-attention',
                 ], run_validation=True)
                 generate_main(data_dir, extra_flags=[])
 
@@ -274,22 +258,6 @@ class TestTranslation(unittest.TestCase):
                     '--noise', 'full_mask',
                     '--pred-length-offset',
                     '--length-loss-factor', '0.1'
-                ], task='translation_lev')
-                generate_main(data_dir, [
-                    '--task', 'translation_lev',
-                    '--iter-decode-max-iter', '9',
-                    '--iter-decode-eos-penalty', '0',
-                    '--print-step',
-                ])
-
-    def test_levenshtein_transformer(self):
-        with contextlib.redirect_stdout(StringIO()):
-            with tempfile.TemporaryDirectory('test_levenshtein_transformer') as data_dir:
-                create_dummy_data(data_dir)
-                preprocess_translation_data(data_dir, ['--joined-dictionary'])
-                train_translation_model(data_dir, 'levenshtein_transformer', [
-                    '--apply-bert-init', '--early-exit', '6,6,6',
-                    '--criterion', 'nat_loss'
                 ], task='translation_lev')
                 generate_main(data_dir, [
                     '--task', 'translation_lev',
@@ -474,6 +442,11 @@ class TestLanguageModeling(unittest.TestCase):
                     '--lr', '0.1',
                 ])
                 eval_lm_main(data_dir)
+                generate_main(data_dir, [
+                    '--task', 'language_modeling',
+                    '--sample-break-mode', 'eos',
+                    '--tokens-per-sample', '500',
+                ])
 
     def test_transformer_lm(self):
         with contextlib.redirect_stdout(StringIO()):
@@ -520,6 +493,20 @@ class TestLanguageModeling(unittest.TestCase):
                     '--tokens-per-sample', '500',
                 ])
 
+    def test_lstm_lm_residuals(self):
+        with contextlib.redirect_stdout(StringIO()):
+            with tempfile.TemporaryDirectory('test_lstm_lm_residuals') as data_dir:
+                create_dummy_data(data_dir)
+                preprocess_lm_data(data_dir)
+                train_language_model(
+                    data_dir, 'lstm_lm', ['--add-bos-token', '--residuals'], run_validation=True,
+                )
+                eval_lm_main(data_dir)
+                generate_main(data_dir, [
+                    '--task', 'language_modeling',
+                    '--sample-break-mode', 'eos',
+                    '--tokens-per-sample', '500',
+                ])
 
 class TestMaskedLanguageModel(unittest.TestCase):
 
@@ -535,6 +522,38 @@ class TestMaskedLanguageModel(unittest.TestCase):
                 create_dummy_data(data_dir)
                 preprocess_lm_data(data_dir)
                 train_legacy_masked_language_model(data_dir, "masked_lm")
+
+    def test_roberta_masked_lm(self):
+        with contextlib.redirect_stdout(StringIO()):
+            with tempfile.TemporaryDirectory("test_roberta_mlm") as data_dir:
+                create_dummy_data(data_dir)
+                preprocess_lm_data(data_dir)
+                train_masked_lm(data_dir, "roberta_base")
+
+    def test_roberta_sentence_prediction(self):
+        num_classes = 3
+        with contextlib.redirect_stdout(StringIO()):
+            with tempfile.TemporaryDirectory("test_roberta_head") as data_dir:
+                create_dummy_roberta_head_data(data_dir, num_classes=num_classes)
+                preprocess_lm_data(os.path.join(data_dir, 'input0'))
+                preprocess_lm_data(os.path.join(data_dir, 'label'))
+                train_roberta_head(data_dir, "roberta_base", num_classes=num_classes)
+
+    def test_roberta_regression_single(self):
+        num_classes = 1
+        with contextlib.redirect_stdout(StringIO()):
+            with tempfile.TemporaryDirectory("test_roberta_regression_single") as data_dir:
+                create_dummy_roberta_head_data(data_dir, num_classes=num_classes, regression=True)
+                preprocess_lm_data(os.path.join(data_dir, 'input0'))
+                train_roberta_head(data_dir, "roberta_base", num_classes=num_classes, extra_flags=['--regression-target'])
+
+    def test_roberta_regression_multiple(self):
+        num_classes = 3
+        with contextlib.redirect_stdout(StringIO()):
+            with tempfile.TemporaryDirectory("test_roberta_regression_multiple") as data_dir:
+                create_dummy_roberta_head_data(data_dir, num_classes=num_classes, regression=True)
+                preprocess_lm_data(os.path.join(data_dir, 'input0'))
+                train_roberta_head(data_dir, "roberta_base", num_classes=num_classes, extra_flags=['--regression-target'])
 
     def _test_pretrained_masked_lm_for_translation(self, learned_pos_emb, encoder_only):
         with contextlib.redirect_stdout(StringIO()):
@@ -690,175 +709,88 @@ class TestOptimizers(unittest.TestCase):
                     ])
                     generate_main(data_dir)
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'test requires a GPU')
-    def test_flat_grads(self):
-        with contextlib.redirect_stdout(StringIO()):
-            with tempfile.TemporaryDirectory('test_flat_grads') as data_dir:
-                # Use just a bit of data and tiny model to keep this test runtime reasonable
-                create_dummy_data(data_dir, num_examples=10, maxlen=5)
-                preprocess_translation_data(data_dir)
-                with self.assertRaises(RuntimeError):
-                    # adafactor isn't compatible with flat grads, which
-                    # are used by default with --fp16
-                    train_translation_model(data_dir, 'lstm', [
-                        '--required-batch-size-multiple', '1',
-                        '--encoder-layers', '1',
-                        '--encoder-hidden-size', '32',
-                        '--decoder-layers', '1',
-                        '--optimizer', 'adafactor',
-                        '--fp16',
-                    ])
-                # but it should pass once we set --fp16-no-flatten-grads
-                train_translation_model(data_dir, 'lstm', [
-                    '--required-batch-size-multiple', '1',
-                    '--encoder-layers', '1',
-                    '--encoder-hidden-size', '32',
-                    '--decoder-layers', '1',
-                    '--optimizer', 'adafactor',
-                    '--fp16',
-                    '--fp16-no-flatten-grads',
-                ])
 
-
-def create_dummy_data(data_dir, num_examples=100, maxlen=20, alignment=False):
+def create_dummy_roberta_head_data(data_dir, num_examples=100, maxlen=10, num_classes=2, regression=False):
+    input_dir = 'input0'
     def _create_dummy_data(filename):
-        data = torch.rand(num_examples * maxlen)
-        data = 97 + torch.floor(26 * data).int()
-        with open(os.path.join(data_dir, filename), 'w') as h:
-            offset = 0
-            for _ in range(num_examples):
-                ex_len = random.randint(1, maxlen)
-                ex_str = ' '.join(map(chr, data[offset:offset+ex_len]))
-                print(ex_str, file=h)
-                offset += ex_len
+        random_data = torch.rand(num_examples * maxlen)
+        input_data = 97 + torch.floor(26 * random_data).int()
+        if regression:
+            output_data = torch.rand((num_examples, num_classes))
+        else:
+            output_data = 1 + torch.floor(num_classes * torch.rand(num_examples)).int()
+        with open(os.path.join(data_dir, input_dir, filename+'.out'), 'w') as f_in:
+            label_filename = filename+'.label' if regression else filename+'.out'
+            with open(os.path.join(data_dir, 'label', label_filename), 'w') as f_out:
+                offset = 0
+                for i in range(num_examples):
+                    # write example input
+                    ex_len = random.randint(1, maxlen)
+                    ex_str = ' '.join(map(chr, input_data[offset:offset+ex_len]))
+                    print(ex_str, file=f_in)
+                    # write example label
+                    if regression:
+                        class_str = ' '.join(map(str, output_data[i].numpy()))
+                        print(class_str, file=f_out)
+                    else:
+                        class_str = 'class{}'.format(output_data[i])
+                        print(class_str, file=f_out)
+                    offset += ex_len
 
-    def _create_dummy_alignment_data(filename_src, filename_tgt, filename):
-        with open(os.path.join(data_dir, filename_src), 'r') as src_f, \
-             open(os.path.join(data_dir, filename_tgt), 'r') as tgt_f, \
-             open(os.path.join(data_dir, filename), 'w') as h:
-                    for src, tgt in zip(src_f, tgt_f):
-                        src_len = len(src.split())
-                        tgt_len = len(tgt.split())
-                        avg_len = (src_len + tgt_len) // 2
-                        num_alignments = random.randint(avg_len // 2, 2 * avg_len)
-                        src_indices = torch.floor(torch.rand(num_alignments) * src_len).int()
-                        tgt_indices = torch.floor(torch.rand(num_alignments) * tgt_len).int()
-                        ex_str = ' '.join(["{}-{}".format(src, tgt) for src, tgt in zip(src_indices, tgt_indices)])
-                        print(ex_str, file=h)
-
-    _create_dummy_data('train.in')
-    _create_dummy_data('train.out')
-    _create_dummy_data('valid.in')
-    _create_dummy_data('valid.out')
-    _create_dummy_data('test.in')
-    _create_dummy_data('test.out')
-
-    if alignment:
-        _create_dummy_alignment_data('train.in', 'train.out', 'train.align')
-        _create_dummy_alignment_data('valid.in', 'valid.out', 'valid.align')
-        _create_dummy_alignment_data('test.in', 'test.out', 'test.align')
-
-def preprocess_translation_data(data_dir, extra_flags=None):
-    preprocess_parser = options.get_preprocessing_parser()
-    preprocess_args = preprocess_parser.parse_args(
-        [
-            '--source-lang', 'in',
-            '--target-lang', 'out',
-            '--trainpref', os.path.join(data_dir, 'train'),
-            '--validpref', os.path.join(data_dir, 'valid'),
-            '--testpref', os.path.join(data_dir, 'test'),
-            '--thresholdtgt', '0',
-            '--thresholdsrc', '0',
-            '--destdir', data_dir,
-        ] + (extra_flags or []),
-    )
-    preprocess.main(preprocess_args)
+    os.mkdir(os.path.join(data_dir, input_dir))
+    os.mkdir(os.path.join(data_dir, 'label'))
+    _create_dummy_data('train')
+    _create_dummy_data('valid')
+    _create_dummy_data('test')
 
 
-def train_translation_model(data_dir, arch, extra_flags=None, task='translation', run_validation=False,
-                            lang_flags=None, extra_valid_flags=None):
-    if lang_flags is None:
-        lang_flags = [
-            '--source-lang', 'in',
-            '--target-lang', 'out',
-        ]
+def train_masked_lm(data_dir, arch, extra_flags=None):
     train_parser = options.get_training_parser()
     train_args = options.parse_args_and_arch(
         train_parser,
         [
-            '--task', task,
+            '--task', 'masked_lm',
             data_dir,
-            '--save-dir', data_dir,
             '--arch', arch,
-            '--lr', '0.05',
-            '--max-tokens', '500',
+            '--optimizer', 'adam',
+            '--lr', '0.0001',
+            '--criterion', 'masked_lm',
+            '--max-sentences', '500',
+            '--save-dir', data_dir,
             '--max-epoch', '1',
             '--no-progress-bar',
             '--distributed-world-size', '1',
+            '--ddp-backend', 'no_c10d',
             '--num-workers', 0,
-        ] + lang_flags + (extra_flags or []),
+        ] + (extra_flags or []),
     )
     train.main(train_args)
 
-    if run_validation:
-        # test validation
-        validate_parser = options.get_validation_parser()
-        validate_args = options.parse_args_and_arch(
-            validate_parser,
-            [
-                '--task', task,
-                data_dir,
-                '--path', os.path.join(data_dir, 'checkpoint_last.pt'),
-                '--valid-subset', 'valid',
-                '--max-tokens', '500',
-                '--no-progress-bar',
-            ] + lang_flags + (extra_valid_flags or [])
-        )
-        validate.main(validate_args)
 
-
-def generate_main(data_dir, extra_flags=None):
-    if extra_flags is None:
-        extra_flags = [
-            '--print-alignment',
-        ]
-    generate_parser = options.get_generation_parser()
-    generate_args = options.parse_args_and_arch(
-        generate_parser,
+def train_roberta_head(data_dir, arch, num_classes=2, extra_flags=None):
+    train_parser = options.get_training_parser()
+    train_args = options.parse_args_and_arch(
+        train_parser,
         [
+            '--task', 'sentence_prediction',
             data_dir,
-            '--path', os.path.join(data_dir, 'checkpoint_last.pt'),
-            '--beam', '3',
-            '--batch-size', '64',
-            '--max-len-b', '5',
-            '--gen-subset', 'valid',
+            '--arch', arch,
+            '--num-classes', str(num_classes),
+            '--optimizer', 'adam',
+            '--lr', '0.0001',
+            '--criterion', 'sentence_prediction',
+            '--max-tokens', '500',
+            '--max-positions', '500',
+            '--max-sentences', '500',
+            '--save-dir', data_dir,
+            '--max-epoch', '1',
             '--no-progress-bar',
+            '--distributed-world-size', '1',
+            '--ddp-backend', 'no_c10d',
+            '--num-workers', 0,
         ] + (extra_flags or []),
     )
-
-    # evaluate model in batch mode
-    generate.main(generate_args)
-
-    # evaluate model interactively
-    generate_args.buffer_size = 0
-    generate_args.input = '-'
-    generate_args.max_sentences = None
-    orig_stdin = sys.stdin
-    sys.stdin = StringIO('h e l l o\n')
-    interactive.main(generate_args)
-    sys.stdin = orig_stdin
-
-
-def preprocess_lm_data(data_dir):
-    preprocess_parser = options.get_preprocessing_parser()
-    preprocess_args = preprocess_parser.parse_args([
-        '--only-source',
-        '--trainpref', os.path.join(data_dir, 'train.out'),
-        '--validpref', os.path.join(data_dir, 'valid.out'),
-        '--testpref', os.path.join(data_dir, 'test.out'),
-        '--destdir', data_dir,
-    ])
-    preprocess.main(preprocess_args)
+    train.main(train_args)
 
 
 def train_language_model(data_dir, arch, extra_flags=None, run_validation=False):

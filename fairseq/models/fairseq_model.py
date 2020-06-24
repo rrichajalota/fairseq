@@ -45,7 +45,7 @@ class BaseFairseqModel(nn.Module):
 
     def get_normalized_probs(
         self,
-        net_output: Tuple[Tensor, Dict[str, List[Optional[Tensor]]]],
+        net_output: Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]],
         log_probs: bool,
         sample: Optional[Dict[str, Tensor]] = None,
     ):
@@ -58,7 +58,7 @@ class BaseFairseqModel(nn.Module):
     # call the helper function from scriptable Subclass.
     def get_normalized_probs_scriptable(
         self,
-        net_output: Tuple[Tensor, Dict[str, List[Optional[Tensor]]]],
+        net_output: Tuple[Tensor, Optional[Dict[str, List[Optional[Tensor]]]]],
         log_probs: bool,
         sample: Optional[Dict[str, Tensor]] = None,
     ):
@@ -119,6 +119,15 @@ class BaseFairseqModel(nn.Module):
 
         do_upgrade(self, name)
 
+    def set_num_updates(self, num_updates):
+        """ State from trainer to pass along to model at every update """
+
+        def _apply(m):
+            if hasattr(m, 'set_num_updates') and m != self:
+                m.set_num_updates(num_updates)
+        self.apply(_apply)
+
+
     def make_generation_fast_(self, **kwargs):
         """Optimize model for faster generation."""
         if self._is_generation_fast:
@@ -169,6 +178,21 @@ class BaseFairseqModel(nn.Module):
                 module.prepare_for_onnx_export_(**kwargs)
 
         self.apply(apply_prepare_for_onnx_export_)
+
+    def prepare_for_tpu_(self, **kwargs):
+        """Optionally modify model for use on TPUs."""
+        seen = set()
+
+        def apply_prepare_for_tpu_(module):
+            if (
+                module != self
+                and hasattr(module, "prepare_for_tpu_")
+                and module not in seen
+            ):
+                seen.add(module)
+                module.prepare_for_tpu_(**kwargs)
+
+        self.apply(apply_prepare_for_tpu_)
 
     @classmethod
     def from_pretrained(
@@ -351,13 +375,7 @@ class FairseqMultiModel(BaseFairseqModel):
         return build_embedding(shared_dict, embed_dim, pretrained_embed_path)
 
     def forward(self, src_tokens, src_lengths, prev_output_tokens, **kwargs):
-        decoder_outs = {}
-        for key in self.keys:
-            encoder_out = self.models[key].encoder(src_tokens, src_lengths, **kwargs)
-            decoder_outs[key] = self.models[key].decoder(
-                prev_output_tokens, encoder_out, **kwargs
-            )
-        return decoder_outs
+        raise NotImplementedError
 
     def max_positions(self):
         """Maximum length supported by the model."""
