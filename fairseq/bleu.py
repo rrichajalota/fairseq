@@ -16,6 +16,7 @@ except ImportError as e:
 
 
 C = ctypes.cdll.LoadLibrary(libbleu.__file__)
+print("libbleu: ", libbleu.__file__)
 
 
 class BleuStat(ctypes.Structure):
@@ -50,12 +51,34 @@ class SacrebleuScorer(object):
         self.sys.append(pred)
 
     def score(self, order=4):
+        print("In bleu.py score")
         return self.result_string(order).score
 
     def result_string(self, order=4):
         if order != 4:
             raise NotImplementedError
+        '''
+        print("In bleu.py Sacrebleu self.sys: ", self.sys)
+        print("In bleu.py Sacrebleu self.ref: ", self.ref)
+        sent_pairs = list(zip(self.sys, self.ref))
+        print("\n\nsent pairs", sent_pairs)
+        print("try res")
+        for i,j in sent_pairs:
+            print("\nIII", i)
+            print("\nJJJ", j)
+            res = self.sacrebleu.sentence_bleu(i, j)
+            print("\nres: ", f'{res.score:1.2f}')
+        '''
         return self.sacrebleu.corpus_bleu(self.sys, [self.ref])
+
+
+    def result_sentence_level_test_sb(self, hypo, gold, order=4):
+        if order != 4:
+            raise NotImplementedError
+        res = self.sacrebleu.sentence_bleu(hypo, gold).score
+        #print("res.score: ", res)
+        return res
+
 
 
 class Scorer(object):
@@ -124,6 +147,21 @@ class Scorer(object):
             fmt += '/{:2.1f}'
         fmt += ' (BP={:.3f}, ratio={:.3f}, syslen={}, reflen={})'
         bleup = [p * 100 for p in self.precision()[:order]]
+        return fmt.format(order, self.score(order=order), *bleup,
+                          self.brevity(), self.stat.predlen/self.stat.reflen,
+                          self.stat.predlen, self.stat.reflen)
+
+
+    def result_string_sentence_level_b(self, hypo, gold, order=4):
+        assert order <= 4, "BLEU scores for order > 4 aren't supported"
+        self.add(gold, hypo)
+        fmt = 'BLEU{} = {:2.2f}, {:2.1f}'
+        for _ in range(1, order):
+            fmt += '/{:2.1f}'
+        fmt += ' (BP={:.3f}, ratio={:.3f}, syslen={}, reflen={})'
+        bleup = [p * 100 for p in self.precision()[:order]]
+        self.reset()
+        print("BLEUP", bleup)
         return fmt.format(order, self.score(order=order), *bleup,
                           self.brevity(), self.stat.predlen/self.stat.reflen,
                           self.stat.predlen, self.stat.reflen)
