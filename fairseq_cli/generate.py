@@ -37,15 +37,24 @@ def main(args):
 
 def _main(args, output_file):
     ### writing table
-    measures = ["[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
+    measures = ["score", "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
                 "dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)",
                 "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)", "dist-enc(src)-enc(hyp)"]
 
-    measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
+    #measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
+    top_measure = True
+    measure = measures[2]
     print("MEASURE: ", measure)
-    filename = "/raid/data/daga01/fairseq_out/distance_test2_{}.csv".format(measure)
+    filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
+    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+
+    delete_corpscore = False
+    if os.path.exists(filename_corp) and delete_corpscore:
+        os.remove(filename_corp)
+
     if os.path.exists(filename):
         os.remove(filename)
+
     counter = 0
     #####################################################
 
@@ -127,7 +136,8 @@ def _main(args, output_file):
     num_sentences = 0
     has_target = True
 
-    scorer_test_sb = bleu.SacrebleuScorer()
+    scorer_test_sb_sent = bleu.SacrebleuScorer()
+    scorer_test_sb_corp = bleu.SacrebleuScorer()
     #scorer_test_bleu = bleu.Scorer(tgt_dict.pad(), tgt_dict.eos(), tgt_dict.unk())
 
     ######################################################################################################
@@ -136,7 +146,7 @@ def _main(args, output_file):
         wps_meter = TimeMeter()
 
         ################################################
-        fieldnames = ["sent", "sent_id", "src", "tgt", "beam", "hyp", "sacrebleu",
+        fieldnames = ["sent", "sent_id", "src", "tgt", "beam", "hyp", "score", "sacrebleu",
                       "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
                       "dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)", "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)","dist-enc(src)-enc(hyp)",
                       "maybe-nosense-dist-enc(src)-dec(hyp)", "nosense-dist-dec(src_noenc_posplus)-dec(hyp)","nosense-dist-dec(2args<-src)-dec(hyp)",
@@ -164,17 +174,21 @@ def _main(args, output_file):
 
             sent = 0
             for idk in sorted(data_table.keys()):
-                print("IDK: ", idk)
-                data_table[idk] = sorted(data_table[idk], key=lambda s: s[measure], reverse=False)
-                for bnr in data_table[idk]:
+                print("\n\nIDK: ", idk)
+                reverse_val = False
+                if measure == "score":
+                    reverse_val = True
+
+                data_table[idk] = sorted(data_table[idk], key=lambda s: s[measure], reverse=reverse_val)
+                for i, bnr in enumerate(data_table[idk]):
                 ##
-                    print("measure:", measure," -- BNR: ", bnr)
+                    print("measure:", measure," -- order i: ", i, " -- BNR: ", bnr)
                     tgt_test = bnr["tgt"]
                     #hyp_test = data_table[idk][bnr]["hyp"]
                     hyp_test = bnr["hyp"]
                     print("target-hyp: ", tgt_test, "  ---  ", hyp_test)
-                    #score_sb = scorer_test_sb.sacrebleu.sentence_bleu(hyp_test, tgt_test)
-                    score_sb = scorer_test_sb.result_sentence_level_test_sb(hyp_test, tgt_test)
+                    #score_sb = scorer_test_sb_sent.sacrebleu.sentence_bleu(hyp_test, tgt_test)
+                    score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hyp_test, tgt_test)
                     print("\nSCORE SB: ", f'{score_sb:1.2f}')
                     bnr["sacrebleu"] = f'{score_sb:1.2f}'
                     #
@@ -186,7 +200,20 @@ def _main(args, output_file):
                     #print("data_table[idk][bnr][sent]: ", data_table[idk][bnr]["sent"])
                     bnr["sent"] = counter + sent
                     print(counter, " * data_table[idk][bnr]['sent']", bnr['sent'])
-                    writer.writerow(bnr)
+                    #writer.writerow(bnr)   ### write all hypos
+
+                    ## add only top hypothesis to bleu scorer; print only top hypothesis
+                    if i == 0:
+                        writer.writerow(bnr)
+                        if hasattr(scorer_test_sb_corp, 'add_string'):
+                            print("scorer_test.add_string(...)", hyp_test)
+                            scorer_test_sb_corp.add_string(tgt_test, hyp_test)
+                            print("scorer! my hypothesis added: ", hyp_test)
+                        '''
+                        else:
+                            scorer_test_sb_corp.add(target_tokens, hypo_tokens)
+                            print("scorer_test.add(...)")
+                        '''
 
             counter += sent + 1
             ######################################################################
@@ -273,11 +300,13 @@ def _main(args, output_file):
                             # Convert back to tokens for evaluation with unk replacement and/or without BPE
                             target_tokens = tgt_dict.encode_line(target_str, add_if_not_exist=True)
                         if hasattr(scorer, 'add_string'):
-                            print("scorer.add_string(...)", hypo_str)
+                            #print("scorer.add_string(...)", hypo_str) ### SACREbleu
                             scorer.add_string(target_str, hypo_str)
+                            print("scorer! Hypo official added: ", hypo_str)
                         else:
                             scorer.add(target_tokens, hypo_tokens)
-                            print("scorer.add(...)")
+                            print("scorer! Hypo official added: ", hypo_tokens)
+                            #print("scorer.add(...)")   ### BLEU
 
             wps_meter.update(num_generated_tokens)
             t.log({'wps': round(wps_meter.avg)})
@@ -290,7 +319,10 @@ def _main(args, output_file):
         num_sentences, gen_timer.n, gen_timer.sum, num_sentences / gen_timer.sum, 1. / gen_timer.avg))
     if has_target:
         logger.info('Generate {} with beam={}: {}'.format(args.gen_subset, args.beam, scorer.result_string()))
-        print("scorer: ", scorer.result_string())
+        with open(filename_corp, "a") as f_corp:
+            f_corp.write('{}\t{}'.format(measure, scorer_test_sb_corp.result_string()))
+            f_corp.write("\n")
+        print("\nmeasure: ", measure, "scorer_test_sb: ", scorer_test_sb_corp.result_string())
 
     return scorer
 

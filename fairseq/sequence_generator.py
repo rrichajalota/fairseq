@@ -664,7 +664,7 @@ class SequenceGenerator(object):
             print("\n\n\n\nSent nr:", sent)
             print("finalized[sent][0].keys(): ", finalized[sent][0].keys())
             finalized[sent] = sorted(finalized[sent], key=lambda r: r['score'], reverse=True)
-
+            #print("KEYS finalized[sent][0].keys()", finalized[sent][0].keys())
 
             id_1 = sample["id"][sent].item()
 
@@ -722,7 +722,7 @@ class SequenceGenerator(object):
             data_coll = list()
             #print("len(finalized[sent]): ", len(finalized[sent]))
             for l in range(len(finalized[sent])):
-                print("\nTokens for sent ", sent, " beam nr ", l, ": ")
+                print("\nTokens for sent ", sent, " beam nr ", l, " score: ", finalized[sent][l]["score"])
                 hyp_tok = finalized[sent][l]["tokens"]
                 hyp_mask = hyp_tok.ne(self.eos)
                 hyp_tok = hyp_tok[hyp_mask]
@@ -740,6 +740,7 @@ class SequenceGenerator(object):
                 #print("idsss", sample["id"][sent])
                 data_sub["sent_id"] = id_1
                 id_2 = data_sub["beam"]
+                data_sub["score"] = finalized[sent][l]["score"]
 
                 ###
                 '''
