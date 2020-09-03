@@ -32,6 +32,7 @@ def get_training_parser(default_task="translation"):
 def get_generation_parser(interactive=False, default_task="translation"):
     parser = get_parser("Generation", default_task)
     add_dataset_args(parser, gen=True)
+    add_distributed_training_args(parser, default_world_size=1)
     add_generation_args(parser)
     if interactive:
         add_interactive_args(parser)
@@ -59,6 +60,10 @@ def get_validation_parser(default_task=None):
     return parser
 
 
+def csv_str_list(x):
+    return x.split(',')
+
+
 def eval_str_list(x, type=float):
     if x is None:
         return None
@@ -68,6 +73,14 @@ def eval_str_list(x, type=float):
         return list(map(type, x))
     except TypeError:
         return [type(x)]
+
+
+def eval_str_dict(x, type=dict):
+    if x is None:
+        return None
+    if isinstance(x, str):
+        x = eval(x)
+    return x
 
 
 def eval_bool(x, default=False):
@@ -187,6 +200,12 @@ def parse_args_and_arch(
     if args.tpu and args.fp16:
         raise ValueError("Cannot combine --fp16 and --tpu, use --bf16 on TPUs")
 
+    if getattr(args, "seed", None) is None:
+        args.seed = 1  # default seed for training
+        args.no_seed_provided = True
+    else:
+        args.no_seed_provided = False
+
     # Apply architecture configuration.
     if hasattr(args, "arch"):
         ARCH_CONFIG_REGISTRY[args.arch](args)
@@ -215,7 +234,7 @@ def get_parser(desc, default_task="translation"):
     parser.add_argument('--tensorboard-logdir', metavar='DIR', default='',
                         help='path to save logs for tensorboard, should match --logdir '
                              'of running tensorboard (default: no tensorboard logging)')
-    parser.add_argument('--seed', default=1, type=int, metavar='N',
+    parser.add_argument('--seed', default=None, type=int, metavar='N',
                         help='pseudo random number generator seed')
     parser.add_argument('--cpu', action='store_true', help='use CPU instead of CUDA')
     parser.add_argument('--tpu', action='store_true', help='use TPU instead of CUDA')
@@ -327,7 +346,8 @@ def add_dataset_args(parser, train=False, gen=False):
     group.add_argument('--max-sentences', '--batch-size', type=int, metavar='N',
                        help='maximum number of sentences in a batch')
     group.add_argument('--required-batch-size-multiple', default=8, type=int, metavar='N',
-                       help='batch size will be a multiplier of this value')
+                       help='batch size will either be less than this value, '
+                            'or a multiple of this value')
     parser.add_argument('--dataset-impl', metavar='FORMAT',
                         choices=get_available_dataset_impl(),
                         help='output dataset implementation')
@@ -341,6 +361,10 @@ def add_dataset_args(parser, train=False, gen=False):
                                 ' (e.g. train, valid, test)')
         group.add_argument('--validate-interval', type=int, default=1, metavar='N',
                            help='validate every N epochs')
+        group.add_argument('--validate-interval-updates', type=int, default=0, metavar='N',
+                           help='validate every N updates')
+        group.add_argument('--validate-after-updates', type=int, default=0, metavar='N',
+                           help='dont validate until reaching this many updates')
         group.add_argument('--fixed-validation-seed', default=None, type=int, metavar='N',
                            help='specified random seed for validation')
         group.add_argument('--disable-validation', action='store_true',
@@ -424,6 +448,10 @@ def add_distributed_training_args(parser, default_world_size=None):
                        help='number of GPUs in each node. An allreduce operation across GPUs in '
                             'a node is very fast. Hence, we do allreduce across GPUs in a node, '
                             'and gossip across different nodes')
+    # Add argument for ZeRO sharding of OptimizerState(os), gradients(g) and parameters(p)
+    group.add_argument('--zero-sharding', default='none', type=str,
+                       choices=['none', 'os'],
+                       help='ZeRO sharding')
     # fmt: on
     return group
 
@@ -435,7 +463,9 @@ def add_optimization_args(parser):
                        help='force stop training at specified epoch')
     group.add_argument('--max-update', '--mu', default=0, type=int, metavar='N',
                        help='force stop training at specified update')
-    group.add_argument('--clip-norm', default=25, type=float, metavar='NORM',
+    group.add_argument('--stop-time-hours', default=0, type=float, metavar='N',
+                       help='force stop training after specified cumulative time (if >0)')
+    group.add_argument('--clip-norm', default=0.0, type=float, metavar='NORM',
                        help='clip threshold of gradients')
     group.add_argument('--sentence-avg', action='store_true',
                        help='normalize gradients by the number of sentences in a batch'
@@ -463,6 +493,9 @@ def add_checkpoint_args(parser):
     group.add_argument('--restore-file', default='checkpoint_last.pt',
                        help='filename from which to load checkpoint '
                             '(default: <save-dir>/checkpoint_last.pt')
+    group.add_argument('--finetune-from-model', default=None, type=str,
+                       help='finetune from a pretrained model; '
+                            'note that meters and lr scheduler will be reset')
     group.add_argument('--reset-dataloader', action='store_true',
                        help='if set, does not reload dataloader state from the checkpoint')
     group.add_argument('--reset-lr-scheduler', action='store_true',
@@ -507,7 +540,7 @@ def add_common_eval_args(group):
     # fmt: off
     group.add_argument('--path', metavar='FILE',
                        help='path(s) to model file(s), colon separated')
-    group.add_argument('--remove-bpe', nargs='?', const='@@ ', default=None,
+    group.add_argument('--remove-bpe', '--post-process', nargs='?', const='@@ ', default=None,
                        help='remove BPE tokens before scoring (can be set to sentencepiece)')
     group.add_argument('--quiet', action='store_true',
                        help='only print final scores')
@@ -580,6 +613,8 @@ def add_generation_args(parser):
                        help='sample from top K likely next words instead of all words')
     group.add_argument('--sampling-topp', default=-1.0, type=float, metavar='PS',
                        help='sample from the smallest set whose cumulative probability mass exceeds p for next words')
+    group.add_argument('--constraints', const="ordered", nargs="?", choices=["ordered", "unordered"],
+                       help='enables lexically constrained decoding')
     group.add_argument('--temperature', default=1., type=float, metavar='N',
                        help='temperature for generation')
     group.add_argument('--diverse-beam-groups', default=-1, type=int, metavar='N',
@@ -605,6 +640,11 @@ def add_generation_args(parser):
                        help='if set, the last checkpoint are assumed to be a reranker to rescore the translations'),
     group.add_argument('--retain-iter-history', action='store_true',
                        help='if set, decoding returns the whole history of iterative refinement')
+    group.add_argument('--retain-dropout', action='store_true',
+                       help='Use dropout at inference time')
+    group.add_argument('--retain-dropout-modules', default=None, nargs='+', type=str,
+                       help='if set, only retain dropout for the specified modules; '
+                            'if not set, then dropout will be retained for all modules')
 
     # special decoding format for advanced decoding.
     group.add_argument('--decoding-format', default=None, type=str, choices=['unigram', 'ensemble', 'vote', 'dp', 'bs'])
@@ -634,8 +674,8 @@ def add_model_args(parser):
     # 2) --arch argument
     # 3) --encoder/decoder-* arguments (highest priority)
     from fairseq.models import ARCH_MODEL_REGISTRY
-    group.add_argument('--arch', '-a', default='fconv', metavar='ARCH',
+    group.add_argument('--arch', '-a', metavar='ARCH',
                        choices=ARCH_MODEL_REGISTRY.keys(),
-                       help='Model Architecture')
+                       help='model architecture')
     # fmt: on
     return group

@@ -19,7 +19,6 @@ from fairseq.data import data_utils
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 # Object used by _background_consumer to signal the source is exhausted
 # to the main thread.
@@ -60,7 +59,10 @@ class CountingIterator(object):
     def __iter__(self):
         for x in self.iterable:
             if self.n >= self.total:
-                return
+                raise RuntimeError(
+                    'Mismatch between actual and expected iterable length. '
+                    'Please report this to the fairseq developers.'
+                )
             self.n += 1
             yield x
 
@@ -81,6 +83,12 @@ class CountingIterator(object):
         Truncates the iterator to n elements at most.
         """
         self.total = min(self.total, n)
+
+        # Propagate this change to the underlying iterator
+        if hasattr(self.iterable, "take"):
+            self.iterable.take(n)
+        else:
+            self.iterable = itertools.islice(self.iterable, n)
 
 
 class EpochBatchIterating(object):
@@ -184,8 +192,10 @@ class EpochBatchIterator(EpochBatchIterating):
     Args:
         dataset (~torch.utils.data.Dataset): dataset from which to load the data
         collate_fn (callable): merges a list of samples to form a mini-batch
-        batch_sampler (~torch.utils.data.Sampler): an iterator over batches of
-            indices
+        batch_sampler (~torch.utils.data.Sampler or a callable): an iterator over batches of
+            indices, or a callable to create such an iterator (~torch.utils.data.Sampler).
+            A callable batch_sampler will be called for each epoch to enable per epoch dynamic
+            batch iterators defined by this callable batch_sampler.
         seed (int, optional): seed for random number generator for
             reproducibility (default: 1).
         num_shards (int, optional): shard the data iterator into N
@@ -211,7 +221,8 @@ class EpochBatchIterator(EpochBatchIterating):
         assert isinstance(dataset, torch.utils.data.Dataset)
         self.dataset = dataset
         self.collate_fn = collate_fn
-        self.frozen_batches = tuple(batch_sampler)
+        self.batch_sampler = batch_sampler
+        self._frozen_batches = tuple(batch_sampler) if not callable(batch_sampler) else None
         self.seed = seed
         self.num_shards = num_shards
         self.shard_id = shard_id
@@ -226,6 +237,12 @@ class EpochBatchIterator(EpochBatchIterating):
         self._cur_epoch_itr = None
         self._next_epoch_itr = None
         self._supports_prefetch = getattr(dataset, 'supports_prefetch', False)
+
+    @property
+    def frozen_batches(self):
+        if self._frozen_batches is None:
+            self._frozen_batches = tuple(self.batch_sampler(self.dataset, self.epoch))
+        return self._frozen_batches
 
     def __len__(self):
         return int(math.ceil(len(self.frozen_batches) / float(self.num_shards)))
@@ -255,14 +272,17 @@ class EpochBatchIterator(EpochBatchIterating):
                 that :attr:`dataset` supports prefetching (default: False).
         """
         self.epoch = self.next_epoch_idx
+        self.dataset.set_epoch(self.epoch)
         if self._next_epoch_itr is not None:
             self._cur_epoch_itr = self._next_epoch_itr
             self._next_epoch_itr = None
         else:
+            if callable(self.batch_sampler):
+                # reset _frozen_batches to refresh the next epoch
+                self._frozen_batches = None
             self._cur_epoch_itr = self._get_iterator_for_epoch(
                 self.epoch, shuffle, fix_batches_to_gpus=fix_batches_to_gpus,
             )
-        self.dataset.set_epoch(self.epoch)
         self.shuffle = shuffle
         return self._cur_epoch_itr
 
@@ -281,9 +301,16 @@ class EpochBatchIterator(EpochBatchIterating):
 
     def state_dict(self):
         """Returns a dictionary containing a whole state of the iterator."""
+        if self.end_of_epoch():
+            epoch = self.epoch + 1
+            iter_in_epoch = 0
+        else:
+            epoch = self.epoch
+            iter_in_epoch = self.iterations_in_epoch
         return {
-            'epoch': self.epoch,
-            'iterations_in_epoch': self.iterations_in_epoch,
+            'version': 2,
+            'epoch': epoch,
+            'iterations_in_epoch': iter_in_epoch,
             'shuffle': self.shuffle,
         }
 
@@ -291,6 +318,7 @@ class EpochBatchIterator(EpochBatchIterating):
         """Copies the state of the iterator from the given *state_dict*."""
         self.epoch = state_dict['epoch']
         itr_pos = state_dict.get('iterations_in_epoch', 0)
+        version = state_dict.get('version', 1)
         if itr_pos > 0:
             # fast-forward epoch iterator
             self._next_epoch_itr = self._get_iterator_for_epoch(
@@ -299,8 +327,15 @@ class EpochBatchIterator(EpochBatchIterating):
                 offset=itr_pos,
             )
             if self._next_epoch_itr is None:
-                # we finished the epoch, increment epoch counter
-                self.epoch += 1
+                if version == 1:
+                    # legacy behavior: we finished the epoch, increment epoch counter
+                    self.epoch += 1
+                else:
+                    raise RuntimeError(
+                        'Cannot resume training due to dataloader mismatch, please '
+                        'report this to the fairseq developers. You can relaunch '
+                        'training with `--reset-dataloader` and it should work.'
+                    )
         else:
             self._next_epoch_itr = None
 
@@ -423,34 +458,52 @@ class ShardedIterator(CountingIterator):
 
 
 class BackgroundConsumer(Thread):
-    def __init__(self, queue, source):
+    def __init__(self, queue, source, max_len):
         Thread.__init__(self)
 
         self._queue = queue
         self._source = source
+        self._max_len = max_len
+        self.count = 0
 
     def run(self):
         try:
-            for item in self._source:
+            self._source_iter = iter(self._source)
+            for _ in range(len(self._source)):
+                item = next(self._source_iter)
                 self._queue.put(item)
+
+                # Stop if we reached the maximum length
+                self.count += 1
+                if self._max_len is not None and self.count >= self._max_len:
+                    break
 
             # Signal the consumer we are done.
             self._queue.put(_sentinel)
         except Exception as e:
             self._queue.put(e)
 
+        del self._source_iter
+
 
 class BufferedIterator(object):
     def __init__(self, size, iterable):
         self._queue = queue.Queue(size)
         self._iterable = iterable
-
-        self._consumer = BackgroundConsumer(self._queue, iterable)
-        self._consumer.daemon = True
-        self._consumer.start()
+        self.max_len = None
+        self._consumer = None
 
         self.start_time = time.time()
         self.warning_time = None
+
+    def _create_consumer(self):
+        self._consumer = BackgroundConsumer(
+            self._queue,
+            self._iterable,
+            self.max_len
+        )
+        self._consumer.daemon = True
+        self._consumer.start()
 
     def __iter__(self):
         return self
@@ -458,12 +511,19 @@ class BufferedIterator(object):
     def __len__(self):
         return len(self._iterable)
 
+    def take(self, n):
+        self.max_len = n
+
     def __next__(self):
+        # Create consumer if not created yet
+        if self._consumer is None:
+            self._create_consumer()
+
         # Notify the user if there is a data loading bottleneck
-        if self._queue.qsize() < max(1, self._queue.maxsize // 2):
+        if self._queue.qsize() < min(2, max(1, self._queue.maxsize // 2)):
             if time.time() - self.start_time > 5 * 60:
                 if self.warning_time is None or time.time() - self.warning_time > 15 * 60:
-                    logger.info(
+                    logger.debug(
                         "Data loading buffer is empty or nearly empty. This may "
                         "indicate a data loading bottleneck, and increasing the "
                         "number of workers (--num-workers) may help."

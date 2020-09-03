@@ -39,7 +39,9 @@ def load_langpair_dataset(
     combine, dataset_impl, upsample_primary,
     left_pad_source, left_pad_target, max_source_positions,
     max_target_positions, prepend_bos=False, load_alignments=False,
-    truncate_source=False, append_source_id=False
+    truncate_source=False, append_source_id=False,
+    num_buckets=0,
+    shuffle=True,
 ):
 
     def split_exists(split, src, tgt, lang, data_path):
@@ -124,9 +126,9 @@ def load_langpair_dataset(
         tgt_dataset, tgt_dataset_sizes, tgt_dict,
         left_pad_source=left_pad_source,
         left_pad_target=left_pad_target,
-        max_source_positions=max_source_positions,
-        max_target_positions=max_target_positions,
-        align_dataset=align_dataset, eos=eos
+        align_dataset=align_dataset, eos=eos,
+        num_buckets=num_buckets,
+        shuffle=shuffle,
     )
 
 
@@ -157,7 +159,9 @@ class TranslationTask(FairseqTask):
         """Add task-specific arguments to the parser."""
         # fmt: off
         parser.add_argument('data', help='colon separated path to data directories list, \
-                            will be iterated upon during epochs in round-robin manner')
+                            will be iterated upon during epochs in round-robin manner; \
+                            however, valid and test data are always in the first directory to \
+                            avoid the need for repeating them in all directories')
         parser.add_argument('-s', '--source-lang', default=None, metavar='SRC',
                             help='source language')
         parser.add_argument('-t', '--target-lang', default=None, metavar='TARGET',
@@ -176,6 +180,10 @@ class TranslationTask(FairseqTask):
                             help='amount to upsample primary dataset')
         parser.add_argument('--truncate-source', action='store_true', default=False,
                             help='truncate source to max-source-positions')
+        parser.add_argument('--num-batch-buckets', default=0, type=int, metavar='N',
+                            help='if >0, then bucket source and target lengths into N '
+                                 'buckets and pad accordingly; this is useful on TPUs '
+                                 'to minimize the number of compilations')
 
         # options for reporting BLEU during validation
         parser.add_argument('--eval-bleu', action='store_true',
@@ -240,6 +248,9 @@ class TranslationTask(FairseqTask):
         """
         paths = utils.split_paths(self.args.data)
         assert len(paths) > 0
+        if split != getattr(self.args, "train_subset", None):
+            # if not training data set, use the first shard for valid and test
+            paths = paths[:1]
         data_path = paths[(epoch - 1) % len(paths)]
 
         # infer langcode
@@ -255,10 +266,14 @@ class TranslationTask(FairseqTask):
             max_target_positions=self.args.max_target_positions,
             load_alignments=self.args.load_alignments,
             truncate_source=self.args.truncate_source,
+            num_buckets=self.args.num_batch_buckets,
+            shuffle=(split != 'test'),
         )
 
-    def build_dataset_for_inference(self, src_tokens, src_lengths):
-        return LanguagePairDataset(src_tokens, src_lengths, self.source_dictionary)
+    def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
+        return LanguagePairDataset(src_tokens, src_lengths, self.source_dictionary,
+                                   tgt_dict=self.target_dictionary,
+                                   constraints=constraints)
 
     def build_model(self, args):
         model = super().build_model(args)
@@ -364,7 +379,7 @@ class TranslationTask(FairseqTask):
                 s = self.tokenizer.decode(s)
             return s
 
-        gen_out = self.inference_step(generator, [model], sample, None)
+        gen_out = self.inference_step(generator, [model], sample, prefix_tokens=None)
         hyps, refs = [], []
         for i in range(len(gen_out)):
             hyps.append(decode(gen_out[i][0]['tokens']))
