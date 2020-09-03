@@ -17,6 +17,7 @@ import torch
 from fairseq import bleu, checkpoint_utils, options, progress_bar, tasks, utils
 from fairseq.meters import StopwatchMeter, TimeMeter
 
+import csv
 
 def main(args):
     assert args.path is not None, '--path required for generation!'
@@ -35,6 +36,28 @@ def main(args):
 
 
 def _main(args, output_file):
+    ### writing table
+    measures = ["score", "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
+                "dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)",
+                "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)", "dist-enc(src)-enc(hyp)"]
+
+    #measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
+    top_measure = True
+    measure = measures[2]
+    print("MEASURE: ", measure)
+    filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
+    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+
+    delete_corpscore = False
+    if os.path.exists(filename_corp) and delete_corpscore:
+        os.remove(filename_corp)
+
+    if os.path.exists(filename):
+        os.remove(filename)
+
+    counter = 0
+    #####################################################
+
     logging.basicConfig(
         format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
@@ -112,8 +135,27 @@ def _main(args, output_file):
         scorer = bleu.Scorer(tgt_dict.pad(), tgt_dict.eos(), tgt_dict.unk())
     num_sentences = 0
     has_target = True
-    with progress_bar.build_progress_bar(args, itr) as t:
+
+    scorer_test_sb_sent = bleu.SacrebleuScorer()
+    scorer_test_sb_corp = bleu.SacrebleuScorer()
+    #scorer_test_bleu = bleu.Scorer(tgt_dict.pad(), tgt_dict.eos(), tgt_dict.unk())
+
+    ######################################################################################################
+
+    with progress_bar.build_progress_bar(args, itr) as t, open(filename, mode='a') as csv_file:
         wps_meter = TimeMeter()
+
+        ################################################
+        fieldnames = ["sent", "sent_id", "src", "tgt", "beam", "hyp", "score", "sacrebleu",
+                      "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
+                      "dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)", "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)","dist-enc(src)-enc(hyp)",
+                      "maybe-nosense-dist-enc(src)-dec(hyp)", "nosense-dist-dec(src_noenc_posplus)-dec(hyp)","nosense-dist-dec(2args<-src)-dec(hyp)",
+                      "nosense-dist-dec(2args<-src)-dec(2args<-hyp)"]
+
+
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        ######################################################
         for sample in t:
             sample = utils.move_to_cuda(sample) if use_cuda else sample
             if 'net_input' not in sample:
@@ -124,11 +166,62 @@ def _main(args, output_file):
                 prefix_tokens = sample['target'][:, :args.prefix_size]
 
             gen_timer.start()
-            hypos = task.inference_step(generator, models, sample, prefix_tokens)
+            hypos, data_table = task.inference_step(generator, models, sample, prefix_tokens)  ########  data table from me
+            #print("HYPOS in generate", hypos)
+
+            ######################################################################################################
+            ### writing table
+
+            sent = 0
+            for idk in sorted(data_table.keys()):
+                print("\n\nIDK: ", idk)
+                reverse_val = False
+                if measure == "score":
+                    reverse_val = True
+
+                data_table[idk] = sorted(data_table[idk], key=lambda s: s[measure], reverse=reverse_val)
+                for i, bnr in enumerate(data_table[idk]):
+                ##
+                    print("measure:", measure," -- order i: ", i, " -- BNR: ", bnr)
+                    tgt_test = bnr["tgt"]
+                    #hyp_test = data_table[idk][bnr]["hyp"]
+                    hyp_test = bnr["hyp"]
+                    print("target-hyp: ", tgt_test, "  ---  ", hyp_test)
+                    #score_sb = scorer_test_sb_sent.sacrebleu.sentence_bleu(hyp_test, tgt_test)
+                    score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hyp_test, tgt_test)
+                    print("\nSCORE SB: ", f'{score_sb:1.2f}')
+                    bnr["sacrebleu"] = f'{score_sb:1.2f}'
+                    #
+                    #score_b = scorer_test_bleu.result_string_sentence_level_b(hyp_test, tgt_test)
+                    #print("\nSCORE B: ", score_b)
+                    ##
+
+                    sent = bnr["sent"]
+                    #print("data_table[idk][bnr][sent]: ", data_table[idk][bnr]["sent"])
+                    bnr["sent"] = counter + sent
+                    print(counter, " * data_table[idk][bnr]['sent']", bnr['sent'])
+                    #writer.writerow(bnr)   ### write all hypos
+
+                    ## add only top hypothesis to bleu scorer; print only top hypothesis
+                    if i == 0:
+                        writer.writerow(bnr)
+                        if hasattr(scorer_test_sb_corp, 'add_string'):
+                            print("scorer_test.add_string(...)", hyp_test)
+                            scorer_test_sb_corp.add_string(tgt_test, hyp_test)
+                            print("scorer! my hypothesis added: ", hyp_test)
+                        '''
+                        else:
+                            scorer_test_sb_corp.add(target_tokens, hypo_tokens)
+                            print("scorer_test.add(...)")
+                        '''
+
+            counter += sent + 1
+            ######################################################################
             num_generated_tokens = sum(len(h[0]['tokens']) for h in hypos)
             gen_timer.stop(num_generated_tokens)
 
             for i, sample_id in enumerate(sample['id'].tolist()):
+                print("i: ", i, " -- sample_id: ",sample_id)
                 has_target = sample['target'] is not None
 
                 # Remove padding
@@ -157,6 +250,8 @@ def _main(args, output_file):
 
                 # Process top predictions
                 for j, hypo in enumerate(hypos[i][:args.nbest]):
+                    print("enum hypo j: ", j)
+                    print("Hypo hypo.keys()--: ", hypo.keys())
                     hypo_tokens, hypo_str, alignment = utils.post_process_prediction(
                         hypo_tokens=hypo['tokens'].int().cpu(),
                         src_str=src_str,
@@ -200,24 +295,34 @@ def _main(args, output_file):
                                 print('E-{}_{}\t{}'.format(sample_id, step, h_str), file=output_file)
 
                     # Score only the top hypothesis
-                    if has_target and j == 0:
+                    if has_target and j == 0:         ##########################################################################   !!!!!!!!!!!!!!!!!!!!!!!!!
                         if align_dict is not None or args.remove_bpe is not None:
                             # Convert back to tokens for evaluation with unk replacement and/or without BPE
                             target_tokens = tgt_dict.encode_line(target_str, add_if_not_exist=True)
                         if hasattr(scorer, 'add_string'):
+                            #print("scorer.add_string(...)", hypo_str) ### SACREbleu
                             scorer.add_string(target_str, hypo_str)
+                            print("scorer! Hypo official added: ", hypo_str)
                         else:
                             scorer.add(target_tokens, hypo_tokens)
+                            print("scorer! Hypo official added: ", hypo_tokens)
+                            #print("scorer.add(...)")   ### BLEU
 
             wps_meter.update(num_generated_tokens)
             t.log({'wps': round(wps_meter.avg)})
             num_sentences += sample['nsentences']
+
+
 
     logger.info('NOTE: hypothesis and token scores are output in base 2')
     logger.info('Translated {} sentences ({} tokens) in {:.1f}s ({:.2f} sentences/s, {:.2f} tokens/s)'.format(
         num_sentences, gen_timer.n, gen_timer.sum, num_sentences / gen_timer.sum, 1. / gen_timer.avg))
     if has_target:
         logger.info('Generate {} with beam={}: {}'.format(args.gen_subset, args.beam, scorer.result_string()))
+        with open(filename_corp, "a") as f_corp:
+            f_corp.write('{}\t{}'.format(measure, scorer_test_sb_corp.result_string()))
+            f_corp.write("\n")
+        print("\nmeasure: ", measure, "scorer_test_sb: ", scorer_test_sb_corp.result_string())
 
     return scorer
 

@@ -310,14 +310,15 @@ class FairseqTask(object):
         model.eval()
         with torch.no_grad():
             loss, sample_size, logging_output = criterion(model, sample)
-            #print("#### Task: ", "\tmodel: ", model, "\tlogging output: ", logging_output)
+            print("\n#### in fairseq_task valid_step")
+            #print("\tmodel: ", model, "\tlogging output: ", logging_output)
             #print("MODEL", model)
             #print("Sample", sample.keys(), sample)
         return loss, sample_size, logging_output
 
     def inference_step(self, generator, models, sample, prefix_tokens=None):
         with torch.no_grad():
-            #print("\n\n\n ###### MODELS", models)
+            #print("\n\nin fairseq_task inference_step ###### MODELS", models)
             return generator.generate(models, sample, prefix_tokens=prefix_tokens)
 
     def begin_epoch(self, epoch, model):
