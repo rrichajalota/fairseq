@@ -8,6 +8,7 @@
   <a href="https://fairseq.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/fairseq/badge/?version=latest" /></a>
 </p>
 
+# Self-Supervised Neural Machine Translation
 --------------------------------------------------------------------------------
 
 Fairseq(-py) is a sequence modeling toolkit that allows researchers and
