@@ -99,6 +99,6 @@ Phrase/Chunk-based Self-Supervised Neural Machine Translation
 ```bash
 ngram-count -text corpus.L1/L2  -order 5 -write /path/to/write/ngrams -no-eos  -no-sos.
 ```
-2. SRILM returns all n-grams from 1 to n (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named ngrams.L1/L2
+2. SRILM returns all n-grams from 1 to n (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named `ngrams.L1/L2`
 
-3. Go back to the step on `Prepare comparable corpus` above and proceed. 
+3. For each article file in the collection of comparable articles, append all n-grams in the article file that are present in the `ngrams.L1/L2`. (you'll need to write a small script for doing that) Proceed to the step on `Prepare comparable corpus`. 
