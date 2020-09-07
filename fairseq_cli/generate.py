@@ -39,14 +39,17 @@ def _main(args, output_file):
     ### writing table
     measures = ["score", "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)", "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)",
                 "dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)",
-                "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)", "dist-enc(src)-enc(hyp)"]
-
+                "dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)", "dist-enc(src)-enc(hyp)", "maybe-nosense-dist-enc(src)-dec(hyp)", "nosense-dist-dec(src_noenc_posplus)-dec(hyp)", "nosense-dist-dec(2args<-src)-dec(hyp)",
+    "nosense-dist-dec(2args<-src)-dec(2args<-hyp)"]
     #measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
     top_measure = True
-    measure = measures[2]
+    measure = measures[0]
     print("MEASURE: ", measure)
-    filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
-    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+    #filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
+    #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+
+    filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
+    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
 
     delete_corpscore = False
     if os.path.exists(filename_corp) and delete_corpscore:
@@ -174,7 +177,7 @@ def _main(args, output_file):
 
             sent = 0
             for idk in sorted(data_table.keys()):
-                print("\n\nIDK: ", idk)
+                #print("\n\nIDK: ", idk)
                 reverse_val = False
                 if measure == "score":
                     reverse_val = True
@@ -182,14 +185,14 @@ def _main(args, output_file):
                 data_table[idk] = sorted(data_table[idk], key=lambda s: s[measure], reverse=reverse_val)
                 for i, bnr in enumerate(data_table[idk]):
                 ##
-                    print("measure:", measure," -- order i: ", i, " -- BNR: ", bnr)
+                    #print("measure:", measure," -- order i: ", i, " -- BNR: ", bnr)
                     tgt_test = bnr["tgt"]
                     #hyp_test = data_table[idk][bnr]["hyp"]
                     hyp_test = bnr["hyp"]
-                    print("target-hyp: ", tgt_test, "  ---  ", hyp_test)
+                    #print("target-hyp: ", tgt_test, "  ---  ", hyp_test)
                     #score_sb = scorer_test_sb_sent.sacrebleu.sentence_bleu(hyp_test, tgt_test)
                     score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hyp_test, tgt_test)
-                    print("\nSCORE SB: ", f'{score_sb:1.2f}')
+                    #print("\nSCORE SB: ", f'{score_sb:1.2f}')
                     bnr["sacrebleu"] = f'{score_sb:1.2f}'
                     #
                     #score_b = scorer_test_bleu.result_string_sentence_level_b(hyp_test, tgt_test)
@@ -199,16 +202,16 @@ def _main(args, output_file):
                     sent = bnr["sent"]
                     #print("data_table[idk][bnr][sent]: ", data_table[idk][bnr]["sent"])
                     bnr["sent"] = counter + sent
-                    print(counter, " * data_table[idk][bnr]['sent']", bnr['sent'])
+                    #print(counter, " * data_table[idk][bnr]['sent']", bnr['sent'])
                     #writer.writerow(bnr)   ### write all hypos
 
                     ## add only top hypothesis to bleu scorer; print only top hypothesis
                     if i == 0:
                         writer.writerow(bnr)
                         if hasattr(scorer_test_sb_corp, 'add_string'):
-                            print("scorer_test.add_string(...)", hyp_test)
+                            #print("scorer_test.add_string(...)", hyp_test)
                             scorer_test_sb_corp.add_string(tgt_test, hyp_test)
-                            print("scorer! my hypothesis added: ", hyp_test)
+                            #print("scorer! my hypothesis added: ", hyp_test)
                         '''
                         else:
                             scorer_test_sb_corp.add(target_tokens, hypo_tokens)
@@ -221,7 +224,7 @@ def _main(args, output_file):
             gen_timer.stop(num_generated_tokens)
 
             for i, sample_id in enumerate(sample['id'].tolist()):
-                print("i: ", i, " -- sample_id: ",sample_id)
+                #print("i: ", i, " -- sample_id: ",sample_id)
                 has_target = sample['target'] is not None
 
                 # Remove padding
@@ -241,6 +244,7 @@ def _main(args, output_file):
                         src_str = ""
                     if has_target:
                         target_str = tgt_dict.string(target_tokens, args.remove_bpe, escape_unk=True)
+                        #print("args.remove_bpe", args.remove_bpe)
 
                 if not args.quiet:
                     if src_dict is not None:
@@ -250,8 +254,8 @@ def _main(args, output_file):
 
                 # Process top predictions
                 for j, hypo in enumerate(hypos[i][:args.nbest]):
-                    print("enum hypo j: ", j)
-                    print("Hypo hypo.keys()--: ", hypo.keys())
+                    #print("enum hypo j: ", j)
+                    #print("Hypo hypo.keys()--: ", hypo.keys())
                     hypo_tokens, hypo_str, alignment = utils.post_process_prediction(
                         hypo_tokens=hypo['tokens'].int().cpu(),
                         src_str=src_str,
@@ -302,10 +306,10 @@ def _main(args, output_file):
                         if hasattr(scorer, 'add_string'):
                             #print("scorer.add_string(...)", hypo_str) ### SACREbleu
                             scorer.add_string(target_str, hypo_str)
-                            print("scorer! Hypo official added: ", hypo_str)
+                            #print("scorer! Hypo official added: ", hypo_str)
                         else:
                             scorer.add(target_tokens, hypo_tokens)
-                            print("scorer! Hypo official added: ", hypo_tokens)
+                            #print("scorer! Hypo official added: ", hypo_tokens)
                             #print("scorer.add(...)")   ### BLEU
 
             wps_meter.update(num_generated_tokens)
@@ -319,6 +323,8 @@ def _main(args, output_file):
         num_sentences, gen_timer.n, gen_timer.sum, num_sentences / gen_timer.sum, 1. / gen_timer.avg))
     if has_target:
         logger.info('Generate {} with beam={}: {}'.format(args.gen_subset, args.beam, scorer.result_string()))
+
+
         with open(filename_corp, "a") as f_corp:
             f_corp.write('{}\t{}'.format(measure, scorer_test_sb_corp.result_string()))
             f_corp.write("\n")

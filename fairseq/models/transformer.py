@@ -682,7 +682,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's output of shape `(batch, tgt_len, vocab)`
                 - a dictionary with any model-specific outputs
         """
-        print("\n>>>>> IN TransformerDecoder, FORWARD")
+        #print("\n>>>>> IN TransformerDecoder, FORWARD")
         #print(">>>>> IN TransformerDecoder, prev output tokens shape", prev_output_tokens.shape)
         #print("prev_output_tokens:\n", prev_output_tokens)
         x, extra = self.extract_features(
@@ -844,7 +844,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         ###### inner_states seem to be layers - just take the last - x
 
         ### ???????!!!!!!!!!! if I have all indices: embedding of last word or sentence !!!!!!!!!!!!!!!!!
-        print(">in TrDec, x.shape before return: ", x.shape)
+        #print(">in TrDec, x.shape before return: ", x.shape)
         return x, {"attn": [attn], "inner_states": inner_states}
 
     def extract_features_test_posplus(
@@ -875,7 +875,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
-        print("\n***********>>>> In extract_features_test")
+        #print("\n***********>>>> In extract_features_test")
         if alignment_layer is None:
             alignment_layer = self.num_layers - 1
 
@@ -1152,7 +1152,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         ###### inner_states seem to be layers - just take the last - x
 
         ### ???????!!!!!!!!!! if I have all indices: embedding of last word or sentence !!!!!!!!!!!!!!!!!
-        print(">in TrDec, x.shape before return: ", x.shape)
+        #print(">in TrDec, x.shape before return: ", x.shape)
         return x #, {"attn": [attn], "inner_states": inner_states}
 
     def output_layer(self, features):

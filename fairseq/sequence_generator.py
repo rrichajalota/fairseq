@@ -120,11 +120,11 @@ class SequenceGenerator(object):
         '''
         src_tokens = encoder_input['src_tokens']                        ################################################# src tokens
         src_lengths = (src_tokens.ne(self.eos) & src_tokens.ne(self.pad)).long().sum(dim=1)
-        print("\nsample id", sample["id"])
+        #print("\nsample id", sample["id"])
         #print("\nsample ntokens", sample["ntokens"])
 
-        print("sample src_lengths", sample["net_input"]["src_lengths"])
-        print("src_lengths: ", src_lengths)
+        #print("sample src_lengths", sample["net_input"]["src_lengths"])
+        #print("src_lengths: ", src_lengths)
         src_lengths_1st = src_lengths
         '''
         #print("sample src tokens", sample["net_input"]["src_tokens"])
@@ -136,7 +136,7 @@ class SequenceGenerator(object):
         input_size = src_tokens.size()
         # batch dimension goes first followed by source lengths
         bsz = input_size[0]
-        print(">>## bsz1", bsz)
+        #print(">>## bsz1", bsz)
         src_len = input_size[1]
         beam_size = self.beam_size
 
@@ -236,8 +236,9 @@ class SequenceGenerator(object):
                     scores for each hypothesis
             """
             assert bbsz_idx.numel() == eos_scores.numel()
-            print("\nfinalize_hypos, step: ", step)
-            print("bbs_idx", bbsz_idx)
+            #print("\nfinalize_hypos, step: ", step)
+            #print("bbs_idx", bbsz_idx)
+
             # clone relevant token and attention tensors
             #print("finalize_hypos: tokens with a lot padding (here there are still all sentences), shape", tokens.shape)
             tokens_clone = tokens.index_select(0, bbsz_idx)
@@ -255,23 +256,23 @@ class SequenceGenerator(object):
             pos_scores = scores.index_select(0, bbsz_idx)[:, :step+1]
             pos_scores[:, step] = eos_scores
             # convert from cumulative to per-position scores   ### ????????????????!
-            print("??? finalize_hypos: Why do I need to compute scores per token position and ??? convert from cumulative to per-position scores? Substract left-shifted score???")
+            #print("??? finalize_hypos: Why do I need to compute scores per token position and ??? convert from cumulative to per-position scores? Substract left-shifted score???")
             pos_scores[:, 1:] = pos_scores[:, 1:] - pos_scores[:, :-1]
 
             # normalize sentence-level scores
             if self.normalize_scores:
-                print("finalize_hypos, self.normalize_scores True")
+                #print("finalize_hypos, self.normalize_scores True")
                 eos_scores /= (step + 1) ** self.len_penalty
 
             cum_unfin = []
             prev = 0
-            print("finalize_hypos: finished", finished)
+            #print("finalize_hypos: finished", finished)
             for f in finished:
                 if f:
                     prev += 1
                 else:
                     cum_unfin.append(prev)
-                print("    finalize_hypos: for f in finished ([False] * bsz) cum_unfin", cum_unfin)
+                #print("    finalize_hypos: for f in finished ([False] * bsz) cum_unfin", cum_unfin)
 
             sents_seen = set()
             for i, (idx, score) in enumerate(zip(bbsz_idx.tolist(), eos_scores.tolist())):
@@ -324,12 +325,12 @@ class SequenceGenerator(object):
             # reorder decoder internal states based on the prev choice of beams
             #if (step == 16):
                 #break
-            print("\n\n\n>>>>>>>>>>>>>>>>>>>>>STEP ", step)
-            print("reorder state", reorder_state) #1st is None
+            #print("\n\n\n>>>>>>>>>>>>>>>>>>>>>STEP ", step)
+            #print("reorder state", reorder_state) #1st is None
             if reorder_state is not None:
                 if batch_idxs is not None:
                     # update beam indices to take into account removed sentences
-                    print("batch idxs is not None", batch_idxs)
+                    #print("batch idxs is not None", batch_idxs)
                     corr = batch_idxs - torch.arange(batch_idxs.numel()).type_as(batch_idxs)
                     reorder_state.view(-1, beam_size).add_(corr.unsqueeze(-1) * beam_size)
                 model.reorder_incremental_state(reorder_state) # FairseqIncrementalDecoder; ?recursive method calls child module TransformerDecoder
@@ -342,7 +343,8 @@ class SequenceGenerator(object):
             #print("Tokens of forward_decoder -- tokens 2, Z.323, shape", tokens.shape)
             #print("tokens\n", tokens)### viele 1er als padding
             #print("tokens[:, :step + 1], Z.339, shape", tokens[:, :step + 1].shape, "tokens[:, :step + 1]\n", tokens[:, :step + 1])
-            print("Type Model: ", type(model))
+
+            #print("Type Model: ", type(model))
             lprobs, avg_attn_scores, feats_tmp = model.forward_decoder(                  ###################################################################    Decoder ################
                 tokens[:, :step + 1], encoder_outs, temperature=self.temperature,
             ) ### step + 1: 0th step is BOS; features_only changed by me, set to true in EnsembleModel _decode_one
@@ -420,7 +422,7 @@ class SequenceGenerator(object):
             eos_scores = buffer('eos_scores', type_of=scores)
 
             self.search.set_src_lengths(src_lengths)        ######################### SEARCH set_src_lengths ####################
-            print("src_lengths:", src_lengths)
+            #print("src_lengths:", src_lengths)
 
             if self.no_repeat_ngram_size > 0:
                 def calculate_banned_tokens(bbsz_idx):
@@ -497,7 +499,7 @@ class SequenceGenerator(object):
 
             #print("Finalized sents", finalized_sents)
             if len(finalized_sents) > 0:
-                print(">>entering finalized")
+                #print(">>entering finalized")
                 new_bsz = bsz - len(finalized_sents)
 
                 # construct batch_idxs which holds indices of batches to keep for the next pass
@@ -635,8 +637,8 @@ class SequenceGenerator(object):
 
 
         ######################
-        print("\n\n\n\n\n###############################################################################")
-        print("BUFFERS: ", buffers.keys())
+        #print("\n\n\n\n\n###############################################################################")
+        #print("BUFFERS: ", buffers.keys())
         #encoder_out_emb_orig_1st = model.forward_encoder(encoder_input)[0].encoder_out   ############### encoder_input: src_tokens, src_lengths; returns list of encoders from EnsembleModel
         src_mask = (src_tokens.ne(self.pad) & src_tokens.ne(self.eos))
 
@@ -645,7 +647,7 @@ class SequenceGenerator(object):
         #print("tgt mask", gold_tgt_mask)
 
         #################
-        print("\n\n\n\n------In finalized")
+        #print("\n\n\n\n------In finalized")
         '''
         w1 = self.tgt_dict.string(torch.tensor([18906]))
         w2 = self.tgt_dict.string(torch.tensor([3766]))
@@ -661,38 +663,38 @@ class SequenceGenerator(object):
 
         for sent in range(len(finalized)):
             #print("Nr sent finalized", len(finalized[sent])) # hypos: nr beam per sentence
-            print("\n\n\n\nSent nr:", sent)
-            print("finalized[sent][0].keys(): ", finalized[sent][0].keys())
+            #print("\n\n\n\nSent nr:", sent)
+            #print("finalized[sent][0].keys(): ", finalized[sent][0].keys())
             finalized[sent] = sorted(finalized[sent], key=lambda r: r['score'], reverse=True)
             #print("KEYS finalized[sent][0].keys()", finalized[sent][0].keys())
 
             id_1 = sample["id"][sent].item()
 
             tok_in_src = src_tokens[sent][src_mask[sent]].unsqueeze(0)
-            print("tok_in_src = src_tokens[sent][src_mask[sent]]", tok_in_src)
+            #print("tok_in_src = src_tokens[sent][src_mask[sent]]", tok_in_src)
             words = self.tgt_dict.string(tok_in_src)
-            print("\n### SOURCE WORDS - enc input words: ", words)
-            print("len src words: ", tok_in_src.shape[1])
+            #print("\n### SOURCE WORDS - enc input words: ", words)
+            #print("len src words: ", tok_in_src.shape[1])
             #print("\ntok_in_src.shape",tok_in_src.shape)
             enc_in = {"src_tokens": tok_in_src, "src_lengths": torch.tensor(tok_in_src.shape[1])}
 
             enc_outs_test = model.forward_encoder(enc_in)
             emb_enc_src = enc_outs_test[0].encoder_out.transpose(0,1).squeeze()
-            print("emb_enc_src.shape: ", emb_enc_src.shape)
+            #print("emb_enc_src.shape: ", emb_enc_src.shape)
             ###
             dist_enc_src = funct(emb_enc_src)
-            print("dist_enc_src shape: ", dist_enc_src.shape)
+            #print("dist_enc_src shape: ", dist_enc_src.shape)
 
             #### sample gold
             #gold_tgt_tok = sample['net_input']['prev_output_tokens'][sent][gold_tgt_mask[sent]]
             gold_tgt_tok = prev_output_tokens[sent][gold_tgt_mask[sent]]
-            print("Gold target -> sample['net_input']['prev_output_tokens'][sent][gold_tgt_mask[sent]]: ", gold_tgt_tok)
+            #print("Gold target -> sample['net_input']['prev_output_tokens'][sent][gold_tgt_mask[sent]]: ", gold_tgt_tok)
             gold_words = self.tgt_dict.string(gold_tgt_tok)
-            print("\n### GOLD WORDS - gold_words: ", gold_words)
+            #print("\n### GOLD WORDS - gold_words: ", gold_words)
 
             ### extract_features second direction, with: prev_output tokens from src; tokens-to-translate from tgt"
             dec_src_f, _ = model.models[0].extract_features(gold_tgt_tok.unsqueeze(0), gold_tgt_tok.shape, enc_in["src_tokens"])  #################################################### src in decoder extract_features
-            print("dec_src_f.shape: ", dec_src_f.shape)
+            #print("dec_src_f.shape: ", dec_src_f.shape)
             #dist_dec_src = dec_src_f.squeeze().mean(0)
             dist_dec_src = funct(dec_src_f.squeeze())
             #print("dist_dec_src.shape", dist_dec_src.shape)
@@ -700,35 +702,35 @@ class SequenceGenerator(object):
 
             ### src decoder embedding without encoder repr
             feats_tmp3_plus, feats_tmp3_minus = model.forward_decoder_test(enc_in["src_tokens"] )  ################################## src in decoder forward_decoder
-            print(" Feats tmp3: ", type(feats_tmp3_plus), len(feats_tmp3_plus))
+            #print(" Feats tmp3: ", type(feats_tmp3_plus), len(feats_tmp3_plus))
             emb_dec_src_noenc_plus = feats_tmp3_plus.squeeze()
-            print("emb_dec_src_noenc.shape: ", emb_dec_src_noenc_plus.shape)
+            #print("emb_dec_src_noenc.shape: ", emb_dec_src_noenc_plus.shape)
             #dist_dec_fwdec_src_noenc = emb_dec_src_noenc.mean(0)
             dist_dec_fwdec_src_noenc_plus = funct(emb_dec_src_noenc_plus)
-            print("dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape)
+            #print("dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape)
 
             dist_dec_fwdec_src_noenc_minus = funct(feats_tmp3_minus.squeeze())
 
 
             ### src decoder embedding with repeated src encoder
-            print("\nenc_in['src_tokens'].shape: ",  enc_in["src_tokens"].shape)
+            #print("\nenc_in['src_tokens'].shape: ",  enc_in["src_tokens"].shape)
             #model.models[0].decoder.embed_positions = None
             dec_src_f2, _ = model.models[0].extract_features(enc_in["src_tokens"], enc_in["src_tokens"].shape[1], enc_in["src_tokens"])
             #dist_dec_src2 = dec_src_f2.squeeze().mean(0)
             dist_dec_src2 = funct(dec_src_f2.squeeze())
-            print("dist_dec_src2.shape: ", dist_dec_src2.shape)
+            #print("dist_dec_src2.shape: ", dist_dec_src2.shape)
 
 
             data_coll = list()
             #print("len(finalized[sent]): ", len(finalized[sent]))
             for l in range(len(finalized[sent])):
-                print("\nTokens for sent ", sent, " beam nr ", l, " score: ", finalized[sent][l]["score"])
+                #print("\nTokens for sent ", sent, " beam nr ", l, " score: ", finalized[sent][l]["score"])
                 hyp_tok = finalized[sent][l]["tokens"]
                 hyp_mask = hyp_tok.ne(self.eos)
                 hyp_tok = hyp_tok[hyp_mask]
-                print(hyp_tok)
+                #print(hyp_tok)
                 hyp_words = self.tgt_dict.string(hyp_tok)
-                print("\n### HYPOTHESIS - hyp_words: ", hyp_words)
+                #print("\n### HYPOTHESIS - hyp_words: ", hyp_words)
 
                 data_sub = dict()
                 #id = "sent" + str(sent) + "-hyp" + str(l)
@@ -752,129 +754,128 @@ class SequenceGenerator(object):
                 '''
 
                 ###
-                print("\n############ forward_decoder with hyp_tok from hypothesis and enc_outs_test from src")
+                #print("\n############ forward_decoder with hyp_tok from hypothesis and enc_outs_test from src")
                 lprobs2, avg_attn_scores2, feats_tmp2 = model.forward_decoder( hyp_tok.unsqueeze(0), enc_outs_test, temperature=self.temperature,)  ################################## tgt in decoder forward_decoder
                 emb_dec = feats_tmp2.squeeze()
-                print("emb_dec.shape: ", emb_dec.shape)
+                #print("emb_dec.shape: ", emb_dec.shape)
                 #dist_dec_fwdec = emb_dec.mean(0)
                 dist_dec_fwdec = funct(emb_dec)
-                print("Dist shapes: dist_enc_src.shape: ", dist_enc_src.shape," dist_dec_fwdec.shape: ", dist_dec_fwdec.shape)
+                #print("Dist shapes: dist_enc_src.shape: ", dist_enc_src.shape," dist_dec_fwdec.shape: ", dist_dec_fwdec.shape)
                 dist_enc_dec_fwdec = torch.nn.functional.cosine_similarity(dist_enc_src, dist_dec_fwdec, dim=0)
-                print("\n---- Distance:  dist_enc_dec_fwdec -> enc-dec forward_decoder: ", dist_enc_dec_fwdec)
+                #print("\n---- Distance:  dist_enc_dec_fwdec -> enc-dec forward_decoder: ", dist_enc_dec_fwdec)
                 data_sub["maybe-nosense-dist-enc(src)-dec(hyp)"] = f'{dist_enc_dec_fwdec.item():1.3f}'
 
 
-                print("\n############ extract_features with prev_output_tokens from hypothesis")
+                #print("\n############ extract_features with prev_output_tokens from hypothesis")
                 ###
                 dec_tgt_f, _ = model.models[0].extract_features(enc_in["src_tokens"], enc_in["src_lengths"], hyp_tok.unsqueeze(0)) ################################################## tgt in decoder extract_features
-                print("drc_tf.shape: ", dec_tgt_f.shape)
+                #print("drc_tf.shape: ", dec_tgt_f.shape)
                 dec_tf_sq = dec_tgt_f.squeeze()
                 #print("dec_tf_sq.shape: ", dec_tf_sq.shape)
                 #dist_dec_extrft = dec_tf_sq.mean(0)
                 dist_dec_extrft = funct(dec_tf_sq)
                 #print("dist_dec_extrft.shape: ", dist_dec_extrft.shape)
                 dist_enc_dec_extrft = torch.nn.functional.cosine_similarity(dist_enc_src, dist_dec_extrft, dim=0)
-                print("\n---- Distance: dist_enc_dec_extrft -> enc-dec extract_features: ", dist_enc_dec_extrft)
+                #print("\n---- Distance: dist_enc_dec_extrft -> enc-dec extract_features: ", dist_enc_dec_extrft)
 
-                print("\n######## extract_features second direction, with: prev_output tokens from src; tokens-to-translate from hypothesis")
-                print("Dist shapes: dist_dec_src.shape: ", dist_dec_src.shape, " - dist_dec_extrft.shape: ", dist_dec_extrft.shape)
+                #print("\n######## extract_features second direction, with: prev_output tokens from src; tokens-to-translate from hypothesis")
+                #print("Dist shapes: dist_dec_src.shape: ", dist_dec_src.shape, " - dist_dec_extrft.shape: ", dist_dec_extrft.shape)
                 dist_dec_dec_extrft = torch.nn.functional.cosine_similarity(dist_dec_src, dist_dec_extrft, dim=0)
-                print("\n---- DISTANCE: dist_dec_dec_extrft -> dec-dec extract_features: ", dist_dec_dec_extrft)
+                #print("\n---- DISTANCE: dist_dec_dec_extrft -> dec-dec extract_features: ", dist_dec_dec_extrft)
                 data_sub["[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"] = f'{dist_dec_dec_extrft.item():1.3f}'
 
 
-                print("\n######## extract_features second direction, with: prev_output tokens from src; tokens-to-translate from tgt")
+                #print("\n######## extract_features second direction, with: prev_output tokens from src; tokens-to-translate from tgt")
                 dec_src_enc_hyp_f, _ = model.models[0].extract_features(hyp_tok.unsqueeze(0), hyp_tok.shape, enc_in["src_tokens"])
                 dist_dec_src_enc_hyp = funct(dec_src_enc_hyp_f.squeeze())
-                print("Dist shapes: dist_dec_src.shape: ", dist_dec_src_enc_hyp.shape, " - dist_dec_extrft.shape: ", dist_dec_extrft.shape)
+                #print("Dist shapes: dist_dec_src.shape: ", dist_dec_src_enc_hyp.shape, " - dist_dec_extrft.shape: ", dist_dec_extrft.shape)
                 dist_dec_src_hyp_dec_hyp_extrft = torch.nn.functional.cosine_similarity(dist_dec_src_enc_hyp, dist_dec_extrft, dim=0)
-                print("\n---- DISTANCE: dist_dec_src_hyp_dec_hyp_extrft : ", dist_dec_src_hyp_dec_hyp_extrft)
+                #print("\n---- DISTANCE: dist_dec_src_hyp_dec_hyp_extrft : ", dist_dec_src_hyp_dec_hyp_extrft)
                 data_sub["[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"] = f'{dist_dec_src_hyp_dec_hyp_extrft.item():1.3f}'
 
 
-                print("\n########### extract_features 2nd direction encoder_out = None for both src and tgt")
-                print("hyp_tok.shape: ", hyp_tok.unsqueeze(0).shape, "--- ")
-                print("enc_in['src_tokens'].shape: ", enc_in["src_tokens"].shape)
+                #print("\n########### extract_features 2nd direction encoder_out = None for both src and tgt")
+                #print("hyp_tok.shape: ", hyp_tok.unsqueeze(0).shape, "--- ")
+                #print("enc_in['src_tokens'].shape: ", enc_in["src_tokens"].shape)
                 feats_tmp4_plus, feats_tmp4_minus = model.forward_decoder_test(hyp_tok.unsqueeze(0))  ################################## tgt in decoder forward_decoder
-                print(" Feats tmp4: ", type(feats_tmp4_plus), len(feats_tmp4_plus), " shape: ", feats_tmp4_plus.shape)
+                #print(" Feats tmp4: ", type(feats_tmp4_plus), len(feats_tmp4_plus), " shape: ", feats_tmp4_plus.shape)
                 emb_dec_hyp_noenc_plus = feats_tmp4_plus.squeeze()
-                print("emb_dec_tgt_noenc.shape: ", emb_dec_hyp_noenc_plus.shape)
+                #print("emb_dec_tgt_noenc.shape: ", emb_dec_hyp_noenc_plus.shape)
                 #dist_dec_hyp_noenc = emb_dec_hyp_noenc.mean(0)
                 dist_dec_hyp_noenc_plus = funct(emb_dec_hyp_noenc_plus)
                 #print("dist_dec_tgt_noenc.shape: ", dist_dec_tgt_noenc.shape)
-                print("Dist shapes: dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape, "dist_dec_tgt_noenc.shape: ", dist_dec_hyp_noenc_plus.shape)
+                #print("Dist shapes: dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape, "dist_dec_tgt_noenc.shape: ", dist_dec_hyp_noenc_plus.shape)
                 dist_dec_dec_src_hyp_noenc2_posplus = torch.nn.functional.cosine_similarity(dist_dec_fwdec_src_noenc_plus, dist_dec_hyp_noenc_plus, dim=0)
-                print("\n---- ***noenc-2*** DISTANCE:  dist_dec_dec_src_tgt_noenc2 -> dec-dec extract_features_test, dist decoder emb of src and hyp both noenc POSPLUS: ", dist_dec_dec_src_hyp_noenc2_posplus)
+                #print("\n---- ***noenc-2*** DISTANCE:  dist_dec_dec_src_tgt_noenc2 -> dec-dec extract_features_test, dist decoder emb of src and hyp both noenc POSPLUS: ", dist_dec_dec_src_hyp_noenc2_posplus)
                 data_sub["dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)"] = f'{dist_dec_dec_src_hyp_noenc2_posplus.item():1.3f}'
 
                 dist_dec_hyp_noenc_minus = funct(feats_tmp4_minus.squeeze())
                 dist_dec_dec_src_hyp_noenc2_posminus = torch.nn.functional.cosine_similarity(dist_dec_fwdec_src_noenc_minus, dist_dec_hyp_noenc_minus, dim=0)
-                print("\n---- ***noenc-2*** DISTANCE:  dist_dec_dec_src_tgt_noenc2 -> dec-dec extract_features_test, dist decoder emb of src and hyp both noenc POSMINUS: ", dist_dec_dec_src_hyp_noenc2_posminus)
+                #print("\n---- ***noenc-2*** DISTANCE:  dist_dec_dec_src_tgt_noenc2 -> dec-dec extract_features_test, dist decoder emb of src and hyp both noenc POSMINUS: ", dist_dec_dec_src_hyp_noenc2_posminus)
                 data_sub["dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)"] = f'{dist_dec_dec_src_hyp_noenc2_posminus.item():1.3f}'
 
 
-                print("\n############ enc-enc distance btw src and tgt")
+                #print("\n############ enc-enc distance btw src and tgt")
                 hyp_tok_ts = hyp_tok.unsqueeze(0)
-                print("hyp_tok_ts.shape: ", hyp_tok_ts.shape)
+                #print("hyp_tok_ts.shape: ", hyp_tok_ts.shape)
                 enc_in_hyp = {"src_tokens": hyp_tok_ts, "src_lengths": torch.tensor(hyp_tok_ts.shape[1])}
                 enc_outs_hyp = model.forward_encoder(enc_in_hyp)
 
                 emb_enc_hyp = enc_outs_hyp[0].encoder_out.transpose(0, 1).squeeze()
-                print("emb_enc_src.shape: ", emb_enc_hyp.shape)
+                #print("emb_enc_src.shape: ", emb_enc_hyp.shape)
                 #dist_enc_hyp = emb_enc_hyp.mean(0)
                 dist_enc_hyp = funct(emb_enc_hyp)
-                print("dist_enc_tgt shape: ", dist_enc_hyp.shape)
+                #print("dist_enc_tgt shape: ", dist_enc_hyp.shape)
                 dist_enc_enc = torch.nn.functional.cosine_similarity(dist_enc_src, dist_enc_hyp, dim=0)
-                print("\n------ ***### Distance dist_enc_enc: ", dist_enc_enc.item())
+                #print("\n------ ***### Distance dist_enc_enc: ", dist_enc_enc.item())
                 tmp = dist_enc_enc.item()
-                print(f'{tmp:1.3f}')
+                #print(f'{tmp:1.3f}')
                 data_sub["dist-enc(src)-enc(hyp)"] = f'{dist_enc_enc.item():1.3f}'
 
 
 
                 ################    UNNECESSARY
-                print("\n########### extract_features 2nd direction encoder_out = None; Different representations, bad results")
-                print("Dist shapes: dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape, " dist_dec_fwdec.shape: ", dist_dec_fwdec.shape)
+                #print("\n########### extract_features 2nd direction encoder_out = None; Different representations, bad results")
+                #print("Dist shapes: dist_dec_fwdec_src_noenc.shape: ", dist_dec_fwdec_src_noenc_plus.shape, " dist_dec_fwdec.shape: ", dist_dec_fwdec.shape)
                 # dist_dec_dec_src_noenc_2hyp = torch.nn.functional.cosine_similarity(dist_dec_fwdec, dist_dec_fwdec_src_noenc, dim=0)
                 dist_dec_dec_src_noenc_posplus_2hyp = torch.nn.functional.cosine_similarity(dist_dec_fwdec_src_noenc_plus, dist_dec_extrft, dim=0)
-                print("\n---- ***noenc*** DISTANCE:  dist_dec_dec_src_noenc_2hyp-> enc-dec extract_features_test, dist decoder emb of src and hyp: ", dist_dec_dec_src_noenc_posplus_2hyp)
+                #print("\n---- ***noenc*** DISTANCE:  dist_dec_dec_src_noenc_2hyp-> enc-dec extract_features_test, dist decoder emb of src and hyp: ", dist_dec_dec_src_noenc_posplus_2hyp)
                 data_sub["nosense-dist-dec(src_noenc_posplus)-dec(hyp)"] = f'{dist_dec_dec_src_noenc_posplus_2hyp:1.3f}'
 
 
 
-                print("\n########### extract_features 2nd direction, 2XSRC: encoder_out = src")
+                #print("\n########### extract_features 2nd direction, 2XSRC: encoder_out = src")
                 dist_dec_dec_src_srcenc_2hyp = torch.nn.functional.cosine_similarity(dist_dec_src2, dist_dec_extrft, dim=0)
-                print("\n---- ***x2*** DISTANCE:  dist_dec_dec_src_srcenc_2hyp -> enc-dec forward_decoder, dist decoder emb of src and hyp: ", dist_dec_dec_src_srcenc_2hyp)
+                #print("\n---- ***x2*** DISTANCE:  dist_dec_dec_src_srcenc_2hyp -> enc-dec forward_decoder, dist decoder emb of src and hyp: ", dist_dec_dec_src_srcenc_2hyp)
                 data_sub["nosense-dist-dec(2args<-src)-dec(hyp)"] = f'{dist_dec_dec_src_srcenc_2hyp:1.3f}'
 
 
 
-                print("\n############ extract_features with prev_output_tokens from hypothesis and encoder hypothesis")
+                #print("\n############ extract_features with prev_output_tokens from hypothesis and encoder hypothesis")
                 ###
-                print("hyp tok shape", hyp_tok.shape)
+                #print("hyp tok shape", hyp_tok.shape)
                 dec_tgt_f_hyp, _ = model.models[0].extract_features(hyp_tok.unsqueeze(0), hyp_tok, hyp_tok.unsqueeze(0))  ################################################## tgt in decoder extract_features
-                print("drc_tf_hyp.shape: ", dec_tgt_f_hyp.shape)
+                #print("drc_tf_hyp.shape: ", dec_tgt_f_hyp.shape)
                 dec_tf_2hyp = dec_tgt_f_hyp.squeeze()
-                print("dec_tf_2hyp.shape: ", dec_tf_2hyp.shape)
+                #print("dec_tf_2hyp.shape: ", dec_tf_2hyp.shape)
                 # dist_dec_extrft_2hyp = dec_tf_2hyp.mean(0)
                 dist_dec_extrft_2hyp = funct(dec_tf_2hyp)
-                print("dist_dec_extrft_2hyp.shape: ", dist_dec_extrft_2hyp.shape)
+                #print("dist_dec_extrft_2hyp.shape: ", dist_dec_extrft_2hyp.shape)
                 dist_dec_dec_extrft_2hyp = torch.nn.functional.cosine_similarity(dist_dec_src2, dist_dec_extrft_2hyp,
                                                                                  dim=0)
-                print("\n---- ###*** Distance: dist_dec_dec_extrft_2hyp -> dec-dec extract_features: ",
-                      dist_dec_dec_extrft_2hyp)
+                #print("\n---- ###*** Distance: dist_dec_dec_extrft_2hyp -> dec-dec extract_features: ",dist_dec_dec_extrft_2hyp)
                 data_sub["nosense-dist-dec(2args<-src)-dec(2args<-hyp)"] = f'{dist_dec_dec_extrft_2hyp.item():1.3f}'
 
-                print("\n")
+                #print("\n")
 
                 ### adding for table
-                print("id_1: ", id_1, " -- id_2: ", id_2)
+                #print("id_1: ", id_1, " -- id_2: ", id_2)
                 data_coll.append(data_sub)
             main_distance = "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"
             #data_coll = sorted(data_coll, key=lambda s: s[main_distance], reverse=False)
             #print("data_coll", data_coll)
             data_table[id_1] = data_coll
-        print("\n\n")
+        #print("\n\n")
 
         # finalized: list of lists of dictionaries (1 per hypothesis); keys: tokens, score (scalar), attention, alignment (None), positional_scores
         return finalized, data_table
@@ -906,9 +907,9 @@ class EnsembleModel(torch.nn.Module):
 
     @torch.no_grad()
     def forward_decoder(self, tokens, encoder_outs, temperature=1.):
-        print(">>>>> EnsembleModel forward_decoder")
+        #print(">>>>> EnsembleModel forward_decoder")
         if len(self.models) == 1:
-            print(">>>>> Is only one Ensemble Model")
+            #print(">>>>> Is only one Ensemble Model")
             return self._decode_one(
                 tokens,
                 self.models[0],
@@ -944,7 +945,7 @@ class EnsembleModel(torch.nn.Module):
     def forward_decoder_test(self, tokens, temperature=1.):
         #print(">>>>> EnsembleModel forward_decoder")
         if len(self.models) == 1:
-            print(">>>>> Is test decoder ensemble")
+            #print(">>>>> Is test decoder ensemble")
             decoder_out_test_plus_pos = self.models[0].decoder.extract_features_test_posplus(tokens)
             decoder_out_test_munus_pos = self.models[0].decoder.extract_features_test_posminus(tokens)
 

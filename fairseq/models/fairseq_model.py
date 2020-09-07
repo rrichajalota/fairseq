@@ -249,9 +249,9 @@ class FairseqEncoderDecoderModel(BaseFairseqModel):
         return decoder_out
 
     def forward_decoder(self, prev_output_tokens, **kwargs):
-        print(">>>>> FairseqEncoderDecoder forward_decoder")
-        print(">>>>>>> \ndecoder type: ", type(self.decoder))
-        print(">>>>>>> kwargs", kwargs.keys())
+        #print(">>>>> FairseqEncoderDecoder forward_decoder")
+        #print(">>>>>>> \ndecoder type: ", type(self.decoder))
+        #print(">>>>>>> kwargs", kwargs.keys())
         return self.decoder(prev_output_tokens, **kwargs)
 
     def extract_features(self, src_tokens, src_lengths, prev_output_tokens, **kwargs):
