@@ -97,9 +97,9 @@ Phrase/Chunk-based Self-Supervised Neural Machine Translation
 --------------------------------------------------------------------------------
 1. To extract chunks from unprocessed (without BPE) `corpus.L1/L2` files with [SRILM](http://www.speech.sri.com/projects/srilm/download.html) using the command format below:
 ```bash
-ngram-count -text corpus.L1/L2  -order 5 -write /path/to/write/ngrams -no-eos  -no-sos.
+ngram-count -text corpus.L1/L2  -order k -write /path/to/write/ngrams -no-eos  -no-sos.
 ```
-2. SRILM returns all n-grams from 1 to n (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named `ngrams.L1/L2`
+2. SRILM returns all n-grams from 1 to k (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named `ngrams.L1/L2`
 
 3. For each article file in the collection of comparable articles, append all n-grams in the article file that are present in the `ngrams.L1/L2`. (you'll need to write a small script for doing that) 
 4. If you have the unsupervised embeddings already, proceed to the step on `Prepare comparable corpus` above, else proceed to `Training unsupervised embeddings`. 
