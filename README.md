@@ -101,4 +101,4 @@ ngram-count -text corpus.L1/L2  -order 5 -write /path/to/write/ngrams -no-eos  -
 ```
 2. SRILM returns all n-grams from 1 to n (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named ngrams.L1/L2
 
-3. Go back to the step on `Prepare comparable corpus` and continue for there. 
+3. Go back to the step on `Prepare comparable corpus` above and proceed. 
