@@ -1,1 +1,36 @@
 
+CUDA_VISIBLE_DEVICES=1 python traincomp.py /path/to/corpus  \
+  --arch transformer \
+  --share-all-embeddings \
+  --share-decoder-input-output-embed \
+  --encoder-embed-dim 512  
+  --decoder-embed-dim 512 
+  --encoder-embed-path ~/path/to/embeddings.embeddings.merged  \
+  --decoder-embed-path ~/path/to/embeddings.embeddings.merged  \
+  --update-freq 2   \
+  --lr 0.0003 \
+  --criterion label_smoothed_cross_entropy \
+  --label-smoothing 0.1   \
+  --dropout 0.2 \
+  --weight-decay 0.0001 \
+  --optimizer adam \
+  --adam-betas '(0.9, 0.9995)' \
+  --clip-norm 0.0 \
+  --lr-scheduler inverse_sqrt \
+  --warmup-updates 4000  \
+  -s ne -t hi \
+  --dataset-impl raw \
+  --max-sentences 80 \
+  --max-source-positions 512 \
+  --max-target-positions 512 \
+  --skip-invalid-size-inputs-valid-test \
+  --max-epoch 80 \
+  --comparable \
+  --representations dual \
+  --comparable_data /path/to/files.list \
+  --comp_log write/  \
+  --sim_measure margin \   
+  --num-workers 0 \
+  --symmetric \
+  --model_name model_name  \
+  --log-format json |tee train.log
