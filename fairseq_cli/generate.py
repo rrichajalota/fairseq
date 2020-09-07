@@ -44,11 +44,11 @@ def _main(args, output_file):
     #measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
     measure = measures[0]
     print("MEASURE: ", measure)
-    #filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
-    #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+    filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
+    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
 
-    filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
-    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
+    #filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
+    #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
 
     record_corpscore = True
     delete_corpscore = False
