@@ -721,11 +721,11 @@ class SequenceGenerator(object):
             #print("dist_dec_src2.shape: ", dist_dec_src2.shape)
 
 
-            data_coll = list()
+            #data_coll = list()
             #print("len(finalized[sent]): ", len(finalized[sent]))
-            for l in range(len(finalized[sent])):
-                #print("\nTokens for sent ", sent, " beam nr ", l, " score: ", finalized[sent][l]["score"])
-                hyp_tok = finalized[sent][l]["tokens"]
+            for hyp in range(len(finalized[sent])):
+                #print("\nTokens for sent ", sent, " beam nr ", hyp, " score: ", finalized[sent][hyp]["score"])
+                hyp_tok = finalized[sent][hyp]["tokens"]
                 hyp_mask = hyp_tok.ne(self.eos)
                 hyp_tok = hyp_tok[hyp_mask]
                 #print(hyp_tok)
@@ -733,16 +733,16 @@ class SequenceGenerator(object):
                 #print("\n### HYPOTHESIS - hyp_words: ", hyp_words)
 
                 data_sub = dict()
-                #id = "sent" + str(sent) + "-hyp" + str(l)
-                data_sub["sent"] = sent
-                data_sub["beam"] = "hyp" + str(l)  ########################
-                data_sub["src"] = words
-                data_sub["tgt"] = gold_words
-                data_sub["hyp"] = hyp_words
+                #id = "sent" + str(sent) + "-hyp" + str(hyp)
+                #data_sub["sent"] = sent
+                data_sub["beam"] = "hyp" + str(hyp)  ########################
+                #data_sub["src"] = words
+                #data_sub["tgt"] = gold_words
+                #data_sub["hyp"] = hyp_words
                 #print("idsss", sample["id"][sent])
-                data_sub["sent_id"] = id_1
-                id_2 = data_sub["beam"]
-                data_sub["score"] = finalized[sent][l]["score"]
+                #data_sub["sent_id"] = id_1
+                #id_2 = data_sub["beam"]
+                #data_sub["score"] = finalized[sent][hyp]["score"]
 
                 ###
                 '''
@@ -870,15 +870,14 @@ class SequenceGenerator(object):
 
                 ### adding for table
                 #print("id_1: ", id_1, " -- id_2: ", id_2)
-                data_coll.append(data_sub)
-            main_distance = "[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"
-            #data_coll = sorted(data_coll, key=lambda s: s[main_distance], reverse=False)
-            #print("data_coll", data_coll)
-            data_table[id_1] = data_coll
+                finalized[sent][hyp]["distances"] = data_sub
+
+                #data_coll.append(data_sub)
+            #data_table[id_1] = data_coll
         #print("\n\n")
 
         # finalized: list of lists of dictionaries (1 per hypothesis); keys: tokens, score (scalar), attention, alignment (None), positional_scores
-        return finalized, data_table
+        return finalized
 
 
 
