@@ -13,6 +13,11 @@
 This is the code used for the paper *Self-Supervised Neural Machine Translation*, which describes a joint parallel data extraction and NMT training approach. It is based on a May 2019 copy of the [Fairseq-py](https://github.com/pytorch/fairseq) repository. Be aware that it is therefore not up-to-date with current changes in the original Fairseq(-py) code.
 
 
+## Installation
+
+1. Clone this repository and make sure you have [Anaconda Python](https://www.anaconda.com/distribution/) installed.
+
+2. Create a virtual environment with Python 3.6 and activate
 
 ### What's New:
 
