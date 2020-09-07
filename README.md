@@ -95,3 +95,10 @@ Run `train.py -h` for more information.
 --------------------------------------------------------------------------------
 Phrase/Chunk-based Self-Supervised Neural Machine Translation
 --------------------------------------------------------------------------------
+1. To extract chunks from unprocessed (without BPE) `corpus.L1/L2` files with [SRILM](http://www.speech.sri.com/projects/srilm/download.html) using the command format below:
+```bash
+ngram-count -text corpus.L1/L2  -order 5 -write /path/to/write/ngrams -no-eos  -no-sos.
+```
+2. SRILM returns all n-grams from 1 to n (e.g. 1-gram, 2-gram .... , 5-gram) and their corresponding frequencies in the corpus, you need to extract the exact n-grams of a particuler freuency range you want from the file returned by SRILM (you'll need to write a small script for doing that). Assuming the files you get from this step are named ngrams.L1/L2
+
+
