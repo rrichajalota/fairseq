@@ -12,17 +12,26 @@
 --------------------------------------------------------------------------------
 This is the code used for the paper *Self-Supervised Neural Machine Translation*, which describes a joint parallel data extraction and NMT training approach. It is based on a May 2019 copy of the [Fairseq-py](https://github.com/pytorch/fairseq) repository. Be aware that it is therefore not up-to-date with current changes in the original Fairseq(-py) code.
 
+# Requirements and Installation
+
+* [PyTorch](http://pytorch.org/) version >= 1.4.0
+* Python version >= 3.6
+* For training new models, you'll also need an NVIDIA GPU and [NCCL](https://github.com/NVIDIA/nccl)
+* **For faster training** install NVIDIA's [apex](https://github.com/NVIDIA/apex) library with the `--cuda_ext` and `--deprecated_fused_adam` options
 
 ## Installation
 
 1. Clone this repository and make sure you have [Anaconda Python](https://www.anaconda.com/distribution/) installed.
-
+To install fairseq from source and develop locally:
+```bash
+git clone https://github.com/cristinae/fairseq/tree/self_supervised
+cd fairseq
+pip install --editable .
+```
 2. Create a virtual environment with Python 3.6 and activate
 
-3. Install the following packages...
-   * [Pytorch](https://pytorch.org/) with CUDA support (if available)
-   * Configargparse
-   
+
+
 ## Instructions
 
 In order to train the system without any paralell data, you will need plenty of comparable data as well as pre-trained word embeddings. It is vital that the comparable data used for extraction uses the same [Byte-Pair Encoding](https://github.com/rsennrich/subword-nmt) (BPE) as the data that the word embeddings were trained on.
@@ -85,17 +94,5 @@ Run `train.py -h` for more information.
  
 ![Model](fairseq.gif)
 
-# Requirements and Installation
 
-* [PyTorch](http://pytorch.org/) version >= 1.2.0
-* Python version >= 3.6
-* For training new models, you'll also need an NVIDIA GPU and [NCCL](https://github.com/NVIDIA/nccl)
-* **For faster training** install NVIDIA's [apex](https://github.com/NVIDIA/apex) library with the `--cuda_ext` and `--deprecated_fused_adam` options
-
-To install fairseq from source and develop locally:
-```bash
-git clone https://github.com/pytorch/fairseq
-cd fairseq
-pip install --editable .
-```
 
