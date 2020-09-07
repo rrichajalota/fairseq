@@ -58,11 +58,9 @@ In order to train the system without any paralell data, you will need plenty of 
 
 4. Also, create a concatenated version of all the comparable documents. We will call these two files `corpus.L1` and `corpus.L2` for now. These are only needed to create the OpenNMT-py format vocabulary files.
 
-### Create OpenNMT corpus files
+### Create corpus files
 
-1. Run preprocess.py on the `corpus.L1/L2` files. Do not forget to set the vocabulary size high enough to cover all words in the vocabulary. Also, it is *vital* to the system to have a shared vocabulary, so do not forget to set the -share_vocab tag. A sample run command can be found under `comparableNMT/run/examples/run_preproc.sh`
-
-2. Convert embeddings into OpenNMT format using embeddings_to_torch.py in the main directory. A sample run can be found under `comparableNMT/run/examples/run_embeds.sh`
+1. Run preprocess.py on the `corpus.L1/L2` files. Do not forget to set the vocabulary size high enough to cover all words in the vocabulary. Also, it is *vital* to the system to have a shared vocabulary, so do not forget to set the --joined-dictionary tag. A sample run command can be found under `examples/self_supervised/run_preproc.sh`
 
 ### Train
 
