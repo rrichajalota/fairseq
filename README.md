@@ -56,7 +56,7 @@ In order to train the system without any paralell data, you will need plenty of 
 
 3. Now, you should have a directory containing all your pre-processed comparable documents. For the system to know which ones are related to each other, create a `list-file`. In each line, it contains the absolute path to a document in L1 which should be mapped to a document in L2. Use a tab between the L1 and L2 document. As such:
 
-4. Also, create a concatenated version of all the comparable documents. We will call these two files `corpus.L1` and `corpus.L2` for now. These are only needed to create the Fairseq-py format vocabulary files `(dict.{src|tgt}.txt)`.
+4. Also, create a concatenated version of all the comparable documents. We will call these two files `corpus.L1` and `corpus.L2` for now. These are only needed to create the Fairseq-py format vocabulary files `(dict.{L1|L2}.txt)`.
 
 ### Create corpus files
 
