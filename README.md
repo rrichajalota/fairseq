@@ -56,7 +56,7 @@ In order to train the system without any paralell data, you will need plenty of 
 
 3. Now, you should have a directory containing all your pre-processed comparable documents. For the system to know which ones are related to each other, create a `list-file`. In each line, it contains the absolute path to a document in L1 which should be mapped to a document in L2. Use a tab between the L1 and L2 document. As such:
 
-4. Also, create a concatenated version of all the comparable documents. We will call these two files `corpus.L1` and `corpus.L2` for now. These are only needed to create the OpenNMT-py format vocabulary files.
+4. Also, create a concatenated version of all the comparable documents. We will call these two files `corpus.L1` and `corpus.L2` for now. These are only needed to create the Fairseq-py format vocabulary files (dict.{src|tgt}.txt).
 
 ### Create corpus files
 
@@ -64,7 +64,7 @@ In order to train the system without any paralell data, you will need plenty of 
 
 ### Train
 
-Use train.py to train the system. Note that not all options available for training in OpenNMT-py are compatible with this code. For example, training on more than one GPU is currently not possible and batch sizes need to be given in number of sentences and not tokens. The examples in `comparableNMT/run/examples/run_train_XXXX.sh` show how to train the LSTM or Transformer models described in the paper. For best performance, look at `comparableNMT/run/examples/run_train_tf_margP.sh`
+Use traincomp.py to train the system. Note that not all options available for training in Fairseq-py are compatible with this code. For example, batch sizes need to be given in number of sentences and not tokens. The example in `examples/self_supervised/train.sh` show how to train the Transformer based SSNMT model.
 
 #### Comparable training options
 
