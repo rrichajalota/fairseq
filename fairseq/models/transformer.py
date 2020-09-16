@@ -665,6 +665,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         alignment_heads: Optional[int] = None,
         src_lengths: Optional[Any] = None,
         return_all_hiddens: bool = False,
+        use_incremental = True,
     ):
         """
         Args:
@@ -682,15 +683,20 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's output of shape `(batch, tgt_len, vocab)`
                 - a dictionary with any model-specific outputs
         """
-        #print("\n>>>>> IN TransformerDecoder, FORWARD")
-        #print(">>>>> IN TransformerDecoder, prev output tokens shape", prev_output_tokens.shape)
-        #print("prev_output_tokens:\n", prev_output_tokens)
+
+        print("\n>>>>> IN TransformerDecoder, FORWARD")
+        print(">>>>> IN TransformerDecoder, prev output tokens shape", prev_output_tokens.shape)
+        print("prev_output_tokens:\n", prev_output_tokens)
+        print("IN TransformerDecoder forward, use_incremental: ", use_incremental)
+
+        #print("incremental_state: ", incremental_state)
         x, extra = self.extract_features(
             prev_output_tokens,
             encoder_out=encoder_out,
             incremental_state=incremental_state,
             alignment_layer=alignment_layer,
             alignment_heads=alignment_heads,
+            use_incremental=use_incremental,
         )
         #print(">>>>> IN TrD, features only:", features_only, " -- return_all_hiddens:", return_all_hiddens)
         if not features_only:
@@ -705,6 +711,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         full_context_alignment: bool = False,
         alignment_layer: Optional[int] = None,
         alignment_heads: Optional[int] = None,
+        use_incremental: bool = True
     ):
         """
         Similar to *forward* but only return features.
@@ -725,7 +732,16 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
-        #print("\nArgument encoder_out: ", encoder_out)
+        print("In transformer extract_features, use_incremental", use_incremental)
+        print("incremetal_state 1 == None: ", incremental_state == None)
+        print("Wenn ich extract_features ohne incremental_state als argument übergebe, habe ich auch None als Wert dafür")
+
+        if not use_incremental:
+            incremental_state = None
+        else:
+            incremental_state = incremental_state
+        print("incremetal_state 2 == None: ", incremental_state == None)
+
         if alignment_layer is None:
             alignment_layer = self.num_layers - 1
 
@@ -739,8 +755,6 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             else None
         )
 
-        #incremental_state = None
-        #print("incremental state ", incremental_state)
         if incremental_state is not None:
             #print(">In TrD incremental state keys: ", len(incremental_state), incremental_state.keys())
             prev_output_tokens = prev_output_tokens[:, -1:]
@@ -750,7 +764,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         # embed tokens and positions
         #print(">In TransformerDecoder, in extract_features, embeddings:")
         #print(">Embed Scale: ", self.embed_scale)
-        #print(">prev_output tokens in extract features -- only last because of incremental state (Z.739):\n ", prev_output_tokens)
+        print("\n\n>prev_output tokens in extract features -- only last because of incremental state (Z.739):\n ", prev_output_tokens)
 
         #print(">In TransformerDecoder, self.embed tokens(prev_output_tokens).shape", self.embed_tokens(prev_output_tokens).shape)
 
@@ -875,7 +889,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
-        #print("\n***********>>>> In extract_features_test")
+        print("\n***********>>>> In extract_features_test")
         if alignment_layer is None:
             alignment_layer = self.num_layers - 1
 
@@ -891,8 +905,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             else None
         )
 
-        #incremental_state = None
-        #print("incremental state ", incremental_state)
+        print("incremental state ", incremental_state)
         if incremental_state is not None:
             #print(">In TrD incremental state keys: ", len(incremental_state), incremental_state.keys())
             prev_output_tokens = prev_output_tokens[:, -1:]
@@ -917,7 +930,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
             x += positions
 
         if self.layernorm_embedding is not None:
-            print("Layernorm is not none") ##### it is None
+            #print("Layernorm is not none") ##### it is None
             x = self.layernorm_embedding(x)
 
         #x = F.dropout(x, p=self.dropout, training=self.training)

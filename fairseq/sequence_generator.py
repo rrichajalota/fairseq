@@ -11,7 +11,6 @@ from fairseq import search, utils
 from fairseq.data import data_utils
 from fairseq.models import FairseqIncrementalDecoder
 
-import csv
 
 class SequenceGenerator(object):
     def __init__(
@@ -325,7 +324,7 @@ class SequenceGenerator(object):
             # reorder decoder internal states based on the prev choice of beams
             #if (step == 16):
                 #break
-            #print("\n\n\n>>>>>>>>>>>>>>>>>>>>>STEP ", step)
+            print("\n\n\n>>>>>>>>>>>>>>>>>>>>>STEP ", step)
             #print("reorder state", reorder_state) #1st is None
             if reorder_state is not None:
                 if batch_idxs is not None:
@@ -637,8 +636,8 @@ class SequenceGenerator(object):
 
 
         ######################
-        #print("\n\n\n\n\n###############################################################################")
-        #print("BUFFERS: ", buffers.keys())
+        print("\n\n\n\n\n###############################################################################")
+        print("BUFFERS: ", buffers.keys())
         #encoder_out_emb_orig_1st = model.forward_encoder(encoder_input)[0].encoder_out   ############### encoder_input: src_tokens, src_lengths; returns list of encoders from EnsembleModel
         src_mask = (src_tokens.ne(self.pad) & src_tokens.ne(self.eos))
 
@@ -655,8 +654,6 @@ class SequenceGenerator(object):
         '''
 
         # sort by score descending
-        data_table = dict()
-
         def funct(args):
             return args.mean(0)
             #return args.sum(0)
@@ -678,6 +675,7 @@ class SequenceGenerator(object):
             #print("\ntok_in_src.shape",tok_in_src.shape)
             enc_in = {"src_tokens": tok_in_src, "src_lengths": torch.tensor(tok_in_src.shape[1])}
 
+            print("Extract features 1 - forward encoder")
             enc_outs_test = model.forward_encoder(enc_in)
             emb_enc_src = enc_outs_test[0].encoder_out.transpose(0,1).squeeze()
             #print("emb_enc_src.shape: ", emb_enc_src.shape)
@@ -692,6 +690,7 @@ class SequenceGenerator(object):
             gold_words = self.tgt_dict.string(gold_tgt_tok)
             #print("\n### GOLD WORDS - gold_words: ", gold_words)
 
+            print("Extract features 2")
             ### extract_features second direction, with: prev_output tokens from src; tokens-to-translate from tgt"
             dec_src_f, _ = model.models[0].extract_features(gold_tgt_tok.unsqueeze(0), gold_tgt_tok.shape, enc_in["src_tokens"])  #################################################### src in decoder extract_features
             #print("dec_src_f.shape: ", dec_src_f.shape)
@@ -699,7 +698,7 @@ class SequenceGenerator(object):
             dist_dec_src = funct(dec_src_f.squeeze())
             #print("dist_dec_src.shape", dist_dec_src.shape)
 
-
+            print("Extract features 3")
             ### src decoder embedding without encoder repr
             feats_tmp3_plus, feats_tmp3_minus = model.forward_decoder_test(enc_in["src_tokens"] )  ################################## src in decoder forward_decoder
             #print(" Feats tmp3: ", type(feats_tmp3_plus), len(feats_tmp3_plus))
@@ -715,6 +714,7 @@ class SequenceGenerator(object):
             ### src decoder embedding with repeated src encoder
             #print("\nenc_in['src_tokens'].shape: ",  enc_in["src_tokens"].shape)
             #model.models[0].decoder.embed_positions = None
+            print("Extract features 4")
             dec_src_f2, _ = model.models[0].extract_features(enc_in["src_tokens"], enc_in["src_tokens"].shape[1], enc_in["src_tokens"])
             #dist_dec_src2 = dec_src_f2.squeeze().mean(0)
             dist_dec_src2 = funct(dec_src_f2.squeeze())
@@ -755,7 +755,12 @@ class SequenceGenerator(object):
 
                 ###
                 #print("\n############ forward_decoder with hyp_tok from hypothesis and enc_outs_test from src")
-                lprobs2, avg_attn_scores2, feats_tmp2 = model.forward_decoder( hyp_tok.unsqueeze(0), enc_outs_test, temperature=self.temperature,)  ################################## tgt in decoder forward_decoder
+                print("\nExtract features 5")
+                lprobs2, avg_attn_scores2, feats_tmp2 = model.forward_decoder( hyp_tok.unsqueeze(0), enc_outs_test, temperature=self.temperature, use_incremental=False,)  ################################## tgt in decoder forward_decoder
+                print("\nExtract features 5+")
+                # refactoring, changing arguments
+                #feats_tmp2, _ = model.models[0].extract_features(enc_in["src_tokens"], enc_in["src_tokens"].shape[1], enc_in["src_tokens"])
+
                 emb_dec = feats_tmp2.squeeze()
                 #print("emb_dec.shape: ", emb_dec.shape)
                 #dist_dec_fwdec = emb_dec.mean(0)
@@ -768,6 +773,7 @@ class SequenceGenerator(object):
 
                 #print("\n############ extract_features with prev_output_tokens from hypothesis")
                 ###
+                print("\nExtract features 6")
                 dec_tgt_f, _ = model.models[0].extract_features(enc_in["src_tokens"], enc_in["src_lengths"], hyp_tok.unsqueeze(0)) ################################################## tgt in decoder extract_features
                 #print("drc_tf.shape: ", dec_tgt_f.shape)
                 dec_tf_sq = dec_tgt_f.squeeze()
@@ -786,6 +792,7 @@ class SequenceGenerator(object):
 
 
                 #print("\n######## extract_features second direction, with: prev_output tokens from src; tokens-to-translate from tgt")
+                print("\nExtract features 7")
                 dec_src_enc_hyp_f, _ = model.models[0].extract_features(hyp_tok.unsqueeze(0), hyp_tok.shape, enc_in["src_tokens"])
                 dist_dec_src_enc_hyp = funct(dec_src_enc_hyp_f.squeeze())
                 #print("Dist shapes: dist_dec_src.shape: ", dist_dec_src_enc_hyp.shape, " - dist_dec_extrft.shape: ", dist_dec_extrft.shape)
@@ -797,6 +804,7 @@ class SequenceGenerator(object):
                 #print("\n########### extract_features 2nd direction encoder_out = None for both src and tgt")
                 #print("hyp_tok.shape: ", hyp_tok.unsqueeze(0).shape, "--- ")
                 #print("enc_in['src_tokens'].shape: ", enc_in["src_tokens"].shape)
+                print("\nExtract features 8")
                 feats_tmp4_plus, feats_tmp4_minus = model.forward_decoder_test(hyp_tok.unsqueeze(0))  ################################## tgt in decoder forward_decoder
                 #print(" Feats tmp4: ", type(feats_tmp4_plus), len(feats_tmp4_plus), " shape: ", feats_tmp4_plus.shape)
                 emb_dec_hyp_noenc_plus = feats_tmp4_plus.squeeze()
@@ -818,6 +826,7 @@ class SequenceGenerator(object):
                 #print("\n############ enc-enc distance btw src and tgt")
                 hyp_tok_ts = hyp_tok.unsqueeze(0)
                 #print("hyp_tok_ts.shape: ", hyp_tok_ts.shape)
+                print("\nExtract features 9")
                 enc_in_hyp = {"src_tokens": hyp_tok_ts, "src_lengths": torch.tensor(hyp_tok_ts.shape[1])}
                 enc_outs_hyp = model.forward_encoder(enc_in_hyp)
 
@@ -889,8 +898,8 @@ class EnsembleModel(torch.nn.Module):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
         self.incremental_states = None
-        #if all(hasattr(m, 'decoder') and isinstance(m.decoder, FairseqIncrementalDecoder) for m in models):
-        #    self.incremental_states = {m: {} for m in models}
+        if all(hasattr(m, 'decoder') and isinstance(m.decoder, FairseqIncrementalDecoder) for m in models):
+            self.incremental_states = {m: {} for m in models}
 
     def has_encoder(self):
         return hasattr(self.models[0], 'encoder')
@@ -905,19 +914,21 @@ class EnsembleModel(torch.nn.Module):
         return [model.encoder(**encoder_input) for model in self.models]
 
     @torch.no_grad()
-    def forward_decoder(self, tokens, encoder_outs, temperature=1.):
-        #print(">>>>> EnsembleModel forward_decoder")
+    def forward_decoder(self, tokens, encoder_outs, temperature=1., use_incremental=True):
+        print(">>>>> EnsembleModel forward_decoder")
+        print("...use_incremental: ", use_incremental)
         if len(self.models) == 1:
             #print(">>>>> Is only one Ensemble Model")
+            print("in EnsembleModel forward_decoder, use_incremental: ", use_incremental)
             return self._decode_one(
                 tokens,
                 self.models[0],
-                encoder_outs[0] if self.has_encoder() else None, #encoder_outs[0] if self.has_encoder() else None
+                encoder_outs[0] if self.has_encoder() else None,
                 self.incremental_states,
                 log_probs=True,
                 temperature=temperature,
+                use_incremental=use_incremental,
             )
-
         log_probs = []
         avg_attn = None
         for model, encoder_out in zip(self.models, encoder_outs):
@@ -928,6 +939,7 @@ class EnsembleModel(torch.nn.Module):
                 self.incremental_states,
                 log_probs=True,
                 temperature=temperature,
+                use_incremental=use_incremental,
             )
             log_probs.append(probs)
             if attn is not None:
@@ -959,12 +971,13 @@ class EnsembleModel(torch.nn.Module):
 
     def _decode_one(
         self, tokens, model, encoder_out, incremental_states, log_probs,
-        temperature=1.,
+        temperature=1., use_incremental=True,
     ):
+        print("in EnsembleModel _decode_one, use_incremental: ", use_incremental)
         if self.incremental_states is not None:
             print(">>>>> incremental states not None", " >>>>> one Ensemble Model of type: ", type(model)) ### TransformerModel
             decoder_out_test = list(model.forward_decoder(
-                tokens, encoder_out=encoder_out, incremental_state=self.incremental_states[model], features_only=True, #return_all_hiddens=True, ##### changed
+                tokens, encoder_out=encoder_out, incremental_state=self.incremental_states[model], features_only=True, use_incremental=use_incremental, #return_all_hiddens=True, ##### changed
             ))
             ### Meine Änderungen hier:
             #print("\nEnsembleModel Z.792 Tokens in _decode_one:\n", tokens)
@@ -973,14 +986,13 @@ class EnsembleModel(torch.nn.Module):
             x = model.decoder.output_layer(feats_tmp)
             decoder_out = [x, extra_tmp]
         else:
-            decoder_out_test= list(model.forward_decoder(tokens, encoder_out=encoder_out, features_only=True) )#### changed
+            decoder_out_test = list(model.forward_decoder(tokens, encoder_out=encoder_out, features_only=True) )#### changed
             ### Meine Änderungen hier:
             #print("\nEnsembleModel Z.802 Tokens in _decode_one:\n", tokens)
             feats_tmp, extra_tmp = decoder_out_test
             #print("Shape of feats in _decode_one", feats_tmp.shape)
             x = model.decoder.output_layer(feats_tmp)
             decoder_out = [x, extra_tmp]
-
 
 
         decoder_out[0] = decoder_out[0][:, -1:, :]

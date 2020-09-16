@@ -43,12 +43,12 @@ def _main(args, output_file):
     "nosense-dist-dec(2args<-src)-dec(2args<-hyp)"]
     #measure = "[try to approach GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"
     measure = measures[0]
-    print("MEASURE: ", measure)
-    filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
-    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
+    #print("MEASURE: ", measure)
+    #filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
+    #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
 
-    #filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
-    #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
+    filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
+    filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
 
     record_corpscore = True
     delete_corpscore = False
@@ -277,7 +277,7 @@ def _main(args, output_file):
                             # Convert back to tokens for evaluation with unk replacement and/or without BPE
                             target_tokens = tgt_dict.encode_line(target_str, add_if_not_exist=True)
                         if hasattr(scorer, 'add_string'):     ############ bei Sacrebleu
-                            #print("scorer.add_string(...)", hypo_str) ### SACREbleu
+                            #print("scorer.add_string(...)>> target_str: ", target_str, "\thypo_str: " ,hypo_str) ### SACREbleu
                             scorer.add_string(target_str, hypo_str)
                             #print("scorer! Hypo official added: ", hypo_str)
                         else:
@@ -307,9 +307,10 @@ def _main(args, output_file):
 
         if record_corpscore:
             with open(filename_corp, "a") as f_corp:
-                f_corp.write('{}\t{}\t{}'.format(measure, scorer.result_string(), scorer_test_bleu_corp.result_string()))
-                f_corp.write("\n")
-            print("\nmeasure: ", measure, "scorer_test_sb: ", scorer.result_string(), scorer_test_bleu_corp.result_string())
+                #f_corp.write('{}\t{}\t{}'.format(measure, scorer.result_string(), scorer_test_bleu_corp.result_string()))
+                f_corp.write('{}\t{}\n'.format(measure, scorer.result_string()))
+            print("\nmeasure: ", measure, "scorer_test_bleu_corp: ", scorer_test_bleu_corp.result_string(), file=sys.stderr)
+            print("\nmeasure: ", measure, "scorer_test_sb: ", scorer.result_string(), file=sys.stderr)
 
 
     return scorer
