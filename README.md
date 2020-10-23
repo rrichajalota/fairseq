@@ -41,17 +41,28 @@ We provide reference implementations of various sequence modeling papers:
   - [Neural Machine Translation with Byte-Level Subwords (Wang et al., 2020)](examples/byte_level_bpe/README.md)
   - [Unsupervised Quality Estimation for Neural Machine Translation (Fomicheva et al., 2020)](examples/unsupervised_quality_estimation/README.md)
   - [wav2vec 2.0: A Framework for Self-Supervised Learning of Speech Representations (Baevski et al., 2020)](examples/wav2vec/README.md)
+  - [Generating Medical Reports from Patient-Doctor Conversations Using Sequence-to-Sequence Models (Enarvi et al., 2020)](examples/pointer_generator/README.md)
+  - [Linformer: Self-Attention with Linear Complexity (Wang et al., 2020)](examples/linformer/README.md)
+  - [Cross-lingual Retrieval for Iterative Self-Supervised Training (Tran et al., 2020)](examples/criss/README.md)
+  - [Deep Transformers with Latent Depth (Li et al., 2020)](examples/latent_depth/README.md)
 - **Non-autoregressive Transformers**
   - Non-Autoregressive Neural Machine Translation (Gu et al., 2017)
   - Deterministic Non-Autoregressive Neural Sequence Modeling by Iterative Refinement (Lee et al. 2018)
   - Insertion Transformer: Flexible Sequence Generation via Insertion Operations (Stern et al. 2019)
   - Mask-Predict: Parallel Decoding of Conditional Masked Language Models (Ghazvininejad et al., 2019)
   - [Levenshtein Transformer (Gu et al., 2019)](examples/nonautoregressive_translation/README.md)
+- **Finetuning**
+  - [Better Fine-Tuning by Reducing Representational Collapse (Aghajanyan et al. 2020)](examples/rxf/README.md)
 
 </p></details>
 
 ### What's New:
 
+- October 2020: [Added R3F/R4F (Better Fine-Tuning) code](examples/rxf/README.md)
+- October 2020: [Deep Transformer with Latent Depth code released](examples/latent_depth/README.md)
+- October 2020: [Added CRISS models and code](examples/criss/README.md)
+- September 2020: [Added Linformer code](examples/linformer/README.md)
+- September 2020: [Added pointer-generator networks](examples/pointer_generator/README.md)
 - August 2020: [Added lexically constrained decoding](examples/constrained_decoding/README.md)
 - August 2020: [wav2vec2 models and code released](examples/wav2vec/README.md)
 - July 2020: [Unsupervised Quality Estimation code released](examples/unsupervised_quality_estimation/README.md)
@@ -141,6 +152,7 @@ as well as example training and evaluation commands.
 - [Language Modeling](examples/language_model/README.md): convolutional and transformer models are available
 
 We also have more detailed READMEs to reproduce results from specific papers:
+- [Cross-lingual Retrieval for Iterative Self-Supervised Training (Tran et al., 2020)](examples/criss/README.md)
 - [wav2vec 2.0: A Framework for Self-Supervised Learning of Speech Representations (Baevski et al., 2020)](examples/wav2vec/README.md)
 - [Unsupervised Quality Estimation for Neural Machine Translation (Fomicheva et al., 2020)](examples/unsupervised_quality_estimation/README.md)
 - [Training with Quantization Noise for Extreme Model Compression ({Fan*, Stock*} et al., 2020)](examples/quant_noise/README.md)

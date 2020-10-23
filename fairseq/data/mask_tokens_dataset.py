@@ -7,8 +7,7 @@ from functools import lru_cache
 
 import numpy as np
 import torch
-
-from fairseq.data import data_utils, Dictionary
+from fairseq.data import Dictionary, data_utils
 
 from . import BaseWrapperDataset, LRUCacheDataset
 
@@ -86,10 +85,14 @@ class MaskTokensDataset(BaseWrapperDataset):
                 weights = np.array(self.vocab.count)
             else:
                 weights = np.ones(len(self.vocab))
-            weights[:self.vocab.nspecial] = 0
+            weights[: self.vocab.nspecial] = 0
             self.weights = weights / weights.sum()
 
         self.epoch = 0
+
+    @property
+    def can_reuse_epoch_itr_across_epochs(self):
+        return True  # only the noise changes, not item sizes
 
     def set_epoch(self, epoch, **unused):
         super().set_epoch(epoch)
@@ -101,14 +104,15 @@ class MaskTokensDataset(BaseWrapperDataset):
             item = self.dataset[index]
             sz = len(item)
 
-            assert self.mask_idx not in item, \
-                'Dataset contains mask_idx (={}), this is not expected!'.format(
-                    self.mask_idx,
-                )
+            assert (
+                self.mask_idx not in item
+            ), "Dataset contains mask_idx (={}), this is not expected!".format(
+                self.mask_idx,
+            )
 
             if self.mask_whole_words is not None:
                 word_begins_mask = self.mask_whole_words.gather(0, item)
-                word_begins_idx = word_begins_mask.nonzero().view(-1)
+                word_begins_idx = word_begins_mask.nonzero(as_tuple=False).view(-1)
                 sz = len(word_begins_idx)
                 words = np.split(word_begins_mask, word_begins_idx)[1:]
                 assert len(words) == sz
@@ -118,7 +122,8 @@ class MaskTokensDataset(BaseWrapperDataset):
             mask = np.full(sz, False)
             num_mask = int(
                 # add a random number for probabilistic rounding
-                self.mask_prob * sz + np.random.rand()
+                self.mask_prob * sz
+                + np.random.rand()
             )
             mask[np.random.choice(sz, num_mask, replace=False)] = True
 

@@ -3,35 +3,41 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import logging
 import datetime
+import logging
 import time
 
 import torch
 from fairseq.data import (
-    data_utils,
     FairseqDataset,
-    iterators,
     LanguagePairDataset,
     ListDataset,
+    data_utils,
+    iterators,
 )
-
-from fairseq.tasks import FairseqTask, register_task
+from fairseq.data.multilingual.multilingual_data_manager import (
+    MultilingualDatasetManager,
+)
 from fairseq.data.multilingual.sampling_method import SamplingMethod
-from fairseq.data.multilingual.multilingual_data_manager import MultilingualDatasetManager
+from fairseq.tasks import LegacyFairseqTask, register_task
+from fairseq.utils import FileContentsAction
 
 
 ###
 def get_time_gap(s, e):
-    return (datetime.datetime.fromtimestamp(e) - datetime.datetime.fromtimestamp(s)).__str__()
+    return (
+        datetime.datetime.fromtimestamp(e) - datetime.datetime.fromtimestamp(s)
+    ).__str__()
+
+
 ###
 
 
 logger = logging.getLogger(__name__)
 
 
-@register_task('translation_multi_simple_epoch')
-class TranslationMultiSimpleEpochTask(FairseqTask):
+@register_task("translation_multi_simple_epoch")
+class TranslationMultiSimpleEpochTask(LegacyFairseqTask):
     """
     Translate from one (source) language to another (target) language.
 
@@ -62,7 +68,8 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         parser.add_argument('-t', '--target-lang', default=None, metavar='TARGET',
                             help='inference target language')
         parser.add_argument('--lang-pairs', default=None, metavar='PAIRS',
-                            help='comma-separated list of language pairs (in training order): en-de,en-fr,de-fr')
+                            help='comma-separated list of language pairs (in training order): en-de,en-fr,de-fr',
+                            action=FileContentsAction)
         parser.add_argument('--keep-inference-langtok', action='store_true',
                             help='keep language tokens in inference output (e.g. for analysis or debugging)')
 
@@ -78,7 +85,7 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         if training:
             self.lang_pairs = args.lang_pairs
         else:
-            self.lang_pairs = ['{}-{}'.format(args.source_lang, args.target_lang)]
+            self.lang_pairs = ["{}-{}".format(args.source_lang, args.target_lang)]
         # eval_lang_pairs for multilingual translation is usually all of the
         # lang_pairs. However for other multitask settings or when we want to
         # optimize for certain languages we want to use a different subset. Thus
@@ -91,7 +98,8 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         self.model_lang_pairs = self.lang_pairs
         self.sampling_method = SamplingMethod.build_sampler(args, self)
         self.data_manager = MultilingualDatasetManager.setup_data_manager(
-            args, self.lang_pairs, langs, dicts, self.sampling_method)
+            args, self.lang_pairs, langs, dicts, self.sampling_method
+        )
 
     @classmethod
     def setup_task(cls, args, **kwargs):
@@ -127,55 +135,69 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
                 # also this avoid always loading from beginning of the data
                 return
         else:
-            shard_epoch = None
-        logger.info(f'loading data for {split} epoch={epoch}/{shard_epoch}')
+            # estimate the shard epoch from virtual data size and virtual epoch size
+            shard_epoch = self.data_manager.estimate_global_pass_epoch(epoch)
+        logger.info(f"loading data for {split} epoch={epoch}/{shard_epoch}")
+        logger.info(f"mem usage: {data_utils.get_mem_usage()}")
+        if split in self.datasets:
+            del self.datasets[split]
+            logger.info("old dataset deleted manually")
+            logger.info(f"mem usage: {data_utils.get_mem_usage()}")
         self.datasets[split] = self.data_manager.load_sampled_multi_epoch_dataset(
             split,
             self.training,
-            epoch=epoch, combine=combine, shard_epoch=shard_epoch, **kwargs
+            epoch=epoch,
+            combine=combine,
+            shard_epoch=shard_epoch,
+            **kwargs,
         )
 
     def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
         if constraints is not None:
-            raise NotImplementedError("Constrained decoding with the multilingual_translation task is not supported")
+            raise NotImplementedError(
+                "Constrained decoding with the multilingual_translation task is not supported"
+            )
 
         src_data = ListDataset(src_tokens, src_lengths)
         dataset = LanguagePairDataset(src_data, src_lengths, self.source_dictionary)
-        src_langtok_spec, tgt_langtok_spec = self.args.langtoks['main']
+        src_langtok_spec, tgt_langtok_spec = self.args.langtoks["main"]
         if self.args.lang_tok_replacing_bos_eos:
             dataset = self.data_manager.alter_dataset_langtok(
-                    dataset,
-                    src_eos=self.source_dictionary.eos(),
-                    src_lang=self.args.source_lang,
-                    tgt_eos=self.target_dictionary.eos(),
-                    tgt_lang=self.args.target_lang,
-                    src_langtok_spec=src_langtok_spec,
-                    tgt_langtok_spec=tgt_langtok_spec,
-                )
+                dataset,
+                src_eos=self.source_dictionary.eos(),
+                src_lang=self.args.source_lang,
+                tgt_eos=self.target_dictionary.eos(),
+                tgt_lang=self.args.target_lang,
+                src_langtok_spec=src_langtok_spec,
+                tgt_langtok_spec=tgt_langtok_spec,
+            )
         else:
             dataset.src = self.data_manager.src_dataset_tranform_func(
                 self.args.source_lang,
                 self.args.target_lang,
                 dataset=dataset.src,
                 spec=src_langtok_spec,
-                )
+            )
         return dataset
 
     def build_generator(
-        self, models, args,
-        seq_gen_cls=None, extra_gen_cls_kwargs=None,
+        self,
+        models,
+        args,
+        seq_gen_cls=None,
+        extra_gen_cls_kwargs=None,
     ):
-        if not getattr(args, 'keep_inference_langtok', False):
-            _, tgt_langtok_spec = self.args.langtoks['main']
+        if not getattr(args, "keep_inference_langtok", False):
+            _, tgt_langtok_spec = self.args.langtoks["main"]
             if tgt_langtok_spec:
-                tgt_lang_tok = self.data_manager.get_decoder_langtok(self.args.target_lang, tgt_langtok_spec)
+                tgt_lang_tok = self.data_manager.get_decoder_langtok(
+                    self.args.target_lang, tgt_langtok_spec
+                )
                 extra_gen_cls_kwargs = extra_gen_cls_kwargs or {}
-                extra_gen_cls_kwargs['symbols_to_strip_from_output'] = {tgt_lang_tok}
+                extra_gen_cls_kwargs["symbols_to_strip_from_output"] = {tgt_lang_tok}
 
         return super().build_generator(
-            models, args,
-            seq_gen_cls=None,
-            extra_gen_cls_kwargs=extra_gen_cls_kwargs
+            models, args, seq_gen_cls=None, extra_gen_cls_kwargs=extra_gen_cls_kwargs
         )
 
     def build_model(self, args):
@@ -185,30 +207,37 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         loss, sample_size, logging_output = super().valid_step(sample, model, criterion)
         return loss, sample_size, logging_output
 
-    def inference_step(self, generator, models, sample, prefix_tokens=None, constraints=None):
+    def inference_step(
+        self, generator, models, sample, prefix_tokens=None, constraints=None
+    ):
         with torch.no_grad():
-            _, tgt_langtok_spec = self.args.langtoks['main']
+            _, tgt_langtok_spec = self.args.langtoks["main"]
             if not self.args.lang_tok_replacing_bos_eos:
                 if prefix_tokens is None and tgt_langtok_spec:
-                    tgt_lang_tok = self.data_manager.get_decoder_langtok(self.args.target_lang, tgt_langtok_spec)
-                    src_tokens = sample['net_input']['src_tokens']
+                    tgt_lang_tok = self.data_manager.get_decoder_langtok(
+                        self.args.target_lang, tgt_langtok_spec
+                    )
+                    src_tokens = sample["net_input"]["src_tokens"]
                     bsz = src_tokens.size(0)
-                    prefix_tokens = torch.LongTensor(
-                        [[tgt_lang_tok]]
-                        ).expand(bsz, 1).to(src_tokens)
+                    prefix_tokens = (
+                        torch.LongTensor([[tgt_lang_tok]]).expand(bsz, 1).to(src_tokens)
+                    )
                 return generator.generate(
-                        models,
-                        sample,
-                        prefix_tokens=prefix_tokens,
-                        constraints=constraints,
+                    models,
+                    sample,
+                    prefix_tokens=prefix_tokens,
+                    constraints=constraints,
                 )
             else:
                 return generator.generate(
-                        models,
-                        sample,
-                        prefix_tokens=prefix_tokens,
-                        bos_token=self.data_manager.get_decoder_langtok(self.args.target_lang, tgt_langtok_spec)
-                        if tgt_langtok_spec else self.target_dictionary.eos(),
+                    models,
+                    sample,
+                    prefix_tokens=prefix_tokens,
+                    bos_token=self.data_manager.get_decoder_langtok(
+                        self.args.target_lang, tgt_langtok_spec
+                    )
+                    if tgt_langtok_spec
+                    else self.target_dictionary.eos(),
                 )
 
     def reduce_metrics(self, logging_outputs, criterion):
@@ -227,48 +256,83 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         return next(iter(self.dicts.values()))
 
     def create_batch_sampler_func(
-        self, max_positions, ignore_invalid_inputs,
-        max_tokens, max_sentences
+        self,
+        max_positions,
+        ignore_invalid_inputs,
+        max_tokens,
+        max_sentences,
+        required_batch_size_multiple=1,
+        seed=1,
     ):
-        def construct_batch_sampler(
-            dataset, epoch
-        ):
-            splits = [s for s, _ in self.datasets.items() if self.datasets[s] == dataset]
+        def construct_batch_sampler(dataset, epoch):
+            splits = [
+                s for s, _ in self.datasets.items() if self.datasets[s] == dataset
+            ]
             split = splits[0] if len(splits) > 0 else None
-
+            # NEW implementation
             if epoch is not None:
+                # initialize the dataset with the correct starting epoch
                 dataset.set_epoch(epoch)
-            start_time = time.time()
+
             # get indices ordered by example size
-            indices = dataset.ordered_indices()
-            logger.debug(f'[{split}] @batch_sampler order indices time: {get_time_gap(start_time, time.time())}')
+            start_time = time.time()
+            logger.info(f"start batch sampler: mem usage: {data_utils.get_mem_usage()}")
+
+            with data_utils.numpy_seed(seed):
+                indices = dataset.ordered_indices()
+            logger.info(
+                f"[{split}] @batch_sampler order indices time: {get_time_gap(start_time, time.time())}"
+            )
+            logger.info(f"mem usage: {data_utils.get_mem_usage()}")
 
             # filter examples that are too large
             if max_positions is not None:
                 my_time = time.time()
                 indices = self.filter_indices_by_size(
-                    indices,
-                    dataset,
-                    max_positions,
-                    ignore_invalid_inputs=ignore_invalid_inputs,
+                    indices, dataset, max_positions, ignore_invalid_inputs
                 )
-                logger.debug(f'[{split}] @batch_sampler filter_by_size time: {get_time_gap(my_time, time.time())}')
+                logger.info(
+                    f"[{split}] @batch_sampler filter_by_size time: {get_time_gap(my_time, time.time())}"
+                )
+                logger.info(f"mem usage: {data_utils.get_mem_usage()}")
 
             # create mini-batches with given size constraints
             my_time = time.time()
-            batch_sampler = data_utils.batch_by_size(
-                indices, dataset.num_tokens, max_tokens=max_tokens, max_sentences=max_sentences,
+            batch_sampler = dataset.batch_by_size(
+                indices,
+                max_tokens=max_tokens,
+                max_sentences=max_sentences,
+                required_batch_size_multiple=required_batch_size_multiple,
             )
-            logger.debug(f'[{split}] @batch_sampler batch_by_size time: {get_time_gap(my_time, time.time())}')
-            logger.debug(f'[{split}] per epoch batch_sampler set-up time: {get_time_gap(start_time, time.time())}')
+
+            logger.info(
+                f"[{split}] @batch_sampler batch_by_size time: {get_time_gap(my_time, time.time())}"
+            )
+            logger.info(
+                f"[{split}] per epoch batch_sampler set-up time: {get_time_gap(start_time, time.time())}"
+            )
+            logger.info(f"mem usage: {data_utils.get_mem_usage()}")
+
             return batch_sampler
+
         return construct_batch_sampler
 
     # we need to override get_batch_iterator because we want to reset the epoch iterator each time
     def get_batch_iterator(
-        self, dataset, max_tokens=None, max_sentences=None, max_positions=None,
-        ignore_invalid_inputs=False, required_batch_size_multiple=1,
-        seed=1, num_shards=1, shard_id=0, num_workers=0, epoch=1,
+        self,
+        dataset,
+        max_tokens=None,
+        max_sentences=None,
+        max_positions=None,
+        ignore_invalid_inputs=False,
+        required_batch_size_multiple=1,
+        seed=1,
+        num_shards=1,
+        shard_id=0,
+        num_workers=0,
+        epoch=1,
+        data_buffer_size=0,
+        disable_iterator_cache=False,
     ):
         """
         Get an iterator that yields batches of data from the given dataset.
@@ -296,6 +360,11 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
                 (default: 0).
             epoch (int, optional): the epoch to start the iterator from
                 (default: 0).
+            data_buffer_size (int, optional): number of batches to
+                preload (default: 0).
+            disable_iterator_cache (bool, optional): don't cache the
+                EpochBatchIterator (ignores `FairseqTask::can_reuse_epoch_itr`)
+                (default: False).
         Returns:
             ~fairseq.iterators.EpochBatchIterator: a batched iterator over the
                 given dataset split
@@ -304,20 +373,33 @@ class TranslationMultiSimpleEpochTask(FairseqTask):
         assert isinstance(dataset, FairseqDataset)
         if dataset in self.dataset_to_epoch_iter:
             return self.dataset_to_epoch_iter[dataset]
-        if (
-            self.args.sampling_method == 'RoundRobin'
-        ):
+        if self.args.sampling_method == "RoundRobin":
             batch_iter = super().get_batch_iterator(
-                dataset, max_tokens=max_tokens, max_sentences=max_sentences, max_positions=max_positions,
-                ignore_invalid_inputs=ignore_invalid_inputs, required_batch_size_multiple=required_batch_size_multiple,
-                seed=seed, num_shards=num_shards, shard_id=shard_id, num_workers=num_workers, epoch=epoch,
+                dataset,
+                max_tokens=max_tokens,
+                max_sentences=max_sentences,
+                max_positions=max_positions,
+                ignore_invalid_inputs=ignore_invalid_inputs,
+                required_batch_size_multiple=required_batch_size_multiple,
+                seed=seed,
+                num_shards=num_shards,
+                shard_id=shard_id,
+                num_workers=num_workers,
+                epoch=epoch,
+                data_buffer_size=data_buffer_size,
+                disable_iterator_cache=disable_iterator_cache,
             )
             self.dataset_to_epoch_iter[dataset] = batch_iter
             return batch_iter
 
         construct_batch_sampler = self.create_batch_sampler_func(
-            max_positions, ignore_invalid_inputs,
-            max_tokens, max_sentences)
+            max_positions,
+            ignore_invalid_inputs,
+            max_tokens,
+            max_sentences,
+            required_batch_size_multiple=required_batch_size_multiple,
+            seed=seed,
+        )
 
         epoch_iter = iterators.EpochBatchIterator(
             dataset=dataset,

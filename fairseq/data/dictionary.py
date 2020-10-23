@@ -27,7 +27,7 @@ class Dictionary(object):
         unk="<unk>",
         extra_special_symbols=None,
     ):
-        self.unk_word, self.pad_word, self.eos_word = unk, pad, eos
+        self.bos_word, self.unk_word, self.pad_word, self.eos_word = bos, unk, pad, eos
         self.symbols = []
         self.count = []
         self.indices = {}
@@ -221,7 +221,7 @@ class Dictionary(object):
         """
         if isinstance(f, str):
             try:
-                with PathManager.open(f, "r", encoding="utf-8") as fd:
+                with open(PathManager.get_local_path(f), "r", encoding="utf-8") as fd:
                     self.add_from_file(fd)
             except FileNotFoundError as fnfe:
                 raise fnfe
@@ -251,8 +251,7 @@ class Dictionary(object):
                         "Duplicate words can overwrite earlier ones by adding the "
                         "#fairseq:overwrite flag at the end of the corresponding row "
                         "in the dictionary file. If using the Camembert model, please "
-                        "download an updated copy of the model file."
-                        .format(word)
+                        "download an updated copy of the model file.".format(word)
                     )
                 self.add_symbol(word, n=count, overwrite=overwrite)
             except ValueError:

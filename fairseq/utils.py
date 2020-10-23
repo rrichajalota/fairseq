@@ -3,29 +3,31 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import contextlib
 import copy
-import importlib.util
+import importlib
 import logging
-import math
 import os
 import sys
+import tempfile
 import warnings
-from collections import defaultdict
 from itertools import accumulate
 from typing import Callable, Dict, List, Optional
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 from fairseq.data import iterators
+from fairseq.file_io import PathManager
 from fairseq.logging.meters import safe_round
 from fairseq.modules import gelu, gelu_accurate
 from fairseq.modules.multihead_attention import MultiheadAttention
 from torch import Tensor
 
+
 try:
     from amp_C import multi_tensor_l2norm
+
     multi_tensor_l2norm_available = True
 except ImportError:
     multi_tensor_l2norm_available = False
@@ -37,8 +39,27 @@ logger = logging.getLogger(__name__)
 MANIFOLD_PATH_SEP = "|"
 
 
+class FileContentsAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(FileContentsAction, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if PathManager.isfile(values):
+            with PathManager.open(values) as f:
+                argument = f.read().strip()
+        else:
+            argument = values
+        setattr(namespace, self.dest, argument)
+
+
 def split_paths(paths: str) -> List[str]:
-    return paths.split(os.pathsep) if "://" not in paths else paths.split(MANIFOLD_PATH_SEP)
+    return (
+        paths.split(os.pathsep)
+        if "://" not in paths
+        else paths.split(MANIFOLD_PATH_SEP)
+    )
 
 
 def load_ensemble_for_inference(filenames, task, model_arg_overrides=None):
@@ -54,7 +75,7 @@ def load_ensemble_for_inference(filenames, task, model_arg_overrides=None):
 
 
 def apply_to_sample(f, sample):
-    if hasattr(sample, '__len__') and len(sample) == 0:
+    if hasattr(sample, "__len__") and len(sample) == 0:
         return {}
 
     def _apply(x):
@@ -74,9 +95,13 @@ def apply_to_sample(f, sample):
     return _apply(sample)
 
 
-def move_to_cuda(sample):
+def move_to_cuda(sample, device=None):
+    device = device or torch.cuda.current_device()
+
     def _move_to_cuda(tensor):
-        return tensor.cuda()
+        # non_blocking is ignored if tensor is not pinned, so we can always set
+        # to True (see github.com/PyTorchLightning/pytorch-lightning/issues/620)
+        return tensor.cuda(device=device, non_blocking=True)
 
     return apply_to_sample(_move_to_cuda, sample)
 
@@ -185,9 +210,17 @@ def replace_unk(hypo_str, src_str, alignment, align_dict, unk):
 
 
 def post_process_prediction(
-    hypo_tokens, src_str, alignment, align_dict, tgt_dict, remove_bpe=None, extra_symbols_to_ignore=None
+    hypo_tokens,
+    src_str,
+    alignment,
+    align_dict,
+    tgt_dict,
+    remove_bpe=None,
+    extra_symbols_to_ignore=None,
 ):
-    hypo_str = tgt_dict.string(hypo_tokens, remove_bpe, extra_symbols_to_ignore=extra_symbols_to_ignore)
+    hypo_str = tgt_dict.string(
+        hypo_tokens, remove_bpe, extra_symbols_to_ignore=extra_symbols_to_ignore
+    )
     if align_dict is not None:
         hypo_str = replace_unk(
             hypo_str, src_str, alignment, align_dict, tgt_dict.unk_string()
@@ -260,7 +293,7 @@ def item(tensor):
     return tensor
 
 
-def multi_tensor_total_norm(grads, chunk_size=2048*32) -> torch.Tensor:
+def multi_tensor_total_norm(grads, chunk_size=2048 * 32) -> torch.Tensor:
     per_device_grads = {}
     norms = []
     for grad in grads:
@@ -276,14 +309,17 @@ def multi_tensor_total_norm(grads, chunk_size=2048*32) -> torch.Tensor:
             # TODO(msb) return has_inf
             has_inf = torch.zeros((1, 1), dtype=torch.int, device=device)
             with torch.cuda.device(device):
-                norm = multi_tensor_l2norm(chunk_size, has_inf, [cur_device_grads], False)
-                norms.append(norm[0])
+                norm = multi_tensor_l2norm(
+                    chunk_size, has_inf, [cur_device_grads], False
+                )
+            norms.append(norm[0].to(torch.cuda.current_device()))
         else:
             norms += [torch.norm(g, p=2, dtype=torch.float32) for g in cur_device_grads]
     total_norm = torch.norm(torch.stack(norms))
     return total_norm
 
 
+@torch.no_grad()
 def clip_grad_norm_(params, max_norm, aggregate_norm_fn=None) -> torch.Tensor:
     if isinstance(params, torch.Tensor):
         params = [params]
@@ -291,9 +327,9 @@ def clip_grad_norm_(params, max_norm, aggregate_norm_fn=None) -> torch.Tensor:
     grads = [p.grad.detach() for p in filter(lambda p: p.grad is not None, params)]
     if len(grads) == 0:
         if len(params) > 0:
-            return params[0].new_tensor(0.)
+            return params[0].new_tensor(0.0)
         else:
-            return torch.tensor(0.)
+            return torch.tensor(0.0)
 
     if len(grads) == 1:
         total_norm = torch.norm(grads[0], p=2, dtype=torch.float32)
@@ -306,8 +342,15 @@ def clip_grad_norm_(params, max_norm, aggregate_norm_fn=None) -> torch.Tensor:
                     "amp_C fused kernels unavailable, disabling multi_tensor_l2norm; "
                     "you may get better performance by installing NVIDIA's apex library"
                 )
+                device = torch.cuda.current_device()
+            elif grads[0].device.type == "xla":
+                device = grads[0].device
+            else:
+                device = torch.device("cpu")
             total_norm = torch.norm(
-                torch.stack([torch.norm(g, p=2, dtype=torch.float32) for g in grads])
+                torch.stack(
+                    [torch.norm(g, p=2, dtype=torch.float32).to(device) for g in grads]
+                )
             )
 
     if aggregate_norm_fn is not None:
@@ -390,16 +433,30 @@ def import_user_module(args):
     if module_path is not None:
         module_path = os.path.abspath(args.user_dir)
         if not os.path.exists(module_path):
-            fairseq_rel_path = os.path.join(
-                os.path.dirname(__file__), "..", args.user_dir
-            )
+            fairseq_rel_path = os.path.join(os.path.dirname(__file__), args.user_dir)
             if os.path.exists(fairseq_rel_path):
                 module_path = fairseq_rel_path
-        module_parent, module_name = os.path.split(module_path)
+            else:
+                fairseq_rel_path = os.path.join(
+                    os.path.dirname(__file__), "..", args.user_dir
+                )
+                if os.path.exists(fairseq_rel_path):
+                    module_path = fairseq_rel_path
+                else:
+                    raise FileNotFoundError(module_path)
 
-        if module_name not in sys.modules:
-            sys.path.insert(0, module_parent)
-            importlib.import_module(module_name)
+        # We want to import the module under a unique name so that it doesn't
+        # collide with existing modules. At the same time we don't want to
+        # import the module multiple times. The solution is to create a
+        # temporary directory and symlink the user_dir under a new name, which is
+        # a deterministic hash of the original module_path.
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            unique_mod_name = "fairseq_user_dir_{}".format(hash(module_path) % 100000)
+            os.symlink(module_path, os.path.join(tmpdirname, unique_mod_name))
+
+            sys.path.insert(0, tmpdirname)
+            importlib.import_module(unique_mod_name)
+            sys.path.remove(tmpdirname)
 
 
 def softmax(x, dim: int, onnx_trace: bool = False):
@@ -418,11 +475,11 @@ def log_softmax(x, dim: int, onnx_trace: bool = False):
 
 def get_perplexity(loss, round=2, base=2):
     if loss is None:
-        return 0.
+        return 0.0
     try:
         return safe_round(base ** loss, round)
     except OverflowError:
-        return float('inf')
+        return float("inf")
 
 
 def deprecation_warning(message, stacklevel=3):
@@ -463,7 +520,7 @@ def get_available_activation_fns() -> List:
 
 
 @contextlib.contextmanager
-def eval(model):
+def model_eval(model):
     is_training = model.training
     model.eval()
     yield
@@ -527,8 +584,12 @@ def get_token_to_word_mapping(tokens, exclude_list):
 
 
 def extract_hard_alignment(attn, src_sent, tgt_sent, pad, eos):
-    tgt_valid = ((tgt_sent != pad) & (tgt_sent != eos)).nonzero(as_tuple=False).squeeze(dim=-1)
-    src_invalid = ((src_sent == pad) | (src_sent == eos)).nonzero(as_tuple=False).squeeze(dim=-1)
+    tgt_valid = (
+        ((tgt_sent != pad) & (tgt_sent != eos)).nonzero(as_tuple=False).squeeze(dim=-1)
+    )
+    src_invalid = (
+        ((src_sent == pad) | (src_sent == eos)).nonzero(as_tuple=False).squeeze(dim=-1)
+    )
     src_token_to_word = get_token_to_word_mapping(src_sent, [eos, pad])
     tgt_token_to_word = get_token_to_word_mapping(tgt_sent, [eos, pad])
     alignment = []
@@ -558,6 +619,7 @@ def new_arange(x, *size):
 
 def get_tpu_device(args):
     import torch_xla.core.xla_model as xm
+
     return xm.xla_device()
 
 
@@ -602,3 +664,35 @@ class CudaEnvironment(object):
                 + "name = {:40s}".format(env.name)
             )
         logger.info(first_line)
+
+
+def csv_str_list(x):
+    return x.split(",")
+
+
+def eval_str_list(x, type=float):
+    if x is None:
+        return None
+    if isinstance(x, str):
+        x = eval(x)
+    try:
+        return list(map(type, x))
+    except TypeError:
+        return [type(x)]
+
+
+def eval_str_dict(x, type=dict):
+    if x is None:
+        return None
+    if isinstance(x, str):
+        x = eval(x)
+    return x
+
+
+def eval_bool(x, default=False):
+    if x is None:
+        return default
+    try:
+        return bool(eval(x))
+    except TypeError:
+        return default

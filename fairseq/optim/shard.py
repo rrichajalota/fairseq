@@ -6,16 +6,16 @@
 
 try:
     from fairscale.optim import OSS
+
     _has_fairscale = True
 except ImportError:
     _has_fairscale = False
 
 
-def shard_(args, optimizer):
+def shard_(optimizer, group):
     if not _has_fairscale:
         raise ImportError(
-            '\n\nPlease install the fairscale package:'
-            '\n\n  pip install fairscale'
+            "\n\nPlease install the fairscale package:" "\n\n  pip install fairscale"
         )
 
     class FairseqOSS(OSS):
@@ -26,8 +26,16 @@ def shard_(args, optimizer):
         def __getattr__(self, name):
             if name.startswith("supports") and hasattr(self.optim, name):
                 return getattr(self.optim, name)
-            raise AttributeError("'FairseqOSS' object has no attribute {0!r}".format(name))
+            raise AttributeError(
+                "'FairseqOSS' object has no attribute {0!r}".format(name)
+            )
 
     torch_optimizer = optimizer.optimizer
     optim_cls = type(torch_optimizer)
-    optimizer.optimizer = FairseqOSS(torch_optimizer.param_groups, optim_cls, **optimizer.optimizer_config)
+
+    optimizer.optimizer = FairseqOSS(
+        torch_optimizer.param_groups,
+        optim_cls,
+        group=group,
+        **optimizer.optimizer_config
+    )

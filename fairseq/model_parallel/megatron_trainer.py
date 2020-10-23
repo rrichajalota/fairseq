@@ -9,6 +9,8 @@ Train a network across multiple GPUs.
 
 from fairseq import distributed_utils
 from fairseq.trainer import Trainer
+from fairseq.dataclass.configs import FairseqConfig
+
 
 try:
     from fairseq.model_parallel.megatron.mpu import (
@@ -18,22 +20,23 @@ try:
         get_model_parallel_group,
         get_model_parallel_src_rank,
     )
+
     has_megatron_submodule = True
 except (ImportError, ModuleNotFoundError):
     has_megatron_submodule = False
 
 
 class MegatronTrainer(Trainer):
-    """Main class for model parallel with data parallel training.
-    """
-    def __init__(self, args, task, model, criterion):
+    """Main class for model parallel with data parallel training."""
+
+    def __init__(self, cfg: FairseqConfig, task, model, criterion, **kwargs):
         if not has_megatron_submodule:
             raise ImportError(
-                '\n\nPlease install the megatron submodule:'
-                '\n\n  git submodule update --init '
-                'fairseq/model_parallel/megatron'
+                "\n\nPlease install the megatron submodule:"
+                "\n\n  git submodule update --init "
+                "fairseq/model_parallel/megatron"
             )
-        super().__init__(args, task, model, criterion)
+        super().__init__(cfg, task, model, criterion, **kwargs)
 
     @property
     def data_parallel_world_size(self):
@@ -57,6 +60,7 @@ class MegatronTrainer(Trainer):
             distributed_utils.all_reduce(total_norm, group=get_model_parallel_group())
             total_norm = total_norm ** 0.5
             return total_norm
+
         return self.optimizer.clip_grad_norm(
             clip_norm,
             aggregate_norm_fn=_aggregate_model_parallel_grad_norm,

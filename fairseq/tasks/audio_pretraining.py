@@ -8,8 +8,9 @@
 import os
 import sys
 
-from fairseq.data import FileAudioDataset, Dictionary, AddTargetDataset
-from . import FairseqTask, register_task
+from fairseq.data import AddTargetDataset, Dictionary, FileAudioDataset
+
+from . import LegacyFairseqTask, register_task
 
 
 class LabelEncoder(object):
@@ -23,10 +24,8 @@ class LabelEncoder(object):
 
 
 @register_task("audio_pretraining")
-class AudioPretrainingTask(FairseqTask):
-    """
-
-    """
+class AudioPretrainingTask(LegacyFairseqTask):
+    """"""
 
     @staticmethod
     def add_args(parser):
@@ -69,9 +68,9 @@ class AudioPretrainingTask(FairseqTask):
             help="extension of the label file to load, if any",
         )
 
-    def __init__(self, args, source_dictionary=None):
+    def __init__(self, args, source_dictionary=None, target_dictionary=None):
         super().__init__(args)
-        self._target_dictionary = None
+        self._target_dictionary = target_dictionary
         self._source_dictionary = source_dictionary
         self.is_ctc = args.criterion == "ctc"
 
@@ -80,9 +79,16 @@ class AudioPretrainingTask(FairseqTask):
         """Setup the task (e.g., load dictionaries).
 
         Args:
-            args (argparse.Namespace): parsed command-line arguments
+            args (omegaconf.DictConfig): parsed command-line arguments
         """
-        return cls(args)
+
+        if args.labels:
+            dict_path = os.path.join(args.data, f"dict.{args.labels}.txt")
+            target_dictionary = Dictionary.load(dict_path)
+        else:
+            target_dictionary = None
+
+        return cls(args, target_dictionary=target_dictionary)
 
     def load_dataset(self, split, **kwargs):
         """Load a given dataset split.
@@ -102,8 +108,6 @@ class AudioPretrainingTask(FairseqTask):
         )
 
         if self.args.labels:
-            dict_path = os.path.join(self.args.data, f"dict.{self.args.labels}.txt")
-            self._target_dictionary = Dictionary.load(dict_path)
             label_path = os.path.join(self.args.data, f"{split}.{self.args.labels}")
             labels = []
             with open(label_path, "r") as f:
@@ -137,11 +141,11 @@ class AudioPretrainingTask(FairseqTask):
         return (sys.maxsize, sys.maxsize)
 
     def filter_indices_by_size(
-            self,
-            indices,
-            dataset,
-            max_positions=None,
-            ignore_invalid_inputs=False,
+        self,
+        indices,
+        dataset,
+        max_positions=None,
+        ignore_invalid_inputs=False,
     ):
         # we do not need to filter by size in this task as dataloaders take care of this
         return indices
