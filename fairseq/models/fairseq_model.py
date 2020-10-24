@@ -241,7 +241,7 @@ class FairseqEncoderDecoderModel(BaseFairseqModel):
                 - the decoder's output of shape `(batch, tgt_len, vocab)`
                 - a dictionary with any model-specific outputs
         """
-        print(">>>>> In FairseqEncoderDecoder forward")
+        #print(">>>>> In FairseqEncoderDecoder forward")
         encoder_out = self.encoder(src_tokens, src_lengths=src_lengths, **kwargs)
         decoder_out = self.decoder(
             prev_output_tokens, encoder_out=encoder_out, **kwargs
@@ -249,7 +249,7 @@ class FairseqEncoderDecoderModel(BaseFairseqModel):
         return decoder_out
 
     def forward_decoder(self, prev_output_tokens, **kwargs):
-        #print(">>>>> FairseqEncoderDecoder forward_decoder")
+        #print(">>>>> fairseq_model.py - FairseqEncoderDecoderModel, forward_decoder")
         #print(">>>>>>> \ndecoder type: ", type(self.decoder))
         #print(">>>>>>> kwargs", kwargs.keys())
         return self.decoder(prev_output_tokens, **kwargs)
@@ -263,6 +263,7 @@ class FairseqEncoderDecoderModel(BaseFairseqModel):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
+        #print("In fairseq_model.py, FairseqEncoderDecoderModel, extract_features")
         encoder_out = self.encoder(src_tokens, src_lengths=src_lengths, **kwargs)
         features = self.decoder.extract_features(
             prev_output_tokens, encoder_out=encoder_out, **kwargs

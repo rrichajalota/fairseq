@@ -47,7 +47,7 @@ def _main(args, output_file):
     #filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
     #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
 
-    filename = "/raid/data/daga01/fairseq_out/distance_test_{}.csv".format(measure)
+    filename = "/raid/data/daga01/fairseq_out/distance_euclidean_beam10_{}.csv".format(measure)
     filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
 
     record_corpscore = True
@@ -289,7 +289,10 @@ def _main(args, output_file):
 
                         score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hypo_str, target_str)
                         printed_row["sacrebleu_sent"] = f'{score_sb:1.2f}'
-                        writer.writerow(printed_row)
+                        #writer.writerow(printed_row)
+
+
+                    writer.writerow(printed_row)
 
 
 
