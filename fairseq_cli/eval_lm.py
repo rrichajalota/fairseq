@@ -14,15 +14,12 @@ import os
 from argparse import Namespace
 
 import torch
-from fairseq import checkpoint_utils, distributed_utils, options, tasks, utils
+from fairseq import checkpoint_utils, distributed_utils, options, utils
 from fairseq.data import LMContextWindowDataset
-from fairseq.dataclass.initialize import register_hydra_cfg
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
 from fairseq.sequence_scorer import SequenceScorer
-from hydra.core.config_store import ConfigStore
-from hydra.experimental import initialize
 from omegaconf import DictConfig
 
 
@@ -280,15 +277,8 @@ def cli_main():
     parser = options.get_eval_lm_parser()
     args = options.parse_args_and_arch(parser)
 
-    # only override args that are explicitly given on the command line
-    override_parser = options.get_validation_parser()
-    override_args = options.parse_args_and_arch(override_parser, suppress_defaults=True)
-
-    distributed_utils.call_main(args, main, override_args=override_args)
+    distributed_utils.call_main(convert_namespace_to_omegaconf(args), main)
 
 
 if __name__ == "__main__":
-    cs = ConfigStore.instance()
-    register_hydra_cfg(cs)
-    initialize(config_path="../config", strict=True)
     cli_main()

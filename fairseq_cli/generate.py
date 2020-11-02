@@ -19,12 +19,9 @@ import numpy as np
 import torch
 from fairseq import checkpoint_utils, options, scoring, tasks, utils
 from fairseq.data import encoders
-from fairseq.dataclass.initialize import register_hydra_cfg
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
-from hydra.core.config_store import ConfigStore
-from hydra.experimental import initialize
 from omegaconf import DictConfig
 
 
@@ -166,7 +163,7 @@ def _main(cfg: DictConfig, output_file):
 
     extra_gen_cls_kwargs = {"lm_model": lms[0], "lm_weight": cfg.generation.lm_weight}
     generator = task.build_generator(
-        models, cfg.task, extra_gen_cls_kwargs=extra_gen_cls_kwargs
+        models, cfg.generation, extra_gen_cls_kwargs=extra_gen_cls_kwargs
     )
 
     # Handle tokenization and BPE
@@ -393,7 +390,4 @@ def cli_main():
 
 
 if __name__ == "__main__":
-    cs = ConfigStore.instance()
-    register_hydra_cfg(cs)
-    initialize(config_path="../config", strict=True)
     cli_main()
