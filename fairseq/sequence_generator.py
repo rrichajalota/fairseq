@@ -935,7 +935,7 @@ class EnsembleModel(torch.nn.Module):
         self, tokens, model, encoder_out, incremental_states, log_probs,
         temperature=1., use_incremental=True,
     ):
-        #print("in EnsembleModel _decode_one, use_incremental: ", use_incremental)
+        #print("*******in EnsembleModel _decode_one, use_incremental: ", use_incremental)
         if self.incremental_states is not None:
             #print(">>>>> incremental states not None", " >>>>> one Ensemble Model of type: ", type(model)) ### TransformerModel
             decoder_out_test = list(model.forward_decoder(

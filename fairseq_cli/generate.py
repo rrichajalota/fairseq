@@ -47,7 +47,7 @@ def _main(args, output_file):
     #filename = "/raid/data/daga01/fairseq_out/distance_tophyp_{}.csv".format(measure)
     #filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_measures.csv"
 
-    filename = "/raid/data/daga01/fairseq_out/distance_euclidean_beam10_{}.csv".format(measure)
+    filename = "/raid/data/daga01/fairseq_out/distance_euclidean_beam10_{}_test.csv".format(measure)
     filename_corp = "/raid/data/daga01/fairseq_out/sacrebleu_corpus_test.csv"
 
     record_corpscore = True
@@ -206,11 +206,12 @@ def _main(args, output_file):
 
 
                 # DG: rearrange top predictions
+                '''
                 if measure == "score":
                     hypos[i] = sorted(hypos[i], key=lambda r: r['score'], reverse=True)
                 else:
                     hypos[i] = sorted(hypos[i], key=lambda r: r['distances'][measure], reverse=False)
-
+                '''
 
                 # Process top predictions
                 for j, hypo in enumerate(hypos[i][:args.nbest]):
@@ -229,9 +230,9 @@ def _main(args, output_file):
                     #print("hypo str: ", hypo_str)
                     #print("alignment: ", alignment)
 
-
+                    score = hypo['score'] / math.log(2)  # convert to base 2 ### nach oben
                     if not args.quiet:
-                        score = hypo['score'] / math.log(2)  # convert to base 2
+                        #score = hypo['score'] / math.log(2)  # convert to base 2
                         print('H-{}\t{}\t{}'.format(sample_id, score, hypo_str), file=output_file)
                         print('P-{}\t{}'.format(
                             sample_id,
@@ -263,13 +264,13 @@ def _main(args, output_file):
                                 )
                                 print('E-{}_{}\t{}'.format(sample_id, step, h_str), file=output_file)
 
-                        printed_row = dict()
-                        printed_row['sent_id'] = sample_id
-                        printed_row['src'] = src_str
-                        printed_row['tgt'] = target_str
-                        printed_row['hyp'] = hypo_str
-                        printed_row['score'] = score
-                        printed_row.update(hypo['distances'])
+                    printed_row = dict()
+                    printed_row['sent_id'] = sample_id
+                    printed_row['src'] = src_str
+                    printed_row['tgt'] = target_str
+                    printed_row['hyp'] = hypo_str
+                    printed_row['score'] = score
+                    printed_row.update(hypo['distances'])
 
                     # Score only the top hypothesis
                     if has_target and j == 0:         ##########################################################################   !!!!!!!!!!!!!!!!!!!!!!!!!
@@ -287,7 +288,7 @@ def _main(args, output_file):
 
                         scorer_test_bleu_corp.add(target_tokens, hypo_tokens)  ### normales bleu dubliert
 
-                        score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hypo_str, target_str)
+                        score_sb = scorer_test_sb_sent.result_sentence_level_test_sb(hypo_str, [target_str])
                         printed_row["sacrebleu_sent"] = f'{score_sb:1.2f}'
                         #writer.writerow(printed_row)
 
