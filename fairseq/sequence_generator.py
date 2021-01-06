@@ -320,18 +320,19 @@ class SequenceGenerator(object):
         reorder_state = None
         batch_idxs = None
 
+        #test_features_0, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])
+        #test_features_0_1 = test_features_0.clone().detach()
+        #print("0th features", test_features_0.shape)
+        #print("prev out tokens 0", sample['net_input']['prev_output_tokens'])
+
         ###############################################################################################################################################################################################
         #print("max_len again", max_len)
         for step in range(max_len + 1):  # one extra step for EOS marker
             # reorder decoder internal states based on the prev choice of beams
-            #if (step == 16):
-                #break
-            #print("\n\n\n>>>>>>>>>>>>>>>>>>>>>STEP ", step)
-            #print("reorder state", reorder_state) #1st is None
+            #print("reorder state", reorder_state) 1st is None
             if reorder_state is not None:
                 if batch_idxs is not None:
                     # update beam indices to take into account removed sentences
-                    #print("batch idxs is not None", batch_idxs)
                     corr = batch_idxs - torch.arange(batch_idxs.numel()).type_as(batch_idxs)
                     reorder_state.view(-1, beam_size).add_(corr.unsqueeze(-1) * beam_size)
                 model.reorder_incremental_state(reorder_state) # FairseqIncrementalDecoder; ?recursive method calls child module TransformerDecoder
@@ -355,8 +356,6 @@ class SequenceGenerator(object):
             # wie viele extract_features habe ich??? kann man forward_decoder und extract_features gleichzeitig abrufen?
             #test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])  ####### Ensemble Model doesn't have extract features
 
-            #print("lprobs != lprobs", lprobs)
-            lprobs[lprobs != lprobs] = -math.inf    ############# ????????????????????? BOS darauf gesetzt???
             lprobs[:, self.pad] = -math.inf  # never select pad
             lprobs[:, self.unk] -= self.unk_penalty  # apply unk penalty
 
@@ -636,6 +635,43 @@ class SequenceGenerator(object):
             # reorder incremental state in decoder
             reorder_state = active_bbsz_idx
 
+        #### Each element of the sentence/step ready        ################################################################################################
+        ##### TEST #########################
+        '''
+        print("Encoder Emb", encoder_outs[0].encoder_embedding.shape)
+        #print("Encoder States", encoder_outs[0].encoder_embedding[1].size())
+        encoder_out_emb_orig = encoder_outs[0].encoder_out
+        print("Encoder Out orig", encoder_out_emb_orig.shape)
+        encoder_out_emb = encoder_out_emb_orig.transpose(0, 1)
+        print("Encoder Out", encoder_out_emb.shape)
+        #extract_features ->  Returns:
+        #    tuple:
+        #        - the decoder's features of shape `(batch, tgt_len, embed_dim)`
+        #       - a dictionary with any model-specific outputs
+        
+        test_features, _ = model.models[0].extract_features(src_tokens, src_lengths, sample['net_input']['prev_output_tokens'])    ####### Ensemble Model doesn't have extract features
+        print("Out prev out tokens", sample["id"], sample['net_input']['prev_output_tokens'])
+        print("Out target", sample["id"], sample['target'])
+        #print("sample keys", sample.keys())
+        #print("sample net_input keys", sample['net_input'].keys())
+        print("Decoder OutFeatures before softmax", test_features.shape, "first ", test_features.shape[0])
+        out_first_el = test_features[0][1]
+        print("out test features, first element", out_first_el.shape)
+        #out_layer = model.models[0].output_layer(test_features)
+        #print("Decoder OUT_LAYER", out_layer.shape)
+        
+        bszt = input_size[0]
+        print(">>##bsz3", bsz)
+        print(">>##bszt", bszt)
+        for tb in range(bszt):
+            print("tb", tb)
+            #dist_0 = encoder_outs[0].encoder_embedding[tb,:].mean(0) #,keepdim=True)
+            dist_0 = (encoder_outs[0].encoder_out.transpose(0, 1))[tb, :].mean(0) #, keepdim=True) # if keepdim = True, in cosine_similarity dim=1 (default)
+            dist_1 = test_features[tb, :].mean(0)#, keepdim=True)
+            print("Shapes", dist_0.shape, dist_1.shape)
+            dist = torch.nn.functional.cosine_similarity(dist_0, dist_1, dim=0)
+            #print("Dist shape", dist.shape)
+            print("Dist:", dist)
 
         ######################
         #print("\n\n\n\n\n###############################################################################")
@@ -650,6 +686,8 @@ class SequenceGenerator(object):
         #################
         #print("\n\n\n\n------In finalized")
 
+        ####################################
+        '''
 
         # sort by score descending
         def emb_tok2sent(args):
@@ -668,6 +706,7 @@ class SequenceGenerator(object):
 
 
         for sent in range(len(finalized)):
+            #print("Sent", finalized[sent]) # hypos 10 sents
             finalized[sent] = sorted(finalized[sent], key=lambda r: r['score'], reverse=True)
             #print("KEYS finalized[sent][0].keys()", finalized[sent][0].keys())
             #### sample gold
@@ -851,8 +890,6 @@ class SequenceGenerator(object):
         return finalized
 
 
-
-
 class EnsembleModel(torch.nn.Module):
     """A wrapper around an ensemble of models."""
 
@@ -891,6 +928,7 @@ class EnsembleModel(torch.nn.Module):
                 temperature=temperature,
                 use_incremental=use_incremental,
             )
+
         log_probs = []
         avg_attn = None
         for model, encoder_out in zip(self.models, encoder_outs):
@@ -1069,7 +1107,6 @@ class EnsembleModelWithAlignment(EnsembleModel):
         self, tokens, model, encoder_out, incremental_states, log_probs,
         temperature=1.,
     ):
-        print("_decode_one called in EnsembleModelWithAlignment(EnsembleModel)")
         if self.incremental_states is not None:
             decoder_out = list(model.forward_decoder(
                 tokens,
