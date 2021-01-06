@@ -81,7 +81,7 @@ class BeamSearch(Search):
                 lprobs.view(bsz, -1).size(1) - 1,  # -1 so we never select pad
             ),
         )
-        print("<<< In search.py, BeamSearch step: top_prediction (scores_buf, indices_buf): ...")#, top_prediction)
+        #print("<<< In search.py, BeamSearch step: top_prediction (scores_buf, indices_buf): ...")#, top_prediction)
         self.scores_buf = top_prediction[0]
         self.indices_buf = top_prediction[1]
         self.beams_buf = torch.div(self.indices_buf, vocab_size)

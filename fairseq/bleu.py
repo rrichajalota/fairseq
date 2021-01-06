@@ -16,7 +16,7 @@ except ImportError as e:
 
 
 C = ctypes.cdll.LoadLibrary(libbleu.__file__)
-print("libbleu: ", libbleu.__file__)
+#print("libbleu: ", libbleu.__file__)
 
 
 class BleuStat(ctypes.Structure):
@@ -37,6 +37,7 @@ class BleuStat(ctypes.Structure):
 class SacrebleuScorer(object):
     def __init__(self):
         import sacrebleu
+        #print("sacrebleu.path: ", sacrebleu.__file__)
         self.sacrebleu = sacrebleu
         self.reset()
 
