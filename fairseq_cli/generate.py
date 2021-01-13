@@ -334,6 +334,25 @@ def _main(cfg: DictConfig, output_file):
                                 file=output_file,
                             )
 
+                    #####
+                    calculate_distance = True   #TODO: add as fairseq option
+                    if calculate_distance:
+                        printed_row = dict()
+                        printed_row['sent_id'] = sample_id
+                        printed_row['src'] = src_str
+                        printed_row['tgt'] = target_str
+                        printed_row['beam'] = "hyp" + str(j)
+                        printed_row['hyp'] = hypo_str
+                        printed_row['score'] = score.item()
+                        printed_row.update(hypo['distances'])
+
+                        print(
+                            "DIST-{}-{}\t{}".format(sample_id, str(j), printed_row),
+                            file=output_file,
+                        )
+
+                    ###
+
                 # Score only the top hypothesis
                 if has_target and j == 0:
                     if align_dict is not None or cfg.common_eval.post_process is not None:

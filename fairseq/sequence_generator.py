@@ -13,6 +13,10 @@ from fairseq.data import data_utils
 from fairseq.models import FairseqIncrementalDecoder
 from torch import Tensor
 
+from fairseq.distance_calculator import *
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 class SequenceGenerator(nn.Module):
     def __init__(
@@ -233,7 +237,7 @@ class SequenceGenerator(nn.Module):
             self.min_len <= max_len
         ), "min_len cannot be larger than max_len, please adjust these!"
         # compute the encoder output for each beam
-        encoder_outs = self.model.forward_encoder(net_input)
+        encoder_outs = self.model.forward_encoder(net_input) ### ? not src_tokens ??????????????????????
 
         # placeholder of indices for bsz * beam_size to hold tokens and accumulative scores
         new_order = torch.arange(bsz).view(-1, 1).repeat(1, beam_size).view(-1)
@@ -527,6 +531,8 @@ class SequenceGenerator(nn.Module):
             # reorder incremental state in decoder
             reorder_state = active_bbsz_idx
 
+        # initialize distance calculator
+        dc = DistanceCalculator(self.model.single_model, self.tgt_dict)
         # sort by score descending
         for sent in range(len(finalized)):
             scores = torch.tensor(
@@ -537,6 +543,8 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(
                 List[Dict[str, Tensor]], finalized[sent]
             )
+        dc.calculate_distances(sample, finalized)
+
         return finalized
 
     def _prefix_tokens(
