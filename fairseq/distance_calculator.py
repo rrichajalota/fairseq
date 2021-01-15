@@ -8,11 +8,13 @@ from fairseq.models import FairseqIncrementalDecoder
 from fairseq.models.transformer import TransformerDecoder
 from torch import Tensor
 from copy import deepcopy
-
+import sys
 
 import logging
 logger = logging.getLogger('logger')
+#handler = logging.StreamHandler(sys.stderr)
 logger.setLevel(logging.WARNING)
+#logger.addHandler(handler)
 #logging.basicConfig(level=logging.DEBUG)
 
 
@@ -108,7 +110,7 @@ class DistanceCalculator():
 
         #print(self.model.__class__)
 
-        for i in range(len(sample)):
+        for i in range(sample["id"].shape[0]):
             logger.info(f"\n\ni: {i}")
             ### Encoder Representations (src and gold_tgt)
             #### src:

@@ -543,7 +543,7 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(
                 List[Dict[str, Tensor]], finalized[sent]
             )
-        dc.calculate_distances(sample, finalized)
+        finalized = dc.calculate_distances(sample, finalized)
 
         return finalized
 
