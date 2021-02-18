@@ -2,13 +2,11 @@ import math
 from typing import Dict, List, Optional
 
 import torch
-from fairseq import search, utils
-from fairseq.data import data_utils
-from fairseq.models import FairseqIncrementalDecoder
-from fairseq.models.transformer import TransformerDecoder
-from torch import Tensor
 from copy import deepcopy
 import sys
+from stop_words import get_stop_words
+import re
+
 
 import logging
 logger = logging.getLogger('logger')
@@ -17,6 +15,11 @@ logger.setLevel(logging.WARNING)
 #logger.addHandler(handler)
 #logging.basicConfig(level=logging.DEBUG)
 
+stopwords = dict()
+stopwords["en"] = set(get_stop_words('en'))
+stopwords["de"] = set(get_stop_words('de'))
+#TODO piece for sentencepiece, for other BPE algorithms change also function
+piece = "▁"
 
 
 class DistanceCalculator():
@@ -47,6 +50,68 @@ class DistanceCalculator():
         self.encoder = model.encoder
         self.decoder = model.decoder
         self.distance_type = "cosine_similarity"
+        #TODO: get from config
+        self.src_lang = "en"
+        self.tgt_lang = "de"
+        self.remove_stopwords = True
+
+
+    def filter_stop_words(self, lang, tokens):
+        #TODO dict.string methode - eigentlich brauche ich die splitted
+        #print("\nwords string: ", self.tgt_dict.string(tokens))
+        print("\n\nlang", lang)
+        words = self.tgt_dict.string(tokens).lower().split(" ")
+        # print("\n###", type(tokens), type(tokens[0][0].item()))
+        indices = tokens.tolist()[0]
+
+        #tmp = []
+        tmp = ["", []]
+        dict_list = []
+        assert (len(words) == len(indices)), "Words and indices are of different length!"
+        print("indices: ", tokens)
+        print("words: ", words, " -- len: ", len(words))
+        for i in range(len(words)):
+            if words[i].startswith(piece):
+                tmp = [words[i][1:], [indices[i]]]
+                print("->", words[i][1:])
+                dict_list.append(tmp)
+            else:
+                print(words[i])
+                tmp[0] += words[i]
+                tmp[1].append(indices[i])
+        print("dl: ",dict_list)
+        str2tok = dict(dict_list)
+        print(str2tok)
+
+        new_tokens = []
+        print("check stopwords")
+        #TODO reverse logic again; not stopword and not punctuation
+        for w in str2tok:
+            print("w", w)
+            if w in stopwords[lang]:
+                print("+++ w is stopwword", w, " -- ", str2tok[w])
+            elif re.match(r'[^\w\s]', w) :
+                print("*** is punctuation", w, " -- ", str2tok[w])
+            else:
+                new_tokens.extend(str2tok[w])
+                #pass
+                print("not stopword", w)
+        print("new tokens", new_tokens)
+        # if everything is stopwords
+        if (len(new_tokens) == 0):
+            print("\n### only stop words")
+            print("tokens: ", tokens)
+            print("words: ", words)
+            return tokens
+        new_tensor = torch.tensor(new_tokens)
+        new_tensor = new_tensor.unsqueeze(0)
+        device = tokens.get_device()
+        if device >= 0:
+            print("device: ", device)
+            new_tensor.to(device)
+        #exit(0)
+        return new_tensor
+
 
 
     def check_token2word(self, tokens):
@@ -116,6 +181,8 @@ class DistanceCalculator():
             #### src:
             # src_len = sample["net_input"]["src_lengths"][i] # includes eos
             src_tok = sample_src_tok[i][sample_src_mask[i]].unsqueeze(0)  # torch.Size([1, 20])
+            if self.remove_stopwords:
+                src_tok = self.filter_stop_words(self.src_lang, src_tok)
             src_enc_out = self.forward_encoder(src_tok, torch.tensor(src_tok.shape[1])) #torch.Size([22, 1, 512])
             #test = self.encoder.forward(src_tok, torch.tensor(src_tok.shape[1]))["encoder_out"] ### ??? same ??? actually the cos. distance btw. sent_repr of both is 1.
 
@@ -126,6 +193,8 @@ class DistanceCalculator():
 
             #### gold:
             gold_tok = prev_output_tokens[i][gold_tgt_mask[i]].unsqueeze(0)
+            if self.remove_stopwords:
+                gold_tok = self.filter_stop_words(self.tgt_lang, gold_tok)
             gold_enc_out = self.encoder.forward(gold_tok, torch.tensor(gold_tok.shape[1]))  # torch.Size([20, 512])
             semb_enc_gold = self.emb_tok2sent(gold_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f"gold_tok: {self.check_token2word(gold_tok)}")
@@ -163,9 +232,12 @@ class DistanceCalculator():
                 hypo = hypos[j]
                 hypo_mask = (hypo["tokens"].ne(self.eos))
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
+                if self.remove_stopwords:
+                    hypo_tok = self.filter_stop_words(self.tgt_lang, hypo_tok)
                 logger.info(f'hyp_tok {j}: {self.check_token2word(hypo["tokens"])}')
 
                 # Encoder Repr
+                #print("<<< ERROR HERE: ", hypo_tok.shape, type(hypo_tok.shape), type(hypo_tok.shape[1]))
                 hyp_enc_out = self.forward_encoder(hypo_tok, torch.tensor(hypo_tok.shape[1]))
                 semb_enc_hyp = self.emb_tok2sent(hyp_enc_out["encoder_out"][0].transpose(0, 1).squeeze() )
                 logger.debug(

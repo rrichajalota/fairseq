@@ -1,0 +1,6011 @@
+
+words string:  ▁their ▁luck ▁doesn ▁' t ▁always ▁hold ▁out ▁.
+indices:  tensor([[  113, 12793,  7957,    38,   127,   814,  3319,   179,     5]])
+words:  ['▁their', '▁luck', '▁doesn', "▁'", 't', '▁always', '▁hold', '▁out', '▁.']
+-> their
+-> luck
+-> doesn
+-> '
+t
+-> always
+-> hold
+-> out
+-> .
+
+words string:  ▁nicht ▁immer ▁verl äuft ▁alles ▁reibungs los ▁.
+indices:  tensor([[   51,   319,  3434, 13723,   854, 15082,  2448,     5]])
+words:  ['▁nicht', '▁immer', '▁verl', 'äuft', '▁alles', '▁reibungs', 'los', '▁.']
+-> nicht
+-> immer
+-> verl
+äuft
+-> alles
+-> reibungs
+los
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁an ▁.
+indices:  tensor([[ 505, 4906, 4916,   51,  319,   32,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁an', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> an
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁auf recht ▁.
+indices:  tensor([[ 505, 4906, 4916,   51,  319,   30, 1507,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁auf', 'recht', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> auf
+recht
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁halt ▁.
+indices:  tensor([[  505,  4906,  4916,    51,   319, 13980,     5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁halt', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> halt
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁auf ▁.
+indices:  tensor([[ 505, 4906, 4916,   51,  319,   30,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁auf', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> auf
+-> .
+
+words string:  ▁ihr ▁Glück ▁ist ▁nicht ▁immer ▁halt bar ▁.
+indices:  tensor([[  505,  4906,    27,    51,   319, 13980,   558,     5]])
+words:  ['▁ihr', '▁Glück', '▁ist', '▁nicht', '▁immer', '▁halt', 'bar', '▁.']
+-> ihr
+-> Glück
+-> ist
+-> nicht
+-> immer
+-> halt
+bar
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁sich ▁nicht ▁immer ▁auf ▁.
+indices:  tensor([[ 505, 4906, 4916,   59,   51,  319,   30,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁sich', '▁nicht', '▁immer', '▁auf', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> sich
+-> nicht
+-> immer
+-> auf
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁sich ▁nicht ▁immer ▁aus ▁.
+indices:  tensor([[ 505, 4906, 4916,   59,   51,  319,   84,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁sich', '▁nicht', '▁immer', '▁aus', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> sich
+-> nicht
+-> immer
+-> aus
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁stand ▁.
+indices:  tensor([[ 505, 4906, 4916,   51,  319, 1897,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁stand', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> stand
+-> .
+
+words string:  ▁ihr ▁Glück ▁hält ▁nicht ▁immer ▁fest ▁.
+indices:  tensor([[ 505, 4906, 4916,   51,  319, 1330,    5]])
+words:  ['▁ihr', '▁Glück', '▁hält', '▁nicht', '▁immer', '▁fest', '▁.']
+-> ihr
+-> Glück
+-> hält
+-> nicht
+-> immer
+-> fest
+-> .
+
+words string:  ▁ihr ▁Glück ▁hat ▁nicht ▁immer ▁Bestand ▁.
+indices:  tensor([[  505,  4906,    91,    51,   319, 12486,     5]])
+words:  ['▁ihr', '▁Glück', '▁hat', '▁nicht', '▁immer', '▁Bestand', '▁.']
+-> ihr
+-> Glück
+-> hat
+-> nicht
+-> immer
+-> Bestand
+-> .
+
+words string:  ▁cast ▁your ▁vote ▁here ▁or ▁through ▁your ▁mobile ▁device
+indices:  tensor([[7973,  104, 1001,  344,   71,  380,  104, 2842, 5847]])
+words:  ['▁cast', '▁your', '▁vote', '▁here', '▁or', '▁through', '▁your', '▁mobile', '▁device']
+-> cast
+-> your
+-> vote
+-> here
+-> or
+-> through
+-> your
+-> mobile
+-> device
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁mit ▁Ihrem ▁Mobil gerät ▁ab
+indices:  tensor([[ 9071,    62,   193,    83,    29,  1795,  8231, 11664,   214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁mit', '▁Ihrem', '▁Mobil', 'gerät', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> mit
+-> Ihrem
+-> Mobil
+gerät
+-> ab
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁mobil es ▁Gerät ▁ab
+indices:  tensor([[9071,   62,  193,   83,  110, 1135, 5851,   78, 9852,  214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁mobil', 'es', '▁Gerät', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> mobil
+es
+-> Gerät
+-> ab
+
+words string:  ▁cast ▁your ▁vote ▁here ▁or ▁through ▁your ▁mobile ▁device
+indices:  tensor([[7973,  104, 1001,  344,   71,  380,  104, 2842, 5847]])
+words:  ['▁cast', '▁your', '▁vote', '▁here', '▁or', '▁through', '▁your', '▁mobile', '▁device']
+-> cast
+-> your
+-> vote
+-> here
+-> or
+-> through
+-> your
+-> mobile
+-> device
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁Mobiltele fon ▁ab
+indices:  tensor([[ 9071,    62,   193,    83,   110,  1135, 14240,  8424,   214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁Mobiltele', 'fon', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> Mobiltele
+fon
+-> ab
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁über ▁Ihr ▁mobil es ▁Gerät ▁ab
+indices:  tensor([[9071,   62,  193,   83,   79, 1135, 5851,   78, 9852,  214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁über', '▁Ihr', '▁mobil', 'es', '▁Gerät', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> über
+-> Ihr
+-> mobil
+es
+-> Gerät
+-> ab
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁mobil es ▁Gerät
+indices:  tensor([[9071,   62,  193,   83,  110, 1135, 5851,   78, 9852]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁mobil', 'es', '▁Gerät']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> mobil
+es
+-> Gerät
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁Handy ▁ab
+indices:  tensor([[ 9071,    62,   193,    83,   110,  1135, 12609,   214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁Handy', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> Handy
+-> ab
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁über ▁Ihr ▁Mobiltele fon ▁ab
+indices:  tensor([[ 9071,    62,   193,    83,    79,  1135, 14240,  8424,   214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁über', '▁Ihr', '▁Mobiltele', 'fon', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> über
+-> Ihr
+-> Mobiltele
+fon
+-> ab
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁Mobiltele fon
+indices:  tensor([[ 9071,    62,   193,    83,   110,  1135, 14240,  8424]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁Mobiltele', 'fon']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> Mobiltele
+fon
+
+words string:  ▁Stimm ab gabe ▁hier ▁oder ▁durch ▁Ihr ▁Mobiltele fon
+indices:  tensor([[16299,   508,  2967,   193,    83,   110,  1135, 14240,  8424]])
+words:  ['▁Stimm', 'ab', 'gabe', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁Mobiltele', 'fon']
+-> Stimm
+ab
+gabe
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> Mobiltele
+fon
+
+words string:  ▁Stimmen ▁Sie ▁hier ▁oder ▁durch ▁Ihr ▁Mobil gerät ▁ab
+indices:  tensor([[ 9071,    62,   193,    83,   110,  1135,  8231, 11664,   214]])
+words:  ['▁Stimmen', '▁Sie', '▁hier', '▁oder', '▁durch', '▁Ihr', '▁Mobil', 'gerät', '▁ab']
+-> Stimmen
+-> Sie
+-> hier
+-> oder
+-> durch
+-> Ihr
+-> Mobil
+gerät
+-> ab
+
+words string:  ▁rescue ▁workers ▁took ▁the ▁girl ▁to ▁the ▁hospital ▁.
+indices:  tensor([[17307,  1894,  2140,     6, 16799,    13,     6, 14915,     5]])
+words:  ['▁rescue', '▁workers', '▁took', '▁the', '▁girl', '▁to', '▁the', '▁hospital', '▁.']
+-> rescue
+-> workers
+-> took
+-> the
+-> girl
+-> to
+-> the
+-> hospital
+-> .
+
+words string:  ▁Rett ungsk räfte ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[20956,  5578, 15140, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rett', 'ungsk', 'räfte', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rett
+ungsk
+räfte
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rett ungsk räfte ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[20956,  5578, 15140, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rett', 'ungsk', 'räfte', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rett
+ungsk
+räfte
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs kräfte ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850,  6342, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'kräfte', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+kräfte
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rett ungsk räfte ▁nahmen ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[20956,  5578, 15140, 18525,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rett', 'ungsk', 'räfte', '▁nahmen', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rett
+ungsk
+räfte
+-> nahmen
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs personal ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850, 15940, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'personal', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+personal
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs hel fer ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850, 10219,  1741, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'hel', 'fer', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+hel
+fer
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rett ungsk räfte ▁brachten ▁das ▁Mädchen ▁in ▁das ▁Krankenhaus ▁.
+indices:  tensor([[20956,  5578, 15140, 21853,    24, 11190,     7,    24, 17948,     5]])
+words:  ['▁Rett', 'ungsk', 'räfte', '▁brachten', '▁das', '▁Mädchen', '▁in', '▁das', '▁Krankenhaus', '▁.']
+-> Rett
+ungsk
+räfte
+-> brachten
+-> das
+-> Mädchen
+-> in
+-> das
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs kräfte ▁nahmen ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850,  6342, 18525,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'kräfte', '▁nahmen', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+kräfte
+-> nahmen
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs arbeiter ▁brachten ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850, 11443, 21853,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'arbeiter', '▁brachten', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+arbeiter
+-> brachten
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs kräfte ▁brachten ▁das ▁Mädchen ▁in ▁das ▁Krankenhaus ▁.
+indices:  tensor([[17850,  6342, 21853,    24, 11190,     7,    24, 17948,     5]])
+words:  ['▁Rettungs', 'kräfte', '▁brachten', '▁das', '▁Mädchen', '▁in', '▁das', '▁Krankenhaus', '▁.']
+-> Rettungs
+kräfte
+-> brachten
+-> das
+-> Mädchen
+-> in
+-> das
+-> Krankenhaus
+-> .
+
+words string:  ▁Rettungs personal ▁nahmen ▁das ▁Mädchen ▁ins ▁Krankenhaus ▁.
+indices:  tensor([[17850, 15940, 18525,    24, 11190,   722, 17948,     5]])
+words:  ['▁Rettungs', 'personal', '▁nahmen', '▁das', '▁Mädchen', '▁ins', '▁Krankenhaus', '▁.']
+-> Rettungs
+personal
+-> nahmen
+-> das
+-> Mädchen
+-> ins
+-> Krankenhaus
+-> .
+
+words string:  ▁this ▁was ▁announced ▁by ▁the ▁police ▁in ▁Burg ▁.
+indices:  tensor([[  35,   68, 5277,   54,    6, 4339,    7, 7739,    5]])
+words:  ['▁this', '▁was', '▁announced', '▁by', '▁the', '▁police', '▁in', '▁Burg', '▁.']
+-> this
+-> was
+-> announced
+-> by
+-> the
+-> police
+-> in
+-> Burg
+-> .
+
+words string:  ▁das ▁teil te ▁die ▁Polizei ▁in ▁Burg ▁mit ▁.
+indices:  tensor([[  24, 5015,  128,    8, 8190,    7, 7739,   29,    5]])
+words:  ['▁das', '▁teil', 'te', '▁die', '▁Polizei', '▁in', '▁Burg', '▁mit', '▁.']
+-> das
+-> teil
+te
+-> die
+-> Polizei
+-> in
+-> Burg
+-> mit
+-> .
+
+words string:  ▁dies ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[  206,   150,    22,    10,  8190,     7,  7739, 13969,     5]])
+words:  ['▁dies', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> dies
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁das ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[   24,   150,    22,    10,  8190,     7,  7739, 13969,     5]])
+words:  ['▁das', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> das
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁diese ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[   97,   150,    22,    10,  8190,     7,  7739, 13969,     5]])
+words:  ['▁diese', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> diese
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁dies ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁bekannt ▁gegeben ▁.
+indices:  tensor([[ 206,  150,   22,   10, 8190,    7, 7739, 1400, 2243,    5]])
+words:  ['▁dies', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁bekannt', '▁gegeben', '▁.']
+-> dies
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> bekannt
+-> gegeben
+-> .
+
+words string:  ▁dieses ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[  194,   150,    22,    10,  8190,     7,  7739, 13969,     5]])
+words:  ['▁dieses', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> dieses
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁das ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁bekannt ▁gegeben ▁.
+indices:  tensor([[  24,  150,   22,   10, 8190,    7, 7739, 1400, 2243,    5]])
+words:  ['▁das', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁bekannt', '▁gegeben', '▁.']
+-> das
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> bekannt
+-> gegeben
+-> .
+
+words string:  ▁dies ▁wurde ▁von ▁der ▁Polizei ▁in ▁Burg ▁mitgeteilt ▁.
+indices:  tensor([[  206,   150,    22,    10,  8190,     7,  7739, 16902,     5]])
+words:  ['▁dies', '▁wurde', '▁von', '▁der', '▁Polizei', '▁in', '▁Burg', '▁mitgeteilt', '▁.']
+-> dies
+-> wurde
+-> von
+-> der
+-> Polizei
+-> in
+-> Burg
+-> mitgeteilt
+-> .
+
+words string:  ▁dies ▁wurde ▁durch ▁die ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[  206,   150,   110,     8,  8190,     7,  7739, 13969,     5]])
+words:  ['▁dies', '▁wurde', '▁durch', '▁die', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> dies
+-> wurde
+-> durch
+-> die
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁das ▁hat ▁die ▁Polizei ▁in ▁Burg ▁angekündigt ▁.
+indices:  tensor([[   24,    91,     8,  8190,     7,  7739, 13969,     5]])
+words:  ['▁das', '▁hat', '▁die', '▁Polizei', '▁in', '▁Burg', '▁angekündigt', '▁.']
+-> das
+-> hat
+-> die
+-> Polizei
+-> in
+-> Burg
+-> angekündigt
+-> .
+
+words string:  ▁die ▁Polizei ▁in ▁Burg ▁hat ▁dies ▁angekündigt ▁.
+indices:  tensor([[    8,  8190,     7,  7739,    91,   206, 13969,     5]])
+words:  ['▁die', '▁Polizei', '▁in', '▁Burg', '▁hat', '▁dies', '▁angekündigt', '▁.']
+-> die
+-> Polizei
+-> in
+-> Burg
+-> hat
+-> dies
+-> angekündigt
+-> .
+
+words string:  ▁they ▁know ▁their ▁business ▁better ▁than ▁anyone ▁else ▁.
+indices:  tensor([[ 124,  532,  113,  640,  819,  233, 4407, 4356,    5]])
+words:  ['▁they', '▁know', '▁their', '▁business', '▁better', '▁than', '▁anyone', '▁else', '▁.']
+-> they
+-> know
+-> their
+-> business
+-> better
+-> than
+-> anyone
+-> else
+-> .
+
+words string:  ▁sie ▁kennen ▁ihr ▁Geschäft ▁besser ▁als ▁jeder ▁andere ▁.
+indices:  tensor([[  73, 3214,  505, 7954, 1350,   74,  985,  424,    5]])
+words:  ['▁sie', '▁kennen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁jeder', '▁andere', '▁.']
+-> sie
+-> kennen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> jeder
+-> andere
+-> .
+
+words string:  ▁sie ▁kennen ▁ihr ▁Geschäft ▁besser ▁als ▁alle ▁anderen ▁.
+indices:  tensor([[  73, 3214,  505, 7954, 1350,   74,  160,  312,    5]])
+words:  ['▁sie', '▁kennen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁alle', '▁anderen', '▁.']
+-> sie
+-> kennen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> alle
+-> anderen
+-> .
+
+words string:  ▁sie ▁kennen ▁ihre ▁Geschäfte ▁besser ▁als ▁alle ▁anderen ▁.
+indices:  tensor([[  73, 3214,  211, 8417, 1350,   74,  160,  312,    5]])
+words:  ['▁sie', '▁kennen', '▁ihre', '▁Geschäfte', '▁besser', '▁als', '▁alle', '▁anderen', '▁.']
+-> sie
+-> kennen
+-> ihre
+-> Geschäfte
+-> besser
+-> als
+-> alle
+-> anderen
+-> .
+
+words string:  ▁sie ▁kennen ▁ihr ▁Geschäft ▁besser ▁als ▁jeder ▁andere ▁.
+indices:  tensor([[  73, 3214,  505, 7954, 1350,   74,  985,  424,    5]])
+words:  ['▁sie', '▁kennen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁jeder', '▁andere', '▁.']
+-> sie
+-> kennen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> jeder
+-> andere
+-> .
+
+words string:  ▁sie ▁wissen ▁ihr ▁Geschäft ▁besser ▁als ▁alle ▁anderen ▁.
+indices:  tensor([[  73,  979,  505, 7954, 1350,   74,  160,  312,    5]])
+words:  ['▁sie', '▁wissen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁alle', '▁anderen', '▁.']
+-> sie
+-> wissen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> alle
+-> anderen
+-> .
+
+words string:  ▁sie ▁kennen ▁ihre ▁Geschäfte ▁besser ▁als ▁jeder ▁andere ▁.
+indices:  tensor([[  73, 3214,  211, 8417, 1350,   74,  985,  424,    5]])
+words:  ['▁sie', '▁kennen', '▁ihre', '▁Geschäfte', '▁besser', '▁als', '▁jeder', '▁andere', '▁.']
+-> sie
+-> kennen
+-> ihre
+-> Geschäfte
+-> besser
+-> als
+-> jeder
+-> andere
+-> .
+
+words string:  ▁sie ▁kennen ▁ihr ▁Geschäft ▁besser ▁als ▁irgend j em and ▁andere ▁.
+indices:  tensor([[  73, 3214,  505, 7954, 1350,   74, 9340,  705,  310,  730,  424,    5]])
+words:  ['▁sie', '▁kennen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁irgend', 'j', 'em', 'and', '▁andere', '▁.']
+-> sie
+-> kennen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> irgend
+j
+em
+and
+-> andere
+-> .
+
+words string:  ▁sie ▁wissen ▁ihre ▁Geschäfte ▁besser ▁als ▁alle ▁anderen ▁.
+indices:  tensor([[  73,  979,  211, 8417, 1350,   74,  160,  312,    5]])
+words:  ['▁sie', '▁wissen', '▁ihre', '▁Geschäfte', '▁besser', '▁als', '▁alle', '▁anderen', '▁.']
+-> sie
+-> wissen
+-> ihre
+-> Geschäfte
+-> besser
+-> als
+-> alle
+-> anderen
+-> .
+
+words string:  ▁sie ▁wissen ▁ihr ▁Geschäft ▁besser ▁als ▁jeder ▁andere ▁.
+indices:  tensor([[  73,  979,  505, 7954, 1350,   74,  985,  424,    5]])
+words:  ['▁sie', '▁wissen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁jeder', '▁andere', '▁.']
+-> sie
+-> wissen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> jeder
+-> andere
+-> .
+
+words string:  ▁sie ▁kennen ▁ihr ▁Geschäft ▁besser ▁als ▁andere ▁.
+indices:  tensor([[  73, 3214,  505, 7954, 1350,   74,  424,    5]])
+words:  ['▁sie', '▁kennen', '▁ihr', '▁Geschäft', '▁besser', '▁als', '▁andere', '▁.']
+-> sie
+-> kennen
+-> ihr
+-> Geschäft
+-> besser
+-> als
+-> andere
+-> .
+
+words string:  ▁sie ▁kennen ▁ihre ▁Geschäft stätigkeit ▁besser ▁als ▁alle ▁anderen ▁.
+indices:  tensor([[   73,  3214,   211,  7954, 13748,  1350,    74,   160,   312,     5]])
+words:  ['▁sie', '▁kennen', '▁ihre', '▁Geschäft', 'stätigkeit', '▁besser', '▁als', '▁alle', '▁anderen', '▁.']
+-> sie
+-> kennen
+-> ihre
+-> Geschäft
+stätigkeit
+-> besser
+-> als
+-> alle
+-> anderen
+-> .
+
+words string:  ▁a ▁member ▁of ▁security ▁staff ▁was ▁also ▁killed ▁.
+indices:  tensor([[  16, 1737,    9,  745, 1485,   68,   87, 9838,    5]])
+words:  ['▁a', '▁member', '▁of', '▁security', '▁staff', '▁was', '▁also', '▁killed', '▁.']
+-> a
+-> member
+-> of
+-> security
+-> staff
+-> was
+-> also
+-> killed
+-> .
+
+words string:  ▁auch ▁ein ▁Sicherheits mann ▁sei ▁getötet ▁worden ▁.
+indices:  tensor([[   64,    50,  1819,  2504,  1482, 15624,   872,     5]])
+words:  ['▁auch', '▁ein', '▁Sicherheits', 'mann', '▁sei', '▁getötet', '▁worden', '▁.']
+-> auch
+-> ein
+-> Sicherheits
+mann
+-> sei
+-> getötet
+-> worden
+-> .
+
+words string:  ▁ein ▁Mitglied ▁des ▁Sicherheit sp erson als ▁wurde ▁ebenfalls ▁getötet ▁.
+indices:  tensor([[   50,  2300,    42,   714,   990, 11273,   860,   150,  1280, 15624,
+             5]])
+words:  ['▁ein', '▁Mitglied', '▁des', '▁Sicherheit', 'sp', 'erson', 'als', '▁wurde', '▁ebenfalls', '▁getötet', '▁.']
+-> ein
+-> Mitglied
+-> des
+-> Sicherheit
+sp
+erson
+als
+-> wurde
+-> ebenfalls
+-> getötet
+-> .
+
+words string:  ▁ein ▁Mitglied ▁der ▁Sicherheit sk räfte ▁wurde ▁ebenfalls ▁getötet ▁.
+indices:  tensor([[   50,  2300,    10,   714,  1599, 15140,   150,  1280, 15624,     5]])
+words:  ['▁ein', '▁Mitglied', '▁der', '▁Sicherheit', 'sk', 'räfte', '▁wurde', '▁ebenfalls', '▁getötet', '▁.']
+-> ein
+-> Mitglied
+-> der
+-> Sicherheit
+sk
+räfte
+-> wurde
+-> ebenfalls
+-> getötet
+-> .
+
+words string:  ▁auch ▁ein ▁Mitglied ▁des ▁Sicherheit sp erson als ▁wurde ▁getötet ▁.
+indices:  tensor([[   64,    50,  2300,    42,   714,   990, 11273,   860,   150, 15624,
+             5]])
+words:  ['▁auch', '▁ein', '▁Mitglied', '▁des', '▁Sicherheit', 'sp', 'erson', 'als', '▁wurde', '▁getötet', '▁.']
+-> auch
+-> ein
+-> Mitglied
+-> des
+-> Sicherheit
+sp
+erson
+als
+-> wurde
+-> getötet
+-> .
+
+words string:  ▁auch ▁ein ▁Mitglied ▁der ▁Sicherheit sk räfte ▁wurde ▁getötet ▁.
+indices:  tensor([[   64,    50,  2300,    10,   714,  1599, 15140,   150, 15624,     5]])
+words:  ['▁auch', '▁ein', '▁Mitglied', '▁der', '▁Sicherheit', 'sk', 'räfte', '▁wurde', '▁getötet', '▁.']
+-> auch
+-> ein
+-> Mitglied
+-> der
+-> Sicherheit
+sk
+räfte
+-> wurde
+-> getötet
+-> .
+
+words string:  ▁außerdem ▁wurde ▁ein ▁Mitglied ▁des ▁Sicherheit sp erson als ▁getötet ▁.
+indices:  tensor([[ 1082,   150,    50,  2300,    42,   714,   990, 11273,   860, 15624,
+             5]])
+words:  ['▁außerdem', '▁wurde', '▁ein', '▁Mitglied', '▁des', '▁Sicherheit', 'sp', 'erson', 'als', '▁getötet', '▁.']
+-> außerdem
+-> wurde
+-> ein
+-> Mitglied
+-> des
+-> Sicherheit
+sp
+erson
+als
+-> getötet
+-> .
+
+words string:  ▁ein ▁Sicherheits mit arbeiter ▁wurde ▁ebenfalls ▁getötet ▁.
+indices:  tensor([[   50,  1819,  3889, 11443,   150,  1280, 15624,     5]])
+words:  ['▁ein', '▁Sicherheits', 'mit', 'arbeiter', '▁wurde', '▁ebenfalls', '▁getötet', '▁.']
+-> ein
+-> Sicherheits
+mit
+arbeiter
+-> wurde
+-> ebenfalls
+-> getötet
+-> .
+
+words string:  ▁auch ▁ein ▁Sicherheits mit arbeiter ▁wurde ▁getötet ▁.
+indices:  tensor([[   64,    50,  1819,  3889, 11443,   150, 15624,     5]])
+words:  ['▁auch', '▁ein', '▁Sicherheits', 'mit', 'arbeiter', '▁wurde', '▁getötet', '▁.']
+-> auch
+-> ein
+-> Sicherheits
+mit
+arbeiter
+-> wurde
+-> getötet
+-> .
+
+words string:  ▁außerdem ▁wurde ▁ein ▁Mitglied ▁der ▁Sicherheit sk räfte ▁getötet ▁.
+indices:  tensor([[ 1082,   150,    50,  2300,    10,   714,  1599, 15140, 15624,     5]])
+words:  ['▁außerdem', '▁wurde', '▁ein', '▁Mitglied', '▁der', '▁Sicherheit', 'sk', 'räfte', '▁getötet', '▁.']
+-> außerdem
+-> wurde
+-> ein
+-> Mitglied
+-> der
+-> Sicherheit
+sk
+räfte
+-> getötet
+-> .
+
+words string:  ▁ein ▁Sicherheits mit arbeiter ▁wurde ▁ebenfalls ▁erm ord et ▁.
+indices:  tensor([[   50,  1819,  3889, 11443,   150,  1280,  7709,  1561,   329,     5]])
+words:  ['▁ein', '▁Sicherheits', 'mit', 'arbeiter', '▁wurde', '▁ebenfalls', '▁erm', 'ord', 'et', '▁.']
+-> ein
+-> Sicherheits
+mit
+arbeiter
+-> wurde
+-> ebenfalls
+-> erm
+ord
+et
+-> .
+
+words string:  ▁auch ▁ein ▁Mitglied ▁des ▁Sicherheits person als ▁wurde ▁getötet ▁.
+indices:  tensor([[   64,    50,  2300,    42,  1819, 14975,   860,   150, 15624,     5]])
+words:  ['▁auch', '▁ein', '▁Mitglied', '▁des', '▁Sicherheits', 'person', 'als', '▁wurde', '▁getötet', '▁.']
+-> auch
+-> ein
+-> Mitglied
+-> des
+-> Sicherheits
+person
+als
+-> wurde
+-> getötet
+-> .
+
+words string:  ▁R BS ▁suspend s ▁two ▁for ex ▁tra ders
+indices:  tensor([[  240, 16320, 18705,    31,   293,    21,  3526,  1938,  2048]])
+words:  ['▁R', 'BS', '▁suspend', 's', '▁two', '▁for', 'ex', '▁tra', 'ders']
+-> R
+BS
+-> suspend
+s
+-> two
+-> for
+ex
+-> tra
+ders
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen händler
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216, 15039]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'händler']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+händler
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Fore x - H ändler
+indices:  tensor([[  240, 16320, 18705,   301,   433, 22526,   721,    17,   720, 25460]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Fore', 'x', '-', 'H', 'ändler']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Fore
+x
+-
+H
+ändler
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen händler
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216, 15039]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'händler']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+händler
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen h änd lern
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216,   242,  2931,  7108]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'h', 'änd', 'lern']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+h
+änd
+lern
+
+words string:  ▁R BS ▁ausgesetzt ▁zwei ▁Fore x - H ändler
+indices:  tensor([[  240, 16320,  8129,   433, 22526,   721,    17,   720, 25460]])
+words:  ['▁R', 'BS', '▁ausgesetzt', '▁zwei', '▁Fore', 'x', '-', 'H', 'ändler']
+-> R
+BS
+-> ausgesetzt
+-> zwei
+-> Fore
+x
+-
+H
+ändler
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen handel
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216,  4029]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'handel']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+handel
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen handels unternehmen
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216, 10628,  2861]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'handels', 'unternehmen']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+handels
+unternehmen
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Dev isen handels händler
+indices:  tensor([[  240, 16320, 18705,   301,   433,  8501,  2216, 10628, 15039]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Dev', 'isen', 'handels', 'händler']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Dev
+isen
+handels
+händler
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Fore x ▁Trad ers
+indices:  tensor([[  240, 16320, 18705,   301,   433, 22526,   721, 15663,   177]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Fore', 'x', '▁Trad', 'ers']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Fore
+x
+-> Trad
+ers
+
+words string:  ▁R BS ▁suspend iert ▁zwei ▁Fore x ▁Händler
+indices:  tensor([[  240, 16320, 18705,   301,   433, 22526,   721, 14379]])
+words:  ['▁R', 'BS', '▁suspend', 'iert', '▁zwei', '▁Fore', 'x', '▁Händler']
+-> R
+BS
+-> suspend
+iert
+-> zwei
+-> Fore
+x
+-> Händler
+
+words string:  ▁R BS ▁ausgesetzt ▁zwei ▁Dev isen händler
+indices:  tensor([[  240, 16320,  8129,   433,  8501,  2216, 15039]])
+words:  ['▁R', 'BS', '▁ausgesetzt', '▁zwei', '▁Dev', 'isen', 'händler']
+-> R
+BS
+-> ausgesetzt
+-> zwei
+-> Dev
+isen
+händler
+
+words string:  ▁was ▁his ▁death ▁the ▁result ▁of ▁a ▁crime ▁?
+indices:  tensor([[  68,  222, 2541,    6,  817,    9,   16, 4372,  100]])
+words:  ['▁was', '▁his', '▁death', '▁the', '▁result', '▁of', '▁a', '▁crime', '▁?']
+-> was
+-> his
+-> death
+-> the
+-> result
+-> of
+-> a
+-> crime
+-> ?
+
+words string:  ▁ist ▁sein ▁Tod ▁auf ▁ein ▁Verbrechen ▁zurückzuführen ▁?
+indices:  tensor([[   27,   155,  5303,    30,    50,  7265, 10778,   100]])
+words:  ['▁ist', '▁sein', '▁Tod', '▁auf', '▁ein', '▁Verbrechen', '▁zurückzuführen', '▁?']
+-> ist
+-> sein
+-> Tod
+-> auf
+-> ein
+-> Verbrechen
+-> zurückzuführen
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Ergebnis ▁eines ▁Verb rech ens ▁?
+indices:  tensor([[ 168,  155, 5303,   24, 1923,  223, 3775, 8594,  372,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁eines', '▁Verb', 'rech', 'ens', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> eines
+-> Verb
+rech
+ens
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Ergebnis ▁einer ▁St raft at ▁?
+indices:  tensor([[ 168,  155, 5303,   24, 1923,   90,  405, 3809,  254,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁einer', '▁St', 'raft', 'at', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> einer
+-> St
+raft
+at
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Resultat ▁eines ▁Verb rech ens ▁?
+indices:  tensor([[  168,   155,  5303,    24, 18907,   223,  3775,  8594,   372,   100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Resultat', '▁eines', '▁Verb', 'rech', 'ens', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Resultat
+-> eines
+-> Verb
+rech
+ens
+-> ?
+
+words string:  ▁ist ▁sein ▁Tod ▁das ▁Ergebnis ▁eines ▁Verb rech ens ▁?
+indices:  tensor([[  27,  155, 5303,   24, 1923,  223, 3775, 8594,  372,  100]])
+words:  ['▁ist', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁eines', '▁Verb', 'rech', 'ens', '▁?']
+-> ist
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> eines
+-> Verb
+rech
+ens
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁die ▁Folge ▁eines ▁Verb rech ens ▁?
+indices:  tensor([[ 168,  155, 5303,    8, 3301,  223, 3775, 8594,  372,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁die', '▁Folge', '▁eines', '▁Verb', 'rech', 'ens', '▁?']
+-> war
+-> sein
+-> Tod
+-> die
+-> Folge
+-> eines
+-> Verb
+rech
+ens
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Resultat ▁einer ▁St raft at ▁?
+indices:  tensor([[  168,   155,  5303,    24, 18907,    90,   405,  3809,   254,   100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Resultat', '▁einer', '▁St', 'raft', 'at', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Resultat
+-> einer
+-> St
+raft
+at
+-> ?
+
+words string:  ▁ist ▁sein ▁Tod ▁das ▁Ergebnis ▁einer ▁St raft at ▁?
+indices:  tensor([[  27,  155, 5303,   24, 1923,   90,  405, 3809,  254,  100]])
+words:  ['▁ist', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁einer', '▁St', 'raft', 'at', '▁?']
+-> ist
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> einer
+-> St
+raft
+at
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Ergebnis ▁eines ▁St raft ats ▁?
+indices:  tensor([[ 168,  155, 5303,   24, 1923,  223,  405, 3809, 1492,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁eines', '▁St', 'raft', 'ats', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> eines
+-> St
+raft
+ats
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Ergebnis ▁einer ▁Verbrechen ▁?
+indices:  tensor([[ 168,  155, 5303,   24, 1923,   90, 7265,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁einer', '▁Verbrechen', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> einer
+-> Verbrechen
+-> ?
+
+words string:  ▁war ▁sein ▁Tod ▁das ▁Ergebnis ▁eines ▁Verbrechen ▁?
+indices:  tensor([[ 168,  155, 5303,   24, 1923,  223, 7265,  100]])
+words:  ['▁war', '▁sein', '▁Tod', '▁das', '▁Ergebnis', '▁eines', '▁Verbrechen', '▁?']
+-> war
+-> sein
+-> Tod
+-> das
+-> Ergebnis
+-> eines
+-> Verbrechen
+-> ?
+
+words string:  ▁that ▁will ▁happen ▁all ▁through ▁the ▁flight ▁program ▁.
+indices:  tensor([[  19,   65, 4565,   80,  380,    6, 6323, 1859,    5]])
+words:  ['▁that', '▁will', '▁happen', '▁all', '▁through', '▁the', '▁flight', '▁program', '▁.']
+-> that
+-> will
+-> happen
+-> all
+-> through
+-> the
+-> flight
+-> program
+-> .
+
+words string:  ▁das ▁geschieht ▁während ▁des ▁gesamten ▁Flug programms ▁.
+indices:  tensor([[  24, 6204,  489,   42, 1955, 1815, 9259,    5]])
+words:  ['▁das', '▁geschieht', '▁während', '▁des', '▁gesamten', '▁Flug', 'programms', '▁.']
+-> das
+-> geschieht
+-> während
+-> des
+-> gesamten
+-> Flug
+programms
+-> .
+
+words string:  ▁das ▁wird ▁alles ▁über ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,   72,  854,   79,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁wird', '▁alles', '▁über', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> wird
+-> alles
+-> über
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁wird ▁alles ▁durch ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,   72,  854,  110,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁wird', '▁alles', '▁durch', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> wird
+-> alles
+-> durch
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁alles ▁wird ▁über ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,  854,   72,   79,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁alles', '▁wird', '▁über', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> alles
+-> wird
+-> über
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁alles ▁geschieht ▁über ▁das ▁Flug programm ▁.
+indices:  tensor([[  24,  854, 6204,   79,   24, 1815, 2051,    5]])
+words:  ['▁das', '▁alles', '▁geschieht', '▁über', '▁das', '▁Flug', 'programm', '▁.']
+-> das
+-> alles
+-> geschieht
+-> über
+-> das
+-> Flug
+programm
+-> .
+
+words string:  ▁das ▁alles ▁wird ▁durch ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,  854,   72,  110,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁alles', '▁wird', '▁durch', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> alles
+-> wird
+-> durch
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁wird ▁durch ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,   72,  110,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁wird', '▁durch', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> wird
+-> durch
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁wird ▁über ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[  24,   72,   79,   24, 1815, 2051, 5651,    5]])
+words:  ['▁das', '▁wird', '▁über', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> das
+-> wird
+-> über
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁alles ▁geschieht ▁durch ▁das ▁Flug programm ▁.
+indices:  tensor([[  24,  854, 6204,  110,   24, 1815, 2051,    5]])
+words:  ['▁das', '▁alles', '▁geschieht', '▁durch', '▁das', '▁Flug', 'programm', '▁.']
+-> das
+-> alles
+-> geschieht
+-> durch
+-> das
+-> Flug
+programm
+-> .
+
+words string:  ▁dies ▁wird ▁durch ▁das ▁Flug programm ▁geschehen ▁.
+indices:  tensor([[ 206,   72,  110,   24, 1815, 2051, 5651,    5]])
+words:  ['▁dies', '▁wird', '▁durch', '▁das', '▁Flug', 'programm', '▁geschehen', '▁.']
+-> dies
+-> wird
+-> durch
+-> das
+-> Flug
+programm
+-> geschehen
+-> .
+
+words string:  ▁das ▁geschieht ▁über ▁das ▁Flug programm ▁.
+indices:  tensor([[  24, 6204,   79,   24, 1815, 2051,    5]])
+words:  ['▁das', '▁geschieht', '▁über', '▁das', '▁Flug', 'programm', '▁.']
+-> das
+-> geschieht
+-> über
+-> das
+-> Flug
+programm
+-> .
+
+words string:  ▁I ▁hope ▁he ▁sees ▁what ▁I ▁am ▁doing ▁.
+indices:  tensor([[   48,   790,   187, 15696,   167,    48,   111,  2010,     5]])
+words:  ['▁I', '▁hope', '▁he', '▁sees', '▁what', '▁I', '▁am', '▁doing', '▁.']
+-> I
+-> hope
+-> he
+-> sees
+-> what
+-> I
+-> am
+-> doing
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[  55, 1779,    4,  114, 3262,    4,   68,   55,  430,  823,    5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[  55, 1779,    4,  114, 3262,    4,   68,   55,  430,  823,    5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁er ▁sieht ▁, ▁was ▁ich ▁mache ▁.
+indices:  tensor([[   55,  1779,     4,   114,  3262,     4,    68,    55, 19756,     5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁mache', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> mache
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁dass ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[  55, 1779,    4,   53,  114, 3262,    4,   68,   55,  430,  823,    5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁dass', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> dass
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁daß ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[  55, 1779,    4,  159,  114, 3262,    4,   68,   55,  430,  823,    5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁daß', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> daß
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁dass ▁er ▁sieht ▁, ▁was ▁ich ▁mache ▁.
+indices:  tensor([[   55,  1779,     4,    53,   114,  3262,     4,    68,    55, 19756,
+             5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁dass', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁mache', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> dass
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> mache
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁daß ▁er ▁sieht ▁, ▁was ▁ich ▁mache ▁.
+indices:  tensor([[   55,  1779,     4,   159,   114,  3262,     4,    68,    55, 19756,
+             5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁daß', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁mache', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> daß
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> mache
+-> .
+
+words string:  ▁ich ▁hoffe ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[  55, 1779,  114, 3262,    4,   68,   55,  430,  823,    5]])
+words:  ['▁ich', '▁hoffe', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> ich
+-> hoffe
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁er ▁wird ▁sehen ▁, ▁was ▁ich ▁mache ▁.
+indices:  tensor([[   55,  1779,     4,   114,    72,   783,     4,    68,    55, 19756,
+             5]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁er', '▁wird', '▁sehen', '▁,', '▁was', '▁ich', '▁mache', '▁.']
+-> ich
+-> hoffe
+-> ,
+-> er
+-> wird
+-> sehen
+-> ,
+-> was
+-> ich
+-> mache
+-> .
+
+words string:  ▁hoffentlich ▁sieht ▁er ▁, ▁was ▁ich ▁t ue ▁.
+indices:  tensor([[9300, 3262,  114,    4,   68,   55,  430,  823,    5]])
+words:  ['▁hoffentlich', '▁sieht', '▁er', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁.']
+-> hoffentlich
+-> sieht
+-> er
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> .
+
+words string:  ▁ich ▁hoffe ▁, ▁er ▁sieht ▁, ▁was ▁ich ▁t ue ▁!
+indices:  tensor([[  55, 1779,    4,  114, 3262,    4,   68,   55,  430,  823,  103]])
+words:  ['▁ich', '▁hoffe', '▁,', '▁er', '▁sieht', '▁,', '▁was', '▁ich', '▁t', 'ue', '▁!']
+-> ich
+-> hoffe
+-> ,
+-> er
+-> sieht
+-> ,
+-> was
+-> ich
+-> t
+ue
+-> !
+
+words string:  ▁business ▁leaders ▁are ▁s cept ical ▁about ▁this ▁.
+indices:  tensor([[ 640, 2994,   43,  243, 7365,  937,  156,   35,    5]])
+words:  ['▁business', '▁leaders', '▁are', '▁s', 'cept', 'ical', '▁about', '▁this', '▁.']
+-> business
+-> leaders
+-> are
+-> s
+cept
+ical
+-> about
+-> this
+-> .
+
+words string:  ▁die ▁Unternehmen ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[    8,   525,    70,  9662, 16896,  1587,   346,     5]])
+words:  ['▁die', '▁Unternehmen', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Unternehmen
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Unternehmens führer ▁sind ▁in ▁dieser ▁Hinsicht ▁ske pt isch ▁.
+indices:  tensor([[    8,  2864,  5225,    70,     7,   126,  3795, 16896,  1587,   346,
+             5]])
+words:  ['▁die', '▁Unternehmens', 'führer', '▁sind', '▁in', '▁dieser', '▁Hinsicht', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Unternehmens
+führer
+-> sind
+-> in
+-> dieser
+-> Hinsicht
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Wirtschafts führer ▁sind ▁in ▁dieser ▁Hinsicht ▁ske pt isch ▁.
+indices:  tensor([[    8,   882,  5225,    70,     7,   126,  3795, 16896,  1587,   346,
+             5]])
+words:  ['▁die', '▁Wirtschafts', 'führer', '▁sind', '▁in', '▁dieser', '▁Hinsicht', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Wirtschafts
+führer
+-> sind
+-> in
+-> dieser
+-> Hinsicht
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Unternehmens führer ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[    8,  2864,  5225,    70,  9662, 16896,  1587,   346,     5]])
+words:  ['▁die', '▁Unternehmens', 'führer', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Unternehmens
+führer
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Wirtschafts führer ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[    8,   882,  5225,    70,  9662, 16896,  1587,   346,     5]])
+words:  ['▁die', '▁Wirtschafts', 'führer', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Wirtschafts
+führer
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Geschäfts führer ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[    8,  1102,  5225,    70,  9662, 16896,  1587,   346,     5]])
+words:  ['▁die', '▁Geschäfts', 'führer', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Geschäfts
+führer
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁Führ ungsk räfte ▁der ▁Wirtschaft ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[12122,  5578, 15140,    10,  1319,    70,  9662, 16896,  1587,   346,
+             5]])
+words:  ['▁Führ', 'ungsk', 'räfte', '▁der', '▁Wirtschaft', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> Führ
+ungsk
+räfte
+-> der
+-> Wirtschaft
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁Führ ungsk räfte ▁der ▁Unternehmen ▁sind ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[12122,  5578, 15140,    10,   525,    70,  9662, 16896,  1587,   346,
+             5]])
+words:  ['▁Führ', 'ungsk', 'räfte', '▁der', '▁Unternehmen', '▁sind', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> Führ
+ungsk
+räfte
+-> der
+-> Unternehmen
+-> sind
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Führung ▁der ▁Unternehmen ▁ist ▁diesbezüglich ▁ske pt isch ▁.
+indices:  tensor([[    8,  5670,    10,   525,    27,  9662, 16896,  1587,   346,     5]])
+words:  ['▁die', '▁Führung', '▁der', '▁Unternehmen', '▁ist', '▁diesbezüglich', '▁ske', 'pt', 'isch', '▁.']
+-> die
+-> Führung
+-> der
+-> Unternehmen
+-> ist
+-> diesbezüglich
+-> ske
+pt
+isch
+-> .
+
+words string:  ▁die ▁Wirtschafts führer ▁sind ▁in ▁dieser ▁Hinsicht ▁ske pt ischer ▁.
+indices:  tensor([[    8,   882,  5225,    70,     7,   126,  3795, 16896,  1587,   551,
+             5]])
+words:  ['▁die', '▁Wirtschafts', 'führer', '▁sind', '▁in', '▁dieser', '▁Hinsicht', '▁ske', 'pt', 'ischer', '▁.']
+-> die
+-> Wirtschafts
+führer
+-> sind
+-> in
+-> dieser
+-> Hinsicht
+-> ske
+pt
+ischer
+-> .
+
+words string:  ▁die ▁Unternehmens führer ▁sind ▁in ▁dieser ▁Hinsicht ▁ske pt ischer ▁.
+indices:  tensor([[    8,  2864,  5225,    70,     7,   126,  3795, 16896,  1587,   551,
+             5]])
+words:  ['▁die', '▁Unternehmens', 'führer', '▁sind', '▁in', '▁dieser', '▁Hinsicht', '▁ske', 'pt', 'ischer', '▁.']
+-> die
+-> Unternehmens
+führer
+-> sind
+-> in
+-> dieser
+-> Hinsicht
+-> ske
+pt
+ischer
+-> .
+
+words string:  ▁this ▁was ▁a ▁very ▁unusual ▁call - out ▁.
+indices:  tensor([[   35,    68,    16,   153, 14682,  1252,    17,  1784,     5]])
+words:  ['▁this', '▁was', '▁a', '▁very', '▁unusual', '▁call', '-', 'out', '▁.']
+-> this
+-> was
+-> a
+-> very
+-> unusual
+-> call
+-
+out
+-> .
+
+words string:  ▁das ▁war ▁ein ▁ziemlich ▁ungewöhn licher ▁Einsatz ▁.
+indices:  tensor([[   24,   168,    50,  7208, 14264,   588,  1754,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁ziemlich', '▁ungewöhn', 'licher', '▁Einsatz', '▁.']
+-> das
+-> war
+-> ein
+-> ziemlich
+-> ungewöhn
+licher
+-> Einsatz
+-> .
+
+words string:  ▁das ▁war ▁ein ▁sehr ▁ungewöhn licher ▁Aufruf ▁.
+indices:  tensor([[   24,   168,    50,   162, 14264,   588, 15865,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁sehr', '▁ungewöhn', 'licher', '▁Aufruf', '▁.']
+-> das
+-> war
+-> ein
+-> sehr
+-> ungewöhn
+licher
+-> Aufruf
+-> .
+
+words string:  ▁dies ▁war ▁ein ▁sehr ▁ungewöhn licher ▁Aufruf ▁.
+indices:  tensor([[  206,   168,    50,   162, 14264,   588, 15865,     5]])
+words:  ['▁dies', '▁war', '▁ein', '▁sehr', '▁ungewöhn', 'licher', '▁Aufruf', '▁.']
+-> dies
+-> war
+-> ein
+-> sehr
+-> ungewöhn
+licher
+-> Aufruf
+-> .
+
+words string:  ▁es ▁war ▁ein ▁sehr ▁ungewöhn licher ▁Aufruf ▁.
+indices:  tensor([[   49,   168,    50,   162, 14264,   588, 15865,     5]])
+words:  ['▁es', '▁war', '▁ein', '▁sehr', '▁ungewöhn', 'licher', '▁Aufruf', '▁.']
+-> es
+-> war
+-> ein
+-> sehr
+-> ungewöhn
+licher
+-> Aufruf
+-> .
+
+words string:  ▁das ▁war ▁ein ▁ganz ▁ungewöhn licher ▁Aufruf ▁.
+indices:  tensor([[   24,   168,    50,   440, 14264,   588, 15865,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁ganz', '▁ungewöhn', 'licher', '▁Aufruf', '▁.']
+-> das
+-> war
+-> ein
+-> ganz
+-> ungewöhn
+licher
+-> Aufruf
+-> .
+
+words string:  ▁das ▁war ▁eine ▁sehr ▁ungewöhn liche ▁Aufforderung ▁.
+indices:  tensor([[   24,   168,    44,   162, 14264,   261, 17012,     5]])
+words:  ['▁das', '▁war', '▁eine', '▁sehr', '▁ungewöhn', 'liche', '▁Aufforderung', '▁.']
+-> das
+-> war
+-> eine
+-> sehr
+-> ungewöhn
+liche
+-> Aufforderung
+-> .
+
+words string:  ▁das ▁war ▁ein ▁sehr ▁ungewöhn licher ▁Auf ruf ▁.
+indices:  tensor([[   24,   168,    50,   162, 14264,   588,   694,  8477,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁sehr', '▁ungewöhn', 'licher', '▁Auf', 'ruf', '▁.']
+-> das
+-> war
+-> ein
+-> sehr
+-> ungewöhn
+licher
+-> Auf
+ruf
+-> .
+
+words string:  ▁dies ▁war ▁ein ▁ganz ▁ungewöhn licher ▁Aufruf ▁.
+indices:  tensor([[  206,   168,    50,   440, 14264,   588, 15865,     5]])
+words:  ['▁dies', '▁war', '▁ein', '▁ganz', '▁ungewöhn', 'licher', '▁Aufruf', '▁.']
+-> dies
+-> war
+-> ein
+-> ganz
+-> ungewöhn
+licher
+-> Aufruf
+-> .
+
+words string:  ▁dies ▁war ▁eine ▁sehr ▁ungewöhn liche ▁Aufforderung ▁.
+indices:  tensor([[  206,   168,    44,   162, 14264,   261, 17012,     5]])
+words:  ['▁dies', '▁war', '▁eine', '▁sehr', '▁ungewöhn', 'liche', '▁Aufforderung', '▁.']
+-> dies
+-> war
+-> eine
+-> sehr
+-> ungewöhn
+liche
+-> Aufforderung
+-> .
+
+words string:  ▁das ▁war ▁ein ▁sehr ▁ungewöhn licher ▁Anruf ▁.
+indices:  tensor([[   24,   168,    50,   162, 14264,   588, 17373,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁sehr', '▁ungewöhn', 'licher', '▁Anruf', '▁.']
+-> das
+-> war
+-> ein
+-> sehr
+-> ungewöhn
+licher
+-> Anruf
+-> .
+
+words string:  ▁das ▁war ▁ein ▁sehr ▁selten er ▁Aufruf ▁.
+indices:  tensor([[   24,   168,    50,   162,  5902,    94, 15865,     5]])
+words:  ['▁das', '▁war', '▁ein', '▁sehr', '▁selten', 'er', '▁Aufruf', '▁.']
+-> das
+-> war
+-> ein
+-> sehr
+-> selten
+er
+-> Aufruf
+-> .
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁by ▁the ▁Number s
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    54,     6, 22897,    31]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁by', '▁the', '▁Number', 's']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> by
+-> the
+-> Number
+s
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁in ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,     7,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁in', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> in
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁durch ▁die ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,   110,     8,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁durch', '▁die', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> durch
+-> die
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁die ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,     8,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁die', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> die
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁von ▁den ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    22,    23,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁von', '▁den', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> von
+-> den
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁bei ▁den ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    92,    23,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁bei', '▁den', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> bei
+-> den
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁an ▁den ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    32,    23,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁an', '▁den', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> an
+-> den
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁anhand ▁der ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,  9045,    10,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁anhand', '▁der', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> anhand
+-> der
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁mit ▁den ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    29,    23,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁mit', '▁den', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> mit
+-> den
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁nach ▁den ▁Zahlen
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,   101,    23,  6112]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁nach', '▁den', '▁Zahlen']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> nach
+-> den
+-> Zahlen
+
+words string:  ▁Hall ow een ▁2013 ▁: ▁an ▁der ▁Zahl
+indices:  tensor([[ 6350,  1216, 20659,  7404,    57,    32,    10,  2402]])
+words:  ['▁Hall', 'ow', 'een', '▁2013', '▁:', '▁an', '▁der', '▁Zahl']
+-> Hall
+ow
+een
+-> 2013
+-> :
+-> an
+-> der
+-> Zahl
+
+words string:  ▁Hall ow een ▁2013
+indices:  tensor([[ 6350,  1216, 20659,  7404]])
+words:  ['▁Hall', 'ow', 'een', '▁2013']
+-> Hall
+ow
+een
+-> 2013
+
+words string:  ▁the ▁evalu ations ▁were ▁already ▁made ▁on ▁Thursday ▁.
+indices:  tensor([[    6, 14554,   460,   235,   528,   327,    28, 11289,     5]])
+words:  ['▁the', '▁evalu', 'ations', '▁were', '▁already', '▁made', '▁on', '▁Thursday', '▁.']
+-> the
+-> evalu
+ations
+-> were
+-> already
+-> made
+-> on
+-> Thursday
+-> .
+
+words string:  ▁die ▁Bewertungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁vorgenommen
+indices:  tensor([[    8, 16785,   360,   413,   111, 11220,  7170]])
+words:  ['▁die', '▁Bewertungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁vorgenommen']
+-> die
+-> Bewertungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> vorgenommen
+
+words string:  ▁die ▁Bewertungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁vorgenommen ▁.
+indices:  tensor([[    8, 16785,   360,   413,   111, 11220,  7170,     5]])
+words:  ['▁die', '▁Bewertungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁vorgenommen', '▁.']
+-> die
+-> Bewertungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> vorgenommen
+-> .
+
+words string:  ▁die ▁Evalu ierungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁vorgenommen ▁.
+indices:  tensor([[    8, 14890,  2432,   360,   413,   111, 11220,  7170,     5]])
+words:  ['▁die', '▁Evalu', 'ierungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁vorgenommen', '▁.']
+-> die
+-> Evalu
+ierungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> vorgenommen
+-> .
+
+words string:  ▁die ▁Bewertungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁durchgeführt ▁.
+indices:  tensor([[    8, 16785,   360,   413,   111, 11220,  3180,     5]])
+words:  ['▁die', '▁Bewertungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁durchgeführt', '▁.']
+-> die
+-> Bewertungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> durchgeführt
+-> .
+
+words string:  ▁die ▁Evalu ierungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁durchgeführt ▁.
+indices:  tensor([[    8, 14890,  2432,   360,   413,   111, 11220,  3180,     5]])
+words:  ['▁die', '▁Evalu', 'ierungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁durchgeführt', '▁.']
+-> die
+-> Evalu
+ierungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> durchgeführt
+-> .
+
+words string:  ▁die ▁Bewertungen ▁fanden ▁bereits ▁am ▁Donnerstag ▁statt ▁.
+indices:  tensor([[    8, 16785, 14844,   413,   111, 11220,  1845,     5]])
+words:  ['▁die', '▁Bewertungen', '▁fanden', '▁bereits', '▁am', '▁Donnerstag', '▁statt', '▁.']
+-> die
+-> Bewertungen
+-> fanden
+-> bereits
+-> am
+-> Donnerstag
+-> statt
+-> .
+
+words string:  ▁die ▁Be ur teilungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁vorgenommen ▁.
+indices:  tensor([[    8,   501,   394,  9013,   360,   413,   111, 11220,  7170,     5]])
+words:  ['▁die', '▁Be', 'ur', 'teilungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁vorgenommen', '▁.']
+-> die
+-> Be
+ur
+teilungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> vorgenommen
+-> .
+
+words string:  ▁die ▁Evalu ationen ▁wurden ▁bereits ▁am ▁Donnerstag ▁vorgenommen ▁.
+indices:  tensor([[    8, 14890,  1998,   360,   413,   111, 11220,  7170,     5]])
+words:  ['▁die', '▁Evalu', 'ationen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁vorgenommen', '▁.']
+-> die
+-> Evalu
+ationen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> vorgenommen
+-> .
+
+words string:  ▁die ▁Evalu ationen ▁wurden ▁bereits ▁am ▁Donnerstag ▁durchgeführt ▁.
+indices:  tensor([[    8, 14890,  1998,   360,   413,   111, 11220,  3180,     5]])
+words:  ['▁die', '▁Evalu', 'ationen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁durchgeführt', '▁.']
+-> die
+-> Evalu
+ationen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> durchgeführt
+-> .
+
+words string:  ▁die ▁Bewertungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁abgegeben ▁.
+indices:  tensor([[    8, 16785,   360,   413,   111, 11220, 12733,     5]])
+words:  ['▁die', '▁Bewertungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁abgegeben', '▁.']
+-> die
+-> Bewertungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> abgegeben
+-> .
+
+words string:  ▁die ▁Bewertungen ▁wurden ▁bereits ▁am ▁Donnerstag ▁gemacht ▁.
+indices:  tensor([[    8, 16785,   360,   413,   111, 11220,  1381,     5]])
+words:  ['▁die', '▁Bewertungen', '▁wurden', '▁bereits', '▁am', '▁Donnerstag', '▁gemacht', '▁.']
+-> die
+-> Bewertungen
+-> wurden
+-> bereits
+-> am
+-> Donnerstag
+-> gemacht
+-> .
+
+words string:  ▁however ▁, ▁theoret ically ▁, ▁it ▁is ▁possible ▁.
+indices:  tensor([[  347,     4, 13014,  1035,     4,    39,    18,   410,     5]])
+words:  ['▁however', '▁,', '▁theoret', 'ically', '▁,', '▁it', '▁is', '▁possible', '▁.']
+-> however
+-> ,
+-> theoret
+ically
+-> ,
+-> it
+-> is
+-> possible
+-> .
+
+words string:  ▁theoret isch ▁ist ▁das ▁aber ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    24,   130,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁das', '▁aber', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> das
+-> aber
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁es ▁jedoch ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    49,   386,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁es', '▁jedoch', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> es
+-> jedoch
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁dies ▁jedoch ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,   206,   386,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁dies', '▁jedoch', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> dies
+-> jedoch
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁das ▁jedoch ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    24,   386,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁das', '▁jedoch', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> das
+-> jedoch
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁jedoch ▁ist ▁es ▁möglich ▁.
+indices:  tensor([[13014,   346,   386,    27,    49,   689,     5]])
+words:  ['▁theoret', 'isch', '▁jedoch', '▁ist', '▁es', '▁möglich', '▁.']
+-> theoret
+isch
+-> jedoch
+-> ist
+-> es
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁es ▁aber ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    49,   130,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁es', '▁aber', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> es
+-> aber
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁das ▁aber ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    24,   130,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁das', '▁aber', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> das
+-> aber
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁jedoch ▁ist ▁das ▁möglich ▁.
+indices:  tensor([[13014,   346,   386,    27,    24,   689,     5]])
+words:  ['▁theoret', 'isch', '▁jedoch', '▁ist', '▁das', '▁möglich', '▁.']
+-> theoret
+isch
+-> jedoch
+-> ist
+-> das
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁jedoch ▁ist ▁dies ▁möglich ▁.
+indices:  tensor([[13014,   346,   386,    27,   206,   689,     5]])
+words:  ['▁theoret', 'isch', '▁jedoch', '▁ist', '▁dies', '▁möglich', '▁.']
+-> theoret
+isch
+-> jedoch
+-> ist
+-> dies
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁gesehen ▁ist ▁es ▁jedoch ▁möglich ▁.
+indices:  tensor([[13014,   346,  3893,    27,    49,   386,   689,     5]])
+words:  ['▁theoret', 'isch', '▁gesehen', '▁ist', '▁es', '▁jedoch', '▁möglich', '▁.']
+-> theoret
+isch
+-> gesehen
+-> ist
+-> es
+-> jedoch
+-> möglich
+-> .
+
+words string:  ▁theoret isch ▁ist ▁es ▁möglich ▁.
+indices:  tensor([[13014,   346,    27,    49,   689,     5]])
+words:  ['▁theoret', 'isch', '▁ist', '▁es', '▁möglich', '▁.']
+-> theoret
+isch
+-> ist
+-> es
+-> möglich
+-> .
+
+words string:  ▁we ▁must ▁stay ▁composed ▁and ▁keep ▁it ▁up ▁.
+indices:  tensor([[   37,   144,   892, 13860,    11,  1722,    39,   175,     5]])
+words:  ['▁we', '▁must', '▁stay', '▁composed', '▁and', '▁keep', '▁it', '▁up', '▁.']
+-> we
+-> must
+-> stay
+-> composed
+-> and
+-> keep
+-> it
+-> up
+-> .
+
+words string:  ▁das ▁soll ▁ruhig ▁so ▁weiter gehen ▁.
+indices:  tensor([[  24,  758, 9087,   81,  607, 1511,    5]])
+words:  ['▁das', '▁soll', '▁ruhig', '▁so', '▁weiter', 'gehen', '▁.']
+-> das
+-> soll
+-> ruhig
+-> so
+-> weiter
+gehen
+-> .
+
+words string:  ▁wir ▁müssen ▁zusammen halten ▁und ▁auf rechter halten ▁.
+indices:  tensor([[  47,  165,  644, 1051,   12,   30, 9713, 1051,    5]])
+words:  ['▁wir', '▁müssen', '▁zusammen', 'halten', '▁und', '▁auf', 'rechter', 'halten', '▁.']
+-> wir
+-> müssen
+-> zusammen
+halten
+-> und
+-> auf
+rechter
+halten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp on iert ▁bleiben ▁und ▁sie ▁auf rechter halten ▁.
+indices:  tensor([[  47,  165, 3580,  190,  301, 1787,   12,   73,   30, 9713, 1051,    5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'on', 'iert', '▁bleiben', '▁und', '▁sie', '▁auf', 'rechter', 'halten', '▁.']
+-> wir
+-> müssen
+-> komp
+on
+iert
+-> bleiben
+-> und
+-> sie
+-> auf
+rechter
+halten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp on iert ▁bleiben ▁und ▁es ▁auf rechter halten ▁.
+indices:  tensor([[  47,  165, 3580,  190,  301, 1787,   12,   49,   30, 9713, 1051,    5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'on', 'iert', '▁bleiben', '▁und', '▁es', '▁auf', 'rechter', 'halten', '▁.']
+-> wir
+-> müssen
+-> komp
+on
+iert
+-> bleiben
+-> und
+-> es
+-> auf
+rechter
+halten
+-> .
+
+words string:  ▁wir ▁müssen ▁zusammen halten ▁und ▁auf recht ▁erhalten ▁.
+indices:  tensor([[  47,  165,  644, 1051,   12,   30, 1507,  716,    5]])
+words:  ['▁wir', '▁müssen', '▁zusammen', 'halten', '▁und', '▁auf', 'recht', '▁erhalten', '▁.']
+-> wir
+-> müssen
+-> zusammen
+halten
+-> und
+-> auf
+recht
+-> erhalten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp on iert ▁bleiben ▁und ▁ihn ▁auf rechter halten ▁.
+indices:  tensor([[  47,  165, 3580,  190,  301, 1787,   12, 1348,   30, 9713, 1051,    5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'on', 'iert', '▁bleiben', '▁und', '▁ihn', '▁auf', 'rechter', 'halten', '▁.']
+-> wir
+-> müssen
+-> komp
+on
+iert
+-> bleiben
+-> und
+-> ihn
+-> auf
+rechter
+halten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp rom iss los ▁bleiben ▁und ▁sie ▁auf rechter halten ▁.
+indices:  tensor([[  47,  165, 3580, 2653, 1272, 2448, 1787,   12,   73,   30, 9713, 1051,
+            5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'rom', 'iss', 'los', '▁bleiben', '▁und', '▁sie', '▁auf', 'rechter', 'halten', '▁.']
+-> wir
+-> müssen
+-> komp
+rom
+iss
+los
+-> bleiben
+-> und
+-> sie
+-> auf
+rechter
+halten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp on iert ▁bleiben ▁und ▁es ▁auf recht ▁erhalten ▁.
+indices:  tensor([[  47,  165, 3580,  190,  301, 1787,   12,   49,   30, 1507,  716,    5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'on', 'iert', '▁bleiben', '▁und', '▁es', '▁auf', 'recht', '▁erhalten', '▁.']
+-> wir
+-> müssen
+-> komp
+on
+iert
+-> bleiben
+-> und
+-> es
+-> auf
+recht
+-> erhalten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp on iert ▁bleiben ▁und ▁sie ▁auf recht ▁erhalten ▁.
+indices:  tensor([[  47,  165, 3580,  190,  301, 1787,   12,   73,   30, 1507,  716,    5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'on', 'iert', '▁bleiben', '▁und', '▁sie', '▁auf', 'recht', '▁erhalten', '▁.']
+-> wir
+-> müssen
+-> komp
+on
+iert
+-> bleiben
+-> und
+-> sie
+-> auf
+recht
+-> erhalten
+-> .
+
+words string:  ▁wir ▁müssen ▁zusammen halten ▁und ▁sie ▁beibehalten ▁.
+indices:  tensor([[   47,   165,   644,  1051,    12,    73, 13449,     5]])
+words:  ['▁wir', '▁müssen', '▁zusammen', 'halten', '▁und', '▁sie', '▁beibehalten', '▁.']
+-> wir
+-> müssen
+-> zusammen
+halten
+-> und
+-> sie
+-> beibehalten
+-> .
+
+words string:  ▁wir ▁müssen ▁komp rom iss los ▁bleiben ▁und ▁sie ▁beibehalten ▁.
+indices:  tensor([[   47,   165,  3580,  2653,  1272,  2448,  1787,    12,    73, 13449,
+             5]])
+words:  ['▁wir', '▁müssen', '▁komp', 'rom', 'iss', 'los', '▁bleiben', '▁und', '▁sie', '▁beibehalten', '▁.']
+-> wir
+-> müssen
+-> komp
+rom
+iss
+los
+-> bleiben
+-> und
+-> sie
+-> beibehalten
+-> .
+
+words string:  ▁Supreme ▁Court ▁up hold s ▁Obama ▁health ▁care ▁law
+indices:  tensor([[20768,  2223,   175,  8042,    31,  5131,   906,  1844,   752]])
+words:  ['▁Supreme', '▁Court', '▁up', 'hold', 's', '▁Obama', '▁health', '▁care', '▁law']
+-> Supreme
+-> Court
+-> up
+hold
+s
+-> Obama
+-> health
+-> care
+-> law
+
+words string:  ▁Supreme ▁Court ▁bestätigt ▁Ob amas ▁Gesundheits gesetz
+indices:  tensor([[20768,  2223,  5570,  8062, 20308,  2751,  4665]])
+words:  ['▁Supreme', '▁Court', '▁bestätigt', '▁Ob', 'amas', '▁Gesundheits', 'gesetz']
+-> Supreme
+-> Court
+-> bestätigt
+-> Ob
+amas
+-> Gesundheits
+gesetz
+
+words string:  ▁ober ster ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits recht ▁auf recht
+indices:  tensor([[7822, 1410, 5796, 4916, 5131,   24, 2751, 1507,   30, 1507]])
+words:  ['▁ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'recht', '▁auf', 'recht']
+-> ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+recht
+-> auf
+recht
+
+words string:  ▁ober ster ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits gesetz ▁auf recht
+indices:  tensor([[7822, 1410, 5796, 4916, 5131,   24, 2751, 4665,   30, 1507]])
+words:  ['▁ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'gesetz', '▁auf', 'recht']
+-> ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+gesetz
+-> auf
+recht
+
+words string:  ▁der ▁Ober ste ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits recht ▁auf recht
+indices:  tensor([[  10, 3547,  619, 5796, 4916, 5131,   24, 2751, 1507,   30, 1507]])
+words:  ['▁der', '▁Ober', 'ste', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'recht', '▁auf', 'recht']
+-> der
+-> Ober
+ste
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+recht
+-> auf
+recht
+
+words string:  ▁ober ster ▁Gerichtshof ▁hält ▁Obama ▁im ▁Gesundheits recht ▁auf recht
+indices:  tensor([[7822, 1410, 5796, 4916, 5131,   46, 2751, 1507,   30, 1507]])
+words:  ['▁ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁im', '▁Gesundheits', 'recht', '▁auf', 'recht']
+-> ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> im
+-> Gesundheits
+recht
+-> auf
+recht
+
+words string:  ▁Ober ster ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits recht ▁auf recht
+indices:  tensor([[3547, 1410, 5796, 4916, 5131,   24, 2751, 1507,   30, 1507]])
+words:  ['▁Ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'recht', '▁auf', 'recht']
+-> Ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+recht
+-> auf
+recht
+
+words string:  ▁der ▁Ober ste ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits gesetz ▁auf recht
+indices:  tensor([[  10, 3547,  619, 5796, 4916, 5131,   24, 2751, 4665,   30, 1507]])
+words:  ['▁der', '▁Ober', 'ste', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'gesetz', '▁auf', 'recht']
+-> der
+-> Ober
+ste
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+gesetz
+-> auf
+recht
+
+words string:  ▁der ▁Ober ste ▁Gerichtshof ▁hält ▁Obama ▁im ▁Gesundheits recht ▁auf recht
+indices:  tensor([[  10, 3547,  619, 5796, 4916, 5131,   46, 2751, 1507,   30, 1507]])
+words:  ['▁der', '▁Ober', 'ste', '▁Gerichtshof', '▁hält', '▁Obama', '▁im', '▁Gesundheits', 'recht', '▁auf', 'recht']
+-> der
+-> Ober
+ste
+-> Gerichtshof
+-> hält
+-> Obama
+-> im
+-> Gesundheits
+recht
+-> auf
+recht
+
+words string:  ▁ober ster ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits recht ▁ein
+indices:  tensor([[7822, 1410, 5796, 4916, 5131,   24, 2751, 1507,   50]])
+words:  ['▁ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'recht', '▁ein']
+-> ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+recht
+-> ein
+
+words string:  ▁der ▁Ober ste ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits recht ▁ein
+indices:  tensor([[  10, 3547,  619, 5796, 4916, 5131,   24, 2751, 1507,   50]])
+words:  ['▁der', '▁Ober', 'ste', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'recht', '▁ein']
+-> der
+-> Ober
+ste
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+recht
+-> ein
+
+words string:  ▁ober ster ▁Gerichtshof ▁hält ▁Obama ▁das ▁Gesundheits gesetz ▁ein
+indices:  tensor([[7822, 1410, 5796, 4916, 5131,   24, 2751, 4665,   50]])
+words:  ['▁ober', 'ster', '▁Gerichtshof', '▁hält', '▁Obama', '▁das', '▁Gesundheits', 'gesetz', '▁ein']
+-> ober
+ster
+-> Gerichtshof
+-> hält
+-> Obama
+-> das
+-> Gesundheits
+gesetz
+-> ein
+
+words string:  ▁Gut ach ▁: ▁increased ▁safety ▁for ▁ped estr ians
+indices:  tensor([[ 7895,   961,    57,  2343,  1362,    21,  9972, 17046,  2081]])
+words:  ['▁Gut', 'ach', '▁:', '▁increased', '▁safety', '▁for', '▁ped', 'estr', 'ians']
+-> Gut
+ach
+-> :
+-> increased
+-> safety
+-> for
+-> ped
+estr
+ians
+
+words string:  ▁Gut ach ▁: ▁noch ▁mehr ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[7895,  961,   57,  142,  176,  714,   26, 2852, 9521]])
+words:  ['▁Gut', 'ach', '▁:', '▁noch', '▁mehr', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+ach
+-> :
+-> noch
+-> mehr
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁erhöhte ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[ 7895,  3978,    57, 19656,   714,    26,  2852,  9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁erhöhte', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> erhöhte
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁höhere ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[7895, 3978,   57, 6572,  714,   26, 2852, 9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁höhere', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> höhere
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁mehr ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[7895, 3978,   57,  176,  714,   26, 2852, 9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁mehr', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> mehr
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁erhöhte ▁Sicherheit ▁von ▁Fuß gäng ern
+indices:  tensor([[ 7895,  3978,    57, 19656,   714,    22,  2852, 11950,   331]])
+words:  ['▁Gut', 'achten', '▁:', '▁erhöhte', '▁Sicherheit', '▁von', '▁Fuß', 'gäng', 'ern']
+-> Gut
+achten
+-> :
+-> erhöhte
+-> Sicherheit
+-> von
+-> Fuß
+gäng
+ern
+
+words string:  ▁Gut achten ▁: ▁verbesserte ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[ 7895,  3978,    57, 15110,   714,    26,  2852,  9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁verbesserte', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> verbesserte
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁Erhöhung ▁der ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[7895, 3978,   57, 6421,   10,  714,   26, 2852, 9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁Erhöhung', '▁der', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> Erhöhung
+-> der
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁verstärkte ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[ 7895,  3978,    57, 14426,   714,    26,  2852,  9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁verstärkte', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> verstärkte
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁größere ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[7895, 3978,   57, 3864,  714,   26, 2852, 9521]])
+words:  ['▁Gut', 'achten', '▁:', '▁größere', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achten
+-> :
+-> größere
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achter ▁: ▁erhöhte ▁Sicherheit ▁für ▁Fuß gänger
+indices:  tensor([[ 7895, 11032,    57, 19656,   714,    26,  2852,  9521]])
+words:  ['▁Gut', 'achter', '▁:', '▁erhöhte', '▁Sicherheit', '▁für', '▁Fuß', 'gänger']
+-> Gut
+achter
+-> :
+-> erhöhte
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+
+words string:  ▁Gut achten ▁: ▁erhöhte ▁Sicherheit ▁für ▁Fuß gänger ▁.
+indices:  tensor([[ 7895,  3978,    57, 19656,   714,    26,  2852,  9521,     5]])
+words:  ['▁Gut', 'achten', '▁:', '▁erhöhte', '▁Sicherheit', '▁für', '▁Fuß', 'gänger', '▁.']
+-> Gut
+achten
+-> :
+-> erhöhte
+-> Sicherheit
+-> für
+-> Fuß
+gänger
+-> .
+
+words string:  ▁an ▁inquiry ▁by ▁the ▁F DP ▁confirmed ▁this ▁.
+indices:  tensor([[   32, 16638,    54,     6,   263, 12293,  7639,    35,     5]])
+words:  ['▁an', '▁inquiry', '▁by', '▁the', '▁F', 'DP', '▁confirmed', '▁this', '▁.']
+-> an
+-> inquiry
+-> by
+-> the
+-> F
+DP
+-> confirmed
+-> this
+-> .
+
+words string:  ▁eine ▁Anfrage ▁der ▁F DP ▁habe ▁das ▁bestätigt ▁.
+indices:  tensor([[   44,  3395,    10,   263, 12293,   402,    24,  5570,     5]])
+words:  ['▁eine', '▁Anfrage', '▁der', '▁F', 'DP', '▁habe', '▁das', '▁bestätigt', '▁.']
+-> eine
+-> Anfrage
+-> der
+-> F
+DP
+-> habe
+-> das
+-> bestätigt
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁bestät igte ▁dies ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293, 19916,  2543,   206,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁bestät', 'igte', '▁dies', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> bestät
+igte
+-> dies
+-> .
+
+words string:  ▁eine ▁Anfrage ▁der ▁F DP ▁bestät igte ▁dies ▁.
+indices:  tensor([[   44,  3395,    10,   263, 12293, 19916,  2543,   206,     5]])
+words:  ['▁eine', '▁Anfrage', '▁der', '▁F', 'DP', '▁bestät', 'igte', '▁dies', '▁.']
+-> eine
+-> Anfrage
+-> der
+-> F
+DP
+-> bestät
+igte
+-> dies
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁bestät igte ▁das ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293, 19916,  2543,    24,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁bestät', 'igte', '▁das', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> bestät
+igte
+-> das
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁hat ▁dies ▁bestätigt ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293,    91,   206,  5570,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁hat', '▁dies', '▁bestätigt', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> hat
+-> dies
+-> bestätigt
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁durch ▁die ▁F DP ▁bestät igte ▁dies ▁.
+indices:  tensor([[   44,  7011,   110,     8,   263, 12293, 19916,  2543,   206,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁durch', '▁die', '▁F', 'DP', '▁bestät', 'igte', '▁dies', '▁.']
+-> eine
+-> Untersuchung
+-> durch
+-> die
+-> F
+DP
+-> bestät
+igte
+-> dies
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁bestätigt ▁dies ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293,  5570,   206,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁bestätigt', '▁dies', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> bestätigt
+-> dies
+-> .
+
+words string:  ▁eine ▁Anfrage ▁der ▁F DP ▁bestät igte ▁das ▁.
+indices:  tensor([[   44,  3395,    10,   263, 12293, 19916,  2543,    24,     5]])
+words:  ['▁eine', '▁Anfrage', '▁der', '▁F', 'DP', '▁bestät', 'igte', '▁das', '▁.']
+-> eine
+-> Anfrage
+-> der
+-> F
+DP
+-> bestät
+igte
+-> das
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁seitens ▁der ▁F DP ▁bestät igte ▁dies ▁.
+indices:  tensor([[   44,  7011,  6603,    10,   263, 12293, 19916,  2543,   206,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁seitens', '▁der', '▁F', 'DP', '▁bestät', 'igte', '▁dies', '▁.']
+-> eine
+-> Untersuchung
+-> seitens
+-> der
+-> F
+DP
+-> bestät
+igte
+-> dies
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁hat ▁das ▁bestätigt ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293,    91,    24,  5570,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁hat', '▁das', '▁bestätigt', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> hat
+-> das
+-> bestätigt
+-> .
+
+words string:  ▁eine ▁Untersuchung ▁der ▁F DP ▁bestätigt ▁das ▁.
+indices:  tensor([[   44,  7011,    10,   263, 12293,  5570,    24,     5]])
+words:  ['▁eine', '▁Untersuchung', '▁der', '▁F', 'DP', '▁bestätigt', '▁das', '▁.']
+-> eine
+-> Untersuchung
+-> der
+-> F
+DP
+-> bestätigt
+-> das
+-> .
+
+words string:  ▁it ▁was ▁really ▁dar ing ▁what ▁they ▁did ▁.
+indices:  tensor([[  39,   68, 1080, 1283,   76,  167,  124,  886,    5]])
+words:  ['▁it', '▁was', '▁really', '▁dar', 'ing', '▁what', '▁they', '▁did', '▁.']
+-> it
+-> was
+-> really
+-> dar
+ing
+-> what
+-> they
+-> did
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁mut ig ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[  49,  168,  997, 6546,  195,    4,   68,   73, 3438,   88,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁mut', 'ig', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> mut
+ig
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁mut ig ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[  49,  168,  997, 6546,  195,    4,   68,   73, 3438,   88,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁mut', 'ig', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> mut
+ig
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁wage mut ig ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[   49,   168,   997, 12420, 14257,   195,     4,    68,    73,  3438,
+            88,     5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁wage', 'mut', 'ig', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> wage
+mut
+ig
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁kü hn ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[   49,   168,   997, 12751,  2737,     4,    68,    73,  3438,    88,
+             5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁kü', 'hn', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> kü
+hn
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁w agt ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[  49,  168,  997,  534, 3581,    4,   68,   73, 3438,   88,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁w', 'agt', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> w
+agt
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁gew agt ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[  49,  168,  997, 1849, 3581,    4,   68,   73, 3438,   88,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁gew', 'agt', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> gew
+agt
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁w agen d ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[  49,  168,  997,  534, 1691,  228,    4,   68,   73, 3438,   88,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁w', 'agen', 'd', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> w
+agen
+d
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁w agte ▁, ▁was ▁sie ▁getan ▁haben ▁.
+indices:  tensor([[   49,   168,   997,   534, 18885,     4,    68,    73,  3438,    88,
+             5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁w', 'agte', '▁,', '▁was', '▁sie', '▁getan', '▁haben', '▁.']
+-> es
+-> war
+-> wirklich
+-> w
+agte
+-> ,
+-> was
+-> sie
+-> getan
+-> haben
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁mut ig ▁, ▁was ▁sie ▁t aten ▁.
+indices:  tensor([[  49,  168,  997, 6546,  195,    4,   68,   73,  430, 1060,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁mut', 'ig', '▁,', '▁was', '▁sie', '▁t', 'aten', '▁.']
+-> es
+-> war
+-> wirklich
+-> mut
+ig
+-> ,
+-> was
+-> sie
+-> t
+aten
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁mut ig ▁, ▁was ▁sie ▁getan ▁.
+indices:  tensor([[  49,  168,  997, 6546,  195,    4,   68,   73, 3438,    5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁mut', 'ig', '▁,', '▁was', '▁sie', '▁getan', '▁.']
+-> es
+-> war
+-> wirklich
+-> mut
+ig
+-> ,
+-> was
+-> sie
+-> getan
+-> .
+
+words string:  ▁es ▁war ▁wirklich ▁wage mut ig ▁, ▁was ▁sie ▁getan ▁.
+indices:  tensor([[   49,   168,   997, 12420, 14257,   195,     4,    68,    73,  3438,
+             5]])
+words:  ['▁es', '▁war', '▁wirklich', '▁wage', 'mut', 'ig', '▁,', '▁was', '▁sie', '▁getan', '▁.']
+-> es
+-> war
+-> wirklich
+-> wage
+mut
+ig
+-> ,
+-> was
+-> sie
+-> getan
+-> .
+
+words string:  ▁yesterday ▁the ▁accused ▁expressed ▁regret ▁for ▁his ▁behaviour ▁.
+indices:  tensor([[ 5555,     6, 16812,  4046,  6847,    21,   222,  9310,     5]])
+words:  ['▁yesterday', '▁the', '▁accused', '▁expressed', '▁regret', '▁for', '▁his', '▁behaviour', '▁.']
+-> yesterday
+-> the
+-> accused
+-> expressed
+-> regret
+-> for
+-> his
+-> behaviour
+-> .
+
+words string:  ▁der ▁Ange kl agte ▁bedauer te ▁sein ▁Verhalten ▁gestern ▁.
+indices:  tensor([[   10,  8255,  1521, 18885,  7752,   128,   155,  5205,  6210,     5]])
+words:  ['▁der', '▁Ange', 'kl', 'agte', '▁bedauer', 'te', '▁sein', '▁Verhalten', '▁gestern', '▁.']
+-> der
+-> Ange
+kl
+agte
+-> bedauer
+te
+-> sein
+-> Verhalten
+-> gestern
+-> .
+
+words string:  ▁gestern ▁äußer te ▁der ▁Besch uld igte ▁sein ▁Bed auern ▁für ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   128,    10,  3609,  4905,  2543,   155,  3794,  3989,
+            26,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'te', '▁der', '▁Besch', 'uld', 'igte', '▁sein', '▁Bed', 'auern', '▁für', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+te
+-> der
+-> Besch
+uld
+igte
+-> sein
+-> Bed
+auern
+-> für
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁äußer te ▁der ▁Besch uld igte ▁sein ▁Bed auern ▁über ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   128,    10,  3609,  4905,  2543,   155,  3794,  3989,
+            79,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'te', '▁der', '▁Besch', 'uld', 'igte', '▁sein', '▁Bed', 'auern', '▁über', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+te
+-> der
+-> Besch
+uld
+igte
+-> sein
+-> Bed
+auern
+-> über
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁hat ▁der ▁Besch uld igte ▁sein ▁Verhalten ▁bed auert ▁.
+indices:  tensor([[ 6210,    91,    10,  3609,  4905,  2543,   155,  5205,   950, 14368,
+             5]])
+words:  ['▁gestern', '▁hat', '▁der', '▁Besch', 'uld', 'igte', '▁sein', '▁Verhalten', '▁bed', 'auert', '▁.']
+-> gestern
+-> hat
+-> der
+-> Besch
+uld
+igte
+-> sein
+-> Verhalten
+-> bed
+auert
+-> .
+
+words string:  ▁gestern ▁äußer te ▁der ▁Ange kl agte ▁sein ▁Bed auern ▁für ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   128,    10,  8255,  1521, 18885,   155,  3794,  3989,
+            26,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'te', '▁der', '▁Ange', 'kl', 'agte', '▁sein', '▁Bed', 'auern', '▁für', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+te
+-> der
+-> Ange
+kl
+agte
+-> sein
+-> Bed
+auern
+-> für
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁äußer te ▁der ▁Ange kl agte ▁sein ▁Bed auern ▁über ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   128,    10,  8255,  1521, 18885,   155,  3794,  3989,
+            79,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'te', '▁der', '▁Ange', 'kl', 'agte', '▁sein', '▁Bed', 'auern', '▁über', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+te
+-> der
+-> Ange
+kl
+agte
+-> sein
+-> Bed
+auern
+-> über
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁brachte ▁der ▁Besch uld igte ▁sein ▁Verhalten ▁mit ▁Bed auern ▁zum ▁Ausdruck ▁.
+indices:  tensor([[ 6210, 11616,    10,  3609,  4905,  2543,   155,  5205,    29,  3794,
+          3989,   117,  1992,     5]])
+words:  ['▁gestern', '▁brachte', '▁der', '▁Besch', 'uld', 'igte', '▁sein', '▁Verhalten', '▁mit', '▁Bed', 'auern', '▁zum', '▁Ausdruck', '▁.']
+-> gestern
+-> brachte
+-> der
+-> Besch
+uld
+igte
+-> sein
+-> Verhalten
+-> mit
+-> Bed
+auern
+-> zum
+-> Ausdruck
+-> .
+
+words string:  ▁gestern ▁hat ▁der ▁Ange kl agte ▁sein ▁Verhalten ▁bed auert ▁.
+indices:  tensor([[ 6210,    91,    10,  8255,  1521, 18885,   155,  5205,   950, 14368,
+             5]])
+words:  ['▁gestern', '▁hat', '▁der', '▁Ange', 'kl', 'agte', '▁sein', '▁Verhalten', '▁bed', 'auert', '▁.']
+-> gestern
+-> hat
+-> der
+-> Ange
+kl
+agte
+-> sein
+-> Verhalten
+-> bed
+auert
+-> .
+
+words string:  ▁gestern ▁äußer ten ▁die ▁Besch uld igten ▁ihr ▁Bed auern ▁über ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   139,     8,  3609,  4905,  2437,   505,  3794,  3989,
+            79,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'ten', '▁die', '▁Besch', 'uld', 'igten', '▁ihr', '▁Bed', 'auern', '▁über', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+ten
+-> die
+-> Besch
+uld
+igten
+-> ihr
+-> Bed
+auern
+-> über
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁äußer ten ▁die ▁Besch uld igten ▁ihr ▁Bed auern ▁für ▁sein ▁Verhalten ▁.
+indices:  tensor([[ 6210, 10288,   139,     8,  3609,  4905,  2437,   505,  3794,  3989,
+            26,   155,  5205,     5]])
+words:  ['▁gestern', '▁äußer', 'ten', '▁die', '▁Besch', 'uld', 'igten', '▁ihr', '▁Bed', 'auern', '▁für', '▁sein', '▁Verhalten', '▁.']
+-> gestern
+-> äußer
+ten
+-> die
+-> Besch
+uld
+igten
+-> ihr
+-> Bed
+auern
+-> für
+-> sein
+-> Verhalten
+-> .
+
+words string:  ▁gestern ▁äußer te ▁der ▁Besch uld igte ▁sein ▁Bed auern ▁wegen ▁seines ▁Verhaltens ▁.
+indices:  tensor([[ 6210, 10288,   128,    10,  3609,  4905,  2543,   155,  3794,  3989,
+          1729,  3477, 15075,     5]])
+words:  ['▁gestern', '▁äußer', 'te', '▁der', '▁Besch', 'uld', 'igte', '▁sein', '▁Bed', 'auern', '▁wegen', '▁seines', '▁Verhaltens', '▁.']
+-> gestern
+-> äußer
+te
+-> der
+-> Besch
+uld
+igte
+-> sein
+-> Bed
+auern
+-> wegen
+-> seines
+-> Verhaltens
+-> .
+
+words string:  ▁e - mail ▁is ▁short ▁for ▁electronic ▁mail ▁.
+indices:  tensor([[ 398,   17, 2865,   18,  960,   21, 4206, 6881,    5]])
+words:  ['▁e', '-', 'mail', '▁is', '▁short', '▁for', '▁electronic', '▁mail', '▁.']
+-> e
+-
+mail
+-> is
+-> short
+-> for
+-> electronic
+-> mail
+-> .
+
+words string:  ▁E - Mail ▁heißt ▁ja ▁eigentlich ▁elektron ischer ▁Brief ▁.
+indices:  tensor([[  292,    17,  2368,  2133,  1130,  2806, 14023,   551, 12132,     5]])
+words:  ['▁E', '-', 'Mail', '▁heißt', '▁ja', '▁eigentlich', '▁elektron', 'ischer', '▁Brief', '▁.']
+-> E
+-
+Mail
+-> heißt
+-> ja
+-> eigentlich
+-> elektron
+ischer
+-> Brief
+-> .
+
+words string:  ▁E - Mail ▁ist ▁kurz ▁für ▁elektronische ▁Post ▁.
+indices:  tensor([[  292,    17,  2368,    27,  2177,    26, 13392,  2700,     5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁Post', '▁.']
+-> E
+-
+Mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> Post
+-> .
+
+words string:  ▁E - Mail ▁ist ▁kurz ▁für ▁elektronische ▁E - Mail ▁.
+indices:  tensor([[  292,    17,  2368,    27,  2177,    26, 13392,   292,    17,  2368,
+             5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁E', '-', 'Mail', '▁.']
+-> E
+-
+Mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> E
+-
+Mail
+-> .
+
+words string:  ▁E - Mail ▁ist ▁kurz ▁für ▁E - Mail ▁.
+indices:  tensor([[ 292,   17, 2368,   27, 2177,   26,  292,   17, 2368,    5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁kurz', '▁für', '▁E', '-', 'Mail', '▁.']
+-> E
+-
+Mail
+-> ist
+-> kurz
+-> für
+-> E
+-
+Mail
+-> .
+
+words string:  ▁E - Mail ▁ist ▁kurz ▁für ▁elektronische ▁Mail ▁.
+indices:  tensor([[  292,    17,  2368,    27,  2177,    26, 13392,  8834,     5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁Mail', '▁.']
+-> E
+-
+Mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> Mail
+-> .
+
+words string:  ▁E - Mail ▁is ▁short ▁for ▁electronic ▁mail ▁.
+indices:  tensor([[ 292,   17, 2368,   18,  960,   21, 4206, 6881,    5]])
+words:  ['▁E', '-', 'Mail', '▁is', '▁short', '▁for', '▁electronic', '▁mail', '▁.']
+-> E
+-
+Mail
+-> is
+-> short
+-> for
+-> electronic
+-> mail
+-> .
+
+words string:  ▁E - mail ▁ist ▁kurz ▁für ▁elektronische ▁Post ▁.
+indices:  tensor([[  292,    17,  2865,    27,  2177,    26, 13392,  2700,     5]])
+words:  ['▁E', '-', 'mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁Post', '▁.']
+-> E
+-
+mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> Post
+-> .
+
+words string:  ▁E - Mail ▁ist ▁kurz ▁für ▁elektronische ▁mail ▁.
+indices:  tensor([[  292,    17,  2368,    27,  2177,    26, 13392,  6881,     5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁mail', '▁.']
+-> E
+-
+Mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> mail
+-> .
+
+words string:  ▁e - mail ▁ist ▁kurz ▁für ▁elektronische ▁Post ▁.
+indices:  tensor([[  398,    17,  2865,    27,  2177,    26, 13392,  2700,     5]])
+words:  ['▁e', '-', 'mail', '▁ist', '▁kurz', '▁für', '▁elektronische', '▁Post', '▁.']
+-> e
+-
+mail
+-> ist
+-> kurz
+-> für
+-> elektronische
+-> Post
+-> .
+
+words string:  ▁E - Mail ▁ist ▁für ▁elektronische ▁Post ▁kurz ▁.
+indices:  tensor([[  292,    17,  2368,    27,    26, 13392,  2700,  2177,     5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁für', '▁elektronische', '▁Post', '▁kurz', '▁.']
+-> E
+-
+Mail
+-> ist
+-> für
+-> elektronische
+-> Post
+-> kurz
+-> .
+
+words string:  ▁E - Mail ▁ist ▁für ▁E - Mail ▁kurz ▁.
+indices:  tensor([[ 292,   17, 2368,   27,   26,  292,   17, 2368, 2177,    5]])
+words:  ['▁E', '-', 'Mail', '▁ist', '▁für', '▁E', '-', 'Mail', '▁kurz', '▁.']
+-> E
+-
+Mail
+-> ist
+-> für
+-> E
+-
+Mail
+-> kurz
+-> .
+
+words string:  ▁this ▁really ▁is ▁a ▁must ▁for ▁our ▁nation ▁.
+indices:  tensor([[  35, 1080,   18,   16,  144,   21,   82, 6650,    5]])
+words:  ['▁this', '▁really', '▁is', '▁a', '▁must', '▁for', '▁our', '▁nation', '▁.']
+-> this
+-> really
+-> is
+-> a
+-> must
+-> for
+-> our
+-> nation
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unser ▁Land ▁.
+indices:  tensor([[  24,   27,  997,   50,  213, 1677,   26,  646,  480,    5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unser', '▁Land', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unser
+-> Land
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[   24,    27,   997,    50,   213,  1677,    26,   236, 13051,     5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unsere', '▁Nation', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁dies ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[  206,    27,   997,    50,   213,  1677,    26,   236, 13051,     5]])
+words:  ['▁dies', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unsere', '▁Nation', '▁.']
+-> dies
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uß ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[   24,    27,   997,    50,   213,  2351,    26,   236, 13051,     5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uß', '▁für', '▁unsere', '▁Nation', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uß
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁dies ▁ist ▁wirklich ▁ein ▁M uß ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[  206,    27,   997,    50,   213,  2351,    26,   236, 13051,     5]])
+words:  ['▁dies', '▁ist', '▁wirklich', '▁ein', '▁M', 'uß', '▁für', '▁unsere', '▁Nation', '▁.']
+-> dies
+-> ist
+-> wirklich
+-> ein
+-> M
+uß
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unser ▁Volk ▁.
+indices:  tensor([[  24,   27,  997,   50,  213, 1677,   26,  646, 3957,    5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unser', '▁Volk', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unser
+-> Volk
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁eine ▁Notwendigkeit ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[   24,    27,   997,    44,  2465,    26,   236, 13051,     5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁eine', '▁Notwendigkeit', '▁für', '▁unsere', '▁Nation', '▁.']
+-> das
+-> ist
+-> wirklich
+-> eine
+-> Notwendigkeit
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁dies ▁ist ▁wirklich ▁eine ▁Notwendigkeit ▁für ▁unsere ▁Nation ▁.
+indices:  tensor([[  206,    27,   997,    44,  2465,    26,   236, 13051,     5]])
+words:  ['▁dies', '▁ist', '▁wirklich', '▁eine', '▁Notwendigkeit', '▁für', '▁unsere', '▁Nation', '▁.']
+-> dies
+-> ist
+-> wirklich
+-> eine
+-> Notwendigkeit
+-> für
+-> unsere
+-> Nation
+-> .
+
+words string:  ▁dies ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unser ▁Volk ▁.
+indices:  tensor([[ 206,   27,  997,   50,  213, 1677,   26,  646, 3957,    5]])
+words:  ['▁dies', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unser', '▁Volk', '▁.']
+-> dies
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unser
+-> Volk
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uß ▁für ▁unser ▁Volk ▁.
+indices:  tensor([[  24,   27,  997,   50,  213, 2351,   26,  646, 3957,    5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uß', '▁für', '▁unser', '▁Volk', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uß
+-> für
+-> unser
+-> Volk
+-> .
+
+words string:  ▁das ▁ist ▁wirklich ▁ein ▁M uss ▁für ▁unser ▁Land ▁.
+indices:  tensor([[  24,   27,  997,   50,  213, 1677,   26,  646,  480,    5]])
+words:  ['▁das', '▁ist', '▁wirklich', '▁ein', '▁M', 'uss', '▁für', '▁unser', '▁Land', '▁.']
+-> das
+-> ist
+-> wirklich
+-> ein
+-> M
+uss
+-> für
+-> unser
+-> Land
+-> .
+
+words string:  ▁the ▁crime ▁had ▁caused ▁nation wide ▁hor ror ▁.
+indices:  tensor([[    6,  4372,   339,  3479,  6650,  7996,  8395, 12154,     5]])
+words:  ['▁the', '▁crime', '▁had', '▁caused', '▁nation', 'wide', '▁hor', 'ror', '▁.']
+-> the
+-> crime
+-> had
+-> caused
+-> nation
+wide
+-> hor
+ror
+-> .
+
+words string:  ▁die ▁Tat ▁hatte ▁land es weit ▁Ents etzen ▁ausgelöst ▁.
+indices:  tensor([[    8,  2620,   954,  1759,    78,  4636,  9512,  4698, 15929,     5]])
+words:  ['▁die', '▁Tat', '▁hatte', '▁land', 'es', 'weit', '▁Ents', 'etzen', '▁ausgelöst', '▁.']
+-> die
+-> Tat
+-> hatte
+-> land
+es
+weit
+-> Ents
+etzen
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation wide ▁Schre cken ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  7996, 17527,  1680, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'wide', '▁Schre', 'cken', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+wide
+-> Schre
+cken
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation weit ▁Schre cken ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  4636, 17527,  1680, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'weit', '▁Schre', 'cken', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+weit
+-> Schre
+cken
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁land es weit ▁Schre cken ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  1759,    78,  4636, 17527,  1680, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁land', 'es', 'weit', '▁Schre', 'cken', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> land
+es
+weit
+-> Schre
+cken
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation wide ▁Hor ror ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  7996,  8282, 12154, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'wide', '▁Hor', 'ror', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+wide
+-> Hor
+ror
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁national ▁Hor ror ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,   521,  8282, 12154, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁national', '▁Hor', 'ror', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> national
+-> Hor
+ror
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation weit ▁Hor ror ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  4636,  8282, 12154, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'weit', '▁Hor', 'ror', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+weit
+-> Hor
+ror
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation wide ▁Schre cken ▁verursacht ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  7996, 17527,  1680,  7723,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'wide', '▁Schre', 'cken', '▁verursacht', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+wide
+-> Schre
+cken
+-> verursacht
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁nation weit ▁Schre cken ▁verursacht ▁.
+indices:  tensor([[   24,  7265,   954,  6650,  4636, 17527,  1680,  7723,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁nation', 'weit', '▁Schre', 'cken', '▁verursacht', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> nation
+weit
+-> Schre
+cken
+-> verursacht
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁land es weit ▁Hor ror ▁ausgelöst ▁.
+indices:  tensor([[   24,  7265,   954,  1759,    78,  4636,  8282, 12154, 15929,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁land', 'es', 'weit', '▁Hor', 'ror', '▁ausgelöst', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> land
+es
+weit
+-> Hor
+ror
+-> ausgelöst
+-> .
+
+words string:  ▁das ▁Verbrechen ▁hatte ▁national ▁Hor ror ▁verursacht ▁.
+indices:  tensor([[   24,  7265,   954,   521,  8282, 12154,  7723,     5]])
+words:  ['▁das', '▁Verbrechen', '▁hatte', '▁national', '▁Hor', 'ror', '▁verursacht', '▁.']
+-> das
+-> Verbrechen
+-> hatte
+-> national
+-> Hor
+ror
+-> verursacht
+-> .
+
+words string:  ▁sometimes ▁they ▁just ▁need ▁the ▁money ▁very ▁quickly ▁.
+indices:  tensor([[2972,  124,  281,  244,    6, 1215,  153, 2336,    5]])
+words:  ['▁sometimes', '▁they', '▁just', '▁need', '▁the', '▁money', '▁very', '▁quickly', '▁.']
+-> sometimes
+-> they
+-> just
+-> need
+-> the
+-> money
+-> very
+-> quickly
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁auch ▁einfach ▁nur ▁sehr ▁schnell ▁Geld ▁.
+indices:  tensor([[4702, 1460,   73,   64,  737,  121,  162, 1152, 1248,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁auch', '▁einfach', '▁nur', '▁sehr', '▁schnell', '▁Geld', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> auch
+-> einfach
+-> nur
+-> sehr
+-> schnell
+-> Geld
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁das ▁Geld ▁nur ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 1460,   73,   24, 1248,  121,  162, 1152,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁das', '▁Geld', '▁nur', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> das
+-> Geld
+-> nur
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁nur ▁das ▁Geld ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 1460,   73,  121,   24, 1248,  162, 1152,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁nur', '▁das', '▁Geld', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> nur
+-> das
+-> Geld
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁einfach ▁das ▁Geld ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 1460,   73,  737,   24, 1248,  162, 1152,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁einfach', '▁das', '▁Geld', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> einfach
+-> das
+-> Geld
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁das ▁Geld ▁einfach ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 1460,   73,   24, 1248,  737,  162, 1152,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁das', '▁Geld', '▁einfach', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> das
+-> Geld
+-> einfach
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁benötigen ▁sie ▁das ▁Geld ▁nur ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 3135,   73,   24, 1248,  121,  162, 1152,    5]])
+words:  ['▁manchmal', '▁benötigen', '▁sie', '▁das', '▁Geld', '▁nur', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> benötigen
+-> sie
+-> das
+-> Geld
+-> nur
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁nur ▁sehr ▁schnell ▁das ▁Geld ▁.
+indices:  tensor([[4702, 1460,   73,  121,  162, 1152,   24, 1248,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁nur', '▁sehr', '▁schnell', '▁das', '▁Geld', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> nur
+-> sehr
+-> schnell
+-> das
+-> Geld
+-> .
+
+words string:  ▁manchmal ▁benötigen ▁sie ▁nur ▁das ▁Geld ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 3135,   73,  121,   24, 1248,  162, 1152,    5]])
+words:  ['▁manchmal', '▁benötigen', '▁sie', '▁nur', '▁das', '▁Geld', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> benötigen
+-> sie
+-> nur
+-> das
+-> Geld
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁braucht ▁man ▁das ▁Geld ▁nur ▁sehr ▁schnell ▁.
+indices:  tensor([[4702, 4373,  149,   24, 1248,  121,  162, 1152,    5]])
+words:  ['▁manchmal', '▁braucht', '▁man', '▁das', '▁Geld', '▁nur', '▁sehr', '▁schnell', '▁.']
+-> manchmal
+-> braucht
+-> man
+-> das
+-> Geld
+-> nur
+-> sehr
+-> schnell
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁das ▁Geld ▁nur ▁sehr ▁rasch ▁.
+indices:  tensor([[4702, 1460,   73,   24, 1248,  121,  162, 5937,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁das', '▁Geld', '▁nur', '▁sehr', '▁rasch', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> das
+-> Geld
+-> nur
+-> sehr
+-> rasch
+-> .
+
+words string:  ▁manchmal ▁brauchen ▁sie ▁das ▁Geld ▁ganz ▁schnell ▁.
+indices:  tensor([[4702, 1460,   73,   24, 1248,  440, 1152,    5]])
+words:  ['▁manchmal', '▁brauchen', '▁sie', '▁das', '▁Geld', '▁ganz', '▁schnell', '▁.']
+-> manchmal
+-> brauchen
+-> sie
+-> das
+-> Geld
+-> ganz
+-> schnell
+-> .
+
+words string:  ▁some ▁people ▁can ▁die ▁because ▁they ▁are ▁waiting ▁.
+indices:  tensor([[ 217,  201,   85,    8,  267,  124,   43, 6531,    5]])
+words:  ['▁some', '▁people', '▁can', '▁die', '▁because', '▁they', '▁are', '▁waiting', '▁.']
+-> some
+-> people
+-> can
+-> die
+-> because
+-> they
+-> are
+-> waiting
+-> .
+
+words string:  ▁einige ▁Menschen ▁sterben ▁sogar ▁, ▁weil ▁sie ▁warten ▁müssen ▁.
+indices:  tensor([[  490,   354, 14095,  1163,     4,   510,    73,  5667,   165,     5]])
+words:  ['▁einige', '▁Menschen', '▁sterben', '▁sogar', '▁,', '▁weil', '▁sie', '▁warten', '▁müssen', '▁.']
+-> einige
+-> Menschen
+-> sterben
+-> sogar
+-> ,
+-> weil
+-> sie
+-> warten
+-> müssen
+-> .
+
+words string:  ▁einige ▁Menschen ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[  490,   354,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁einige', '▁Menschen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> einige
+-> Menschen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁manche ▁Menschen ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[ 6630,   354,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁manche', '▁Menschen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> manche
+-> Menschen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁manche ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[ 6630,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁manche', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> manche
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁einige ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[  490,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁einige', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> einige
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁einige ▁Leute ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[  490,  3988,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁einige', '▁Leute', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> einige
+-> Leute
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁manche ▁Leute ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[ 6630,  3988,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁manche', '▁Leute', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> manche
+-> Leute
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁einige ▁Menschen ▁können ▁sterben ▁, ▁weil ▁sie ▁darauf ▁warten ▁.
+indices:  tensor([[  490,   354,   107, 14095,     4,   510,    73,   553,  5667,     5]])
+words:  ['▁einige', '▁Menschen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁darauf', '▁warten', '▁.']
+-> einige
+-> Menschen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> darauf
+-> warten
+-> .
+
+words string:  ▁manche ▁Menschen ▁können ▁sterben ▁, ▁weil ▁sie ▁darauf ▁warten ▁.
+indices:  tensor([[ 6630,   354,   107, 14095,     4,   510,    73,   553,  5667,     5]])
+words:  ['▁manche', '▁Menschen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁darauf', '▁warten', '▁.']
+-> manche
+-> Menschen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> darauf
+-> warten
+-> .
+
+words string:  ▁einige ▁Menschen ▁können ▁sterben ▁, ▁weil ▁sie ▁wartet ▁.
+indices:  tensor([[  490,   354,   107, 14095,     4,   510,    73, 17020,     5]])
+words:  ['▁einige', '▁Menschen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁wartet', '▁.']
+-> einige
+-> Menschen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> wartet
+-> .
+
+words string:  ▁einige ▁Personen ▁können ▁sterben ▁, ▁weil ▁sie ▁warten ▁.
+indices:  tensor([[  490,  1267,   107, 14095,     4,   510,    73,  5667,     5]])
+words:  ['▁einige', '▁Personen', '▁können', '▁sterben', '▁,', '▁weil', '▁sie', '▁warten', '▁.']
+-> einige
+-> Personen
+-> können
+-> sterben
+-> ,
+-> weil
+-> sie
+-> warten
+-> .
+
+words string:  ▁the ▁USA ▁still ▁want ▁to ▁prosec ute ▁Snow den
+indices:  tensor([[    6,   734,   475,   427,    13, 12121,  1239, 12853,   241]])
+words:  ['▁the', '▁USA', '▁still', '▁want', '▁to', '▁prosec', 'ute', '▁Snow', 'den']
+-> the
+-> USA
+-> still
+-> want
+-> to
+-> prosec
+ute
+-> Snow
+den
+
+words string:  ▁USA ▁wollen ▁Snow den ▁weiter ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[  734,   643, 12853,   241,   607,  4845,  3076,  1515,   277,  4970]])
+words:  ['▁USA', '▁wollen', '▁Snow', 'den', '▁weiter', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> USA
+-> wollen
+-> Snow
+den
+-> weiter
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁immer ▁noch ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,   319,   142,  4845,  3076,  1515,
+           277,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁immer', '▁noch', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> immer
+-> noch
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁noch ▁immer ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,   142,   319,  4845,  3076,  1515,
+           277,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁noch', '▁immer', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> noch
+-> immer
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁weiterhin ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,  1316,  4845,  3076,  1515,   277,
+          4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁weiterhin', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> weiterhin
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁noch ▁immer ▁wollen ▁die ▁USA ▁Snow den ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[  142,   319,   643,     8,   734, 12853,   241,  4845,  3076,  1515,
+           277,  4970]])
+words:  ['▁noch', '▁immer', '▁wollen', '▁die', '▁USA', '▁Snow', 'den', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> noch
+-> immer
+-> wollen
+-> die
+-> USA
+-> Snow
+den
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁immer ▁noch ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,   319,   142,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁immer', '▁noch', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> immer
+-> noch
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁noch ▁immer ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,   142,   319,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁noch', '▁immer', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> noch
+-> immer
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁nach ▁wie ▁vor ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,   101,    86,   108,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁nach', '▁wie', '▁vor', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> nach
+-> wie
+-> vor
+-> verfolgen
+
+words string:  ▁noch ▁wollen ▁die ▁USA ▁Snow den ▁stra fre cht lich ▁verfolgen
+indices:  tensor([[  142,   643,     8,   734, 12853,   241,  4845,  3076,  1515,   277,
+          4970]])
+words:  ['▁noch', '▁wollen', '▁die', '▁USA', '▁Snow', 'den', '▁stra', 'fre', 'cht', 'lich', '▁verfolgen']
+-> noch
+-> wollen
+-> die
+-> USA
+-> Snow
+den
+-> stra
+fre
+cht
+lich
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁weiterhin ▁verfolgen
+indices:  tensor([[    8,   734,   643, 12853,   241,  1316,  4970]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁weiterhin', '▁verfolgen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> weiterhin
+-> verfolgen
+
+words string:  ▁die ▁USA ▁wollen ▁Snow den ▁immer ▁noch ▁stra fen
+indices:  tensor([[    8,   734,   643, 12853,   241,   319,   142,  4845,  1042]])
+words:  ['▁die', '▁USA', '▁wollen', '▁Snow', 'den', '▁immer', '▁noch', '▁stra', 'fen']
+-> die
+-> USA
+-> wollen
+-> Snow
+den
+-> immer
+-> noch
+-> stra
+fen
+
+words string:  ▁sometimes ▁a ▁traffic ▁light ▁simply ▁never ▁turns ▁green ▁.
+indices:  tensor([[ 2972,    16,  4183,  1569,  1353,  1655, 14011,  3372,     5]])
+words:  ['▁sometimes', '▁a', '▁traffic', '▁light', '▁simply', '▁never', '▁turns', '▁green', '▁.']
+-> sometimes
+-> a
+-> traffic
+-> light
+-> simply
+-> never
+-> turns
+-> green
+-> .
+
+words string:  ▁manchmal ▁wird ▁eine ▁Amp el ▁einfach ▁nicht ▁grün ▁.
+indices:  tensor([[ 4702,    72,    44, 21257,   324,   737,    51,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁eine', '▁Amp', 'el', '▁einfach', '▁nicht', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> eine
+-> Amp
+el
+-> einfach
+-> nicht
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁eine ▁Amp el ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,    72,    44, 21257,   324,   737,  2539,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁eine', '▁Amp', 'el', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> eine
+-> Amp
+el
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁ein ▁Amp el ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,    72,    50, 21257,   324,   737,  2539,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁ein', '▁Amp', 'el', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> ein
+-> Amp
+el
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁eine ▁Amp el ▁sch licht ▁und ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,    72,    44, 21257,   324,   560,  3814,    12,   737,  2539,
+          9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁eine', '▁Amp', 'el', '▁sch', 'licht', '▁und', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> eine
+-> Amp
+el
+-> sch
+licht
+-> und
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁ein ▁Verkehrs licht ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[4702,   72,   50, 2923, 3814,  737, 2539, 9394,    5]])
+words:  ['▁manchmal', '▁wird', '▁ein', '▁Verkehrs', 'licht', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> ein
+-> Verkehrs
+licht
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁eine ▁Amp el ▁sch licht weg ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,    72,    44, 21257,   324,   560,  3814,  3394,  2539,  9394,
+             5]])
+words:  ['▁manchmal', '▁wird', '▁eine', '▁Amp', 'el', '▁sch', 'licht', 'weg', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> eine
+-> Amp
+el
+-> sch
+licht
+weg
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁eine ▁Amp el ▁einfach ▁nicht ▁grün ▁.
+indices:  tensor([[ 4702,    72,    44, 21257,   324,   737,    51,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁eine', '▁Amp', 'el', '▁einfach', '▁nicht', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> eine
+-> Amp
+el
+-> einfach
+-> nicht
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁die ▁Amp el ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,    72,     8, 21257,   324,   737,  2539,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁die', '▁Amp', 'el', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> die
+-> Amp
+el
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁wird ▁ein ▁Amp el ▁einfach ▁nicht ▁grün ▁.
+indices:  tensor([[ 4702,    72,    50, 21257,   324,   737,    51,  9394,     5]])
+words:  ['▁manchmal', '▁wird', '▁ein', '▁Amp', 'el', '▁einfach', '▁nicht', '▁grün', '▁.']
+-> manchmal
+-> wird
+-> ein
+-> Amp
+el
+-> einfach
+-> nicht
+-> grün
+-> .
+
+words string:  ▁manchmal ▁dre ht ▁sich ▁eine ▁Amp el ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,  5216,  2126,    59,    44, 21257,   324,   737,  2539,  9394,
+             5]])
+words:  ['▁manchmal', '▁dre', 'ht', '▁sich', '▁eine', '▁Amp', 'el', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> dre
+ht
+-> sich
+-> eine
+-> Amp
+el
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁manchmal ▁dre ht ▁sich ▁ein ▁Amp el ▁einfach ▁nie ▁grün ▁.
+indices:  tensor([[ 4702,  5216,  2126,    59,    50, 21257,   324,   737,  2539,  9394,
+             5]])
+words:  ['▁manchmal', '▁dre', 'ht', '▁sich', '▁ein', '▁Amp', 'el', '▁einfach', '▁nie', '▁grün', '▁.']
+-> manchmal
+-> dre
+ht
+-> sich
+-> ein
+-> Amp
+el
+-> einfach
+-> nie
+-> grün
+-> .
+
+words string:  ▁local ▁public ▁transport ▁will ▁also ▁become ▁more ▁expensive ▁.
+indices:  tensor([[ 941,  435, 1045,   65,   87,  850,  112, 7474,    5]])
+words:  ['▁local', '▁public', '▁transport', '▁will', '▁also', '▁become', '▁more', '▁expensive', '▁.']
+-> local
+-> public
+-> transport
+-> will
+-> also
+-> become
+-> more
+-> expensive
+-> .
+
+words string:  ▁der ▁öffentliche ▁Nah verkehr ▁werde ▁auch ▁te urer ▁.
+indices:  tensor([[   10,  2870, 10837,  2428,  1733,    64,  2638, 13255,     5]])
+words:  ['▁der', '▁öffentliche', '▁Nah', 'verkehr', '▁werde', '▁auch', '▁te', 'urer', '▁.']
+-> der
+-> öffentliche
+-> Nah
+verkehr
+-> werde
+-> auch
+-> te
+urer
+-> .
+
+words string:  ▁auch ▁der ▁öffentliche ▁Nah verkehr ▁wird ▁te urer ▁.
+indices:  tensor([[   64,    10,  2870, 10837,  2428,    72,  2638, 13255,     5]])
+words:  ['▁auch', '▁der', '▁öffentliche', '▁Nah', 'verkehr', '▁wird', '▁te', 'urer', '▁.']
+-> auch
+-> der
+-> öffentliche
+-> Nah
+verkehr
+-> wird
+-> te
+urer
+-> .
+
+words string:  ▁auch ▁der ▁Nah verkehr ▁wird ▁te urer ▁.
+indices:  tensor([[   64,    10, 10837,  2428,    72,  2638, 13255,     5]])
+words:  ['▁auch', '▁der', '▁Nah', 'verkehr', '▁wird', '▁te', 'urer', '▁.']
+-> auch
+-> der
+-> Nah
+verkehr
+-> wird
+-> te
+urer
+-> .
+
+words string:  ▁auch ▁der ▁öffentliche ▁Nah verkehr ▁wird ▁te urer ▁werden ▁.
+indices:  tensor([[   64,    10,  2870, 10837,  2428,    72,  2638, 13255,    52,     5]])
+words:  ['▁auch', '▁der', '▁öffentliche', '▁Nah', 'verkehr', '▁wird', '▁te', 'urer', '▁werden', '▁.']
+-> auch
+-> der
+-> öffentliche
+-> Nah
+verkehr
+-> wird
+-> te
+urer
+-> werden
+-> .
+
+words string:  ▁auch ▁der ▁lokale ▁öffentliche ▁Nah verkehr ▁wird ▁te urer ▁.
+indices:  tensor([[   64,    10,  8993,  2870, 10837,  2428,    72,  2638, 13255,     5]])
+words:  ['▁auch', '▁der', '▁lokale', '▁öffentliche', '▁Nah', 'verkehr', '▁wird', '▁te', 'urer', '▁.']
+-> auch
+-> der
+-> lokale
+-> öffentliche
+-> Nah
+verkehr
+-> wird
+-> te
+urer
+-> .
+
+words string:  ▁auch ▁der ▁Nah verkehr ▁wird ▁te urer ▁werden ▁.
+indices:  tensor([[   64,    10, 10837,  2428,    72,  2638, 13255,    52,     5]])
+words:  ['▁auch', '▁der', '▁Nah', 'verkehr', '▁wird', '▁te', 'urer', '▁werden', '▁.']
+-> auch
+-> der
+-> Nah
+verkehr
+-> wird
+-> te
+urer
+-> werden
+-> .
+
+words string:  ▁auch ▁die ▁öffentlichen ▁Nah verkehrs mittel ▁werden ▁te urer ▁.
+indices:  tensor([[   64,     8,  1403, 10837,  5544,  1895,    52,  2638, 13255,     5]])
+words:  ['▁auch', '▁die', '▁öffentlichen', '▁Nah', 'verkehrs', 'mittel', '▁werden', '▁te', 'urer', '▁.']
+-> auch
+-> die
+-> öffentlichen
+-> Nah
+verkehrs
+mittel
+-> werden
+-> te
+urer
+-> .
+
+words string:  ▁der ▁öffentliche ▁Nah verkehr ▁wird ▁auch ▁te urer ▁.
+indices:  tensor([[   10,  2870, 10837,  2428,    72,    64,  2638, 13255,     5]])
+words:  ['▁der', '▁öffentliche', '▁Nah', 'verkehr', '▁wird', '▁auch', '▁te', 'urer', '▁.']
+-> der
+-> öffentliche
+-> Nah
+verkehr
+-> wird
+-> auch
+-> te
+urer
+-> .
+
+words string:  ▁auch ▁die ▁öffentlichen ▁Verkehrs mittel ▁werden ▁te urer ▁.
+indices:  tensor([[   64,     8,  1403,  2923,  1895,    52,  2638, 13255,     5]])
+words:  ['▁auch', '▁die', '▁öffentlichen', '▁Verkehrs', 'mittel', '▁werden', '▁te', 'urer', '▁.']
+-> auch
+-> die
+-> öffentlichen
+-> Verkehrs
+mittel
+-> werden
+-> te
+urer
+-> .
+
+words string:  ▁der ▁öffentliche ▁Nah verkehr ▁wird ▁ebenfalls ▁te urer ▁.
+indices:  tensor([[   10,  2870, 10837,  2428,    72,  1280,  2638, 13255,     5]])
+words:  ['▁der', '▁öffentliche', '▁Nah', 'verkehr', '▁wird', '▁ebenfalls', '▁te', 'urer', '▁.']
+-> der
+-> öffentliche
+-> Nah
+verkehr
+-> wird
+-> ebenfalls
+-> te
+urer
+-> .
+
+words string:  ▁der ▁Nah verkehr ▁wird ▁auch ▁te urer ▁.
+indices:  tensor([[   10, 10837,  2428,    72,    64,  2638, 13255,     5]])
+words:  ['▁der', '▁Nah', 'verkehr', '▁wird', '▁auch', '▁te', 'urer', '▁.']
+-> der
+-> Nah
+verkehr
+-> wird
+-> auch
+-> te
+urer
+-> .
+
+words string:  ▁worker ▁falls ▁from ▁lad der ▁: ▁seriously ▁inj ured
+indices:  tensor([[19189,  1912,    67, 23393,   378,    57,  5189,  9740,  4007]])
+words:  ['▁worker', '▁falls', '▁from', '▁lad', 'der', '▁:', '▁seriously', '▁inj', 'ured']
+-> worker
+-> falls
+-> from
+-> lad
+der
+-> :
+-> seriously
+-> inj
+ured
+
+words string:  ▁Arbeiter ▁st ürz te ▁von ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[10562,   484,  8865,   128,    22, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeiter', '▁st', 'ürz', 'te', '▁von', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeiter
+-> st
+ürz
+te
+-> von
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fällt ▁von ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  6483,    22, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fällt', '▁von', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fällt
+-> von
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fallen ▁von ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  4408,    22, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fallen', '▁von', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fallen
+-> von
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fällt ▁von ▁Leiter ▁: ▁schwer ▁Verletz te
+indices:  tensor([[ 3070,  6483,    22, 11392,    57,  2411, 23526,   128]])
+words:  ['▁Arbeitnehmer', '▁fällt', '▁von', '▁Leiter', '▁:', '▁schwer', '▁Verletz', 'te']
+-> Arbeitnehmer
+-> fällt
+-> von
+-> Leiter
+-> :
+-> schwer
+-> Verletz
+te
+
+words string:  ▁Arbeitnehmer ▁fällt ▁von ▁der ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  6483,    22,    10, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fällt', '▁von', '▁der', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fällt
+-> von
+-> der
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeits kräfte ▁fallen ▁von ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[  773,  6342,  4408,    22, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeits', 'kräfte', '▁fallen', '▁von', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeits
+kräfte
+-> fallen
+-> von
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fällt ▁von ▁einer ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  6483,    22,    90, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fällt', '▁von', '▁einer', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fällt
+-> von
+-> einer
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fallen ▁von ▁Leiter ▁: ▁schwer ▁Verletz te
+indices:  tensor([[ 3070,  4408,    22, 11392,    57,  2411, 23526,   128]])
+words:  ['▁Arbeitnehmer', '▁fallen', '▁von', '▁Leiter', '▁:', '▁schwer', '▁Verletz', 'te']
+-> Arbeitnehmer
+-> fallen
+-> von
+-> Leiter
+-> :
+-> schwer
+-> Verletz
+te
+
+words string:  ▁Arbeitnehmer ▁fallen ▁von ▁der ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  4408,    22,    10, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fallen', '▁von', '▁der', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fallen
+-> von
+-> der
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeiter ▁fällt ▁von ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[10562,  6483,    22, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeiter', '▁fällt', '▁von', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeiter
+-> fällt
+-> von
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁Arbeitnehmer ▁fällt ▁aus ▁der ▁Leiter ▁: ▁schwer ▁verletzt
+indices:  tensor([[ 3070,  6483,    84,    10, 11392,    57,  2411, 12142]])
+words:  ['▁Arbeitnehmer', '▁fällt', '▁aus', '▁der', '▁Leiter', '▁:', '▁schwer', '▁verletzt']
+-> Arbeitnehmer
+-> fällt
+-> aus
+-> der
+-> Leiter
+-> :
+-> schwer
+-> verletzt
+
+words string:  ▁we ▁see ▁customers ▁from ▁all ▁walks ▁of ▁life ▁.
+indices:  tensor([[   37,   429,  1180,    67,    80, 17425,     9,   801,     5]])
+words:  ['▁we', '▁see', '▁customers', '▁from', '▁all', '▁walks', '▁of', '▁life', '▁.']
+-> we
+-> see
+-> customers
+-> from
+-> all
+-> walks
+-> of
+-> life
+-> .
+
+words string:  ▁zu ▁uns ▁kommen ▁Kunden ▁aus ▁jeder ▁sozialen ▁Schicht ▁.
+indices:  tensor([[   20,   122,   912,   760,    84,   985,  1770, 22512,     5]])
+words:  ['▁zu', '▁uns', '▁kommen', '▁Kunden', '▁aus', '▁jeder', '▁sozialen', '▁Schicht', '▁.']
+-> zu
+-> uns
+-> kommen
+-> Kunden
+-> aus
+-> jeder
+-> sozialen
+-> Schicht
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Lebens bereichen ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 1600, 9804,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Lebens', 'bereichen', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Lebens
+bereichen
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Bereichen ▁des ▁Lebens ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 2007,   42, 1600,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Bereichen', '▁des', '▁Lebens', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Bereichen
+-> des
+-> Lebens
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Teilen ▁des ▁Lebens ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 6088,   42, 1600,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Teilen', '▁des', '▁Lebens', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Teilen
+-> des
+-> Lebens
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Lebens st ufen ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 1600,  199, 6296,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Lebens', 'st', 'ufen', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Lebens
+st
+ufen
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Schichten ▁des ▁Lebens ▁.
+indices:  tensor([[   47,   783,   760,    84,   537, 21955,    42,  1600,     5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Schichten', '▁des', '▁Lebens', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Schichten
+-> des
+-> Lebens
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Lebens ph asen ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 1600, 1435, 7418,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Lebens', 'ph', 'asen', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Lebens
+ph
+asen
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁allen ▁Lebens sch ritten ▁.
+indices:  tensor([[  47,  783,  760,   84,  537, 1600,  352, 4136,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁allen', '▁Lebens', 'sch', 'ritten', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> allen
+-> Lebens
+sch
+ritten
+-> .
+
+words string:  ▁wir ▁sehen ▁unsere ▁Kunden ▁aus ▁allen ▁Lebens bereichen ▁.
+indices:  tensor([[  47,  783,  236,  760,   84,  537, 1600, 9804,    5]])
+words:  ['▁wir', '▁sehen', '▁unsere', '▁Kunden', '▁aus', '▁allen', '▁Lebens', 'bereichen', '▁.']
+-> wir
+-> sehen
+-> unsere
+-> Kunden
+-> aus
+-> allen
+-> Lebens
+bereichen
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁von ▁allen ▁Lebens bereichen ▁.
+indices:  tensor([[  47,  783,  760,   22,  537, 1600, 9804,    5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁von', '▁allen', '▁Lebens', 'bereichen', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> von
+-> allen
+-> Lebens
+bereichen
+-> .
+
+words string:  ▁wir ▁sehen ▁Kunden ▁aus ▁aller ▁Welt ▁.
+indices:  tensor([[ 47, 783, 760,  84, 867, 358,   5]])
+words:  ['▁wir', '▁sehen', '▁Kunden', '▁aus', '▁aller', '▁Welt', '▁.']
+-> wir
+-> sehen
+-> Kunden
+-> aus
+-> aller
+-> Welt
+-> .
+
+words string:  ▁early ▁p uber ty ▁: ▁growing ▁older ▁soon er
+indices:  tensor([[1967,  343, 6127, 3089,   57, 3245, 7007, 1723,   94]])
+words:  ['▁early', '▁p', 'uber', 'ty', '▁:', '▁growing', '▁older', '▁soon', 'er']
+-> early
+-> p
+uber
+ty
+-> :
+-> growing
+-> older
+-> soon
+er
+
+words string:  ▁frü he ▁Pu bert ät ▁: ▁schneller ▁er wachsen ▁werden
+indices:  tensor([[23990,   666, 22354,  6895,  2899,    57,  6010,   114, 15209,    52]])
+words:  ['▁frü', 'he', '▁Pu', 'bert', 'ät', '▁:', '▁schneller', '▁er', 'wachsen', '▁werden']
+-> frü
+he
+-> Pu
+bert
+ät
+-> :
+-> schneller
+-> er
+wachsen
+-> werden
+
+words string:  ▁frü he ▁Pu bert ät ▁: ▁älter ▁werden
+indices:  tensor([[23990,   666, 22354,  6895,  2899,    57, 17005,    52]])
+words:  ['▁frü', 'he', '▁Pu', 'bert', 'ät', '▁:', '▁älter', '▁werden']
+-> frü
+he
+-> Pu
+bert
+ät
+-> :
+-> älter
+-> werden
+
+words string:  ▁frü he ▁Pu bert ät ▁: ▁älter er ▁werden
+indices:  tensor([[23990,   666, 22354,  6895,  2899,    57, 17005,    94,    52]])
+words:  ['▁frü', 'he', '▁Pu', 'bert', 'ät', '▁:', '▁älter', 'er', '▁werden']
+-> frü
+he
+-> Pu
+bert
+ät
+-> :
+-> älter
+er
+-> werden
+
+words string:  ▁früh zeitige ▁Pu bert ät ▁: ▁älter ▁werden
+indices:  tensor([[ 6374, 22052, 22354,  6895,  2899,    57, 17005,    52]])
+words:  ['▁früh', 'zeitige', '▁Pu', 'bert', 'ät', '▁:', '▁älter', '▁werden']
+-> früh
+zeitige
+-> Pu
+bert
+ät
+-> :
+-> älter
+-> werden
+
+words string:  ▁früh zeitige ▁Pu bert ät ▁: ▁älter er ▁werden
+indices:  tensor([[ 6374, 22052, 22354,  6895,  2899,    57, 17005,    94,    52]])
+words:  ['▁früh', 'zeitige', '▁Pu', 'bert', 'ät', '▁:', '▁älter', 'er', '▁werden']
+-> früh
+zeitige
+-> Pu
+bert
+ät
+-> :
+-> älter
+er
+-> werden
+
+words string:  ▁frü he ▁Pu bert ät ▁: ▁älter er
+indices:  tensor([[23990,   666, 22354,  6895,  2899,    57, 17005,    94]])
+words:  ['▁frü', 'he', '▁Pu', 'bert', 'ät', '▁:', '▁älter', 'er']
+-> frü
+he
+-> Pu
+bert
+ät
+-> :
+-> älter
+er
+
+words string:  ▁früh zeit ige ▁Pu bert ät ▁: ▁älter ▁werden
+indices:  tensor([[ 6374,   902,   276, 22354,  6895,  2899,    57, 17005,    52]])
+words:  ['▁früh', 'zeit', 'ige', '▁Pu', 'bert', 'ät', '▁:', '▁älter', '▁werden']
+-> früh
+zeit
+ige
+-> Pu
+bert
+ät
+-> :
+-> älter
+-> werden
+
+words string:  ▁früh zeitige ▁Pu bert ät ▁: ▁älter er
+indices:  tensor([[ 6374, 22052, 22354,  6895,  2899,    57, 17005,    94]])
+words:  ['▁früh', 'zeitige', '▁Pu', 'bert', 'ät', '▁:', '▁älter', 'er']
+-> früh
+zeitige
+-> Pu
+bert
+ät
+-> :
+-> älter
+er
+
+words string:  ▁früh fert ige ▁Pu bert ät ▁: ▁älter ▁werden
+indices:  tensor([[ 6374,  5927,   276, 22354,  6895,  2899,    57, 17005,    52]])
+words:  ['▁früh', 'fert', 'ige', '▁Pu', 'bert', 'ät', '▁:', '▁älter', '▁werden']
+-> früh
+fert
+ige
+-> Pu
+bert
+ät
+-> :
+-> älter
+-> werden
+
+words string:  ▁Fr ü her ▁Pu bert ät ▁: ▁älter ▁werden
+indices:  tensor([[ 1526,  1037,  1220, 22354,  6895,  2899,    57, 17005,    52]])
+words:  ['▁Fr', 'ü', 'her', '▁Pu', 'bert', 'ät', '▁:', '▁älter', '▁werden']
+-> Fr
+ü
+her
+-> Pu
+bert
+ät
+-> :
+-> älter
+-> werden
+
+words string:  ▁frü he ▁Pu bert ät ▁: ▁schneller ▁älter ▁werden
+indices:  tensor([[23990,   666, 22354,  6895,  2899,    57,  6010, 17005,    52]])
+words:  ['▁frü', 'he', '▁Pu', 'bert', 'ät', '▁:', '▁schneller', '▁älter', '▁werden']
+-> frü
+he
+-> Pu
+bert
+ät
+-> :
+-> schneller
+-> älter
+-> werden
+
+words string:  ▁my ▁objective ▁is ▁to ▁discovery ▁the ▁truth ▁.
+indices:  tensor([[  226,  2364,    18,    13, 17299,     6,  6299,     5]])
+words:  ['▁my', '▁objective', '▁is', '▁to', '▁discovery', '▁the', '▁truth', '▁.']
+-> my
+-> objective
+-> is
+-> to
+-> discovery
+-> the
+-> truth
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁heraus zufinden ▁.
+indices:  tensor([[ 1714,   604,    27,    49,     4,     8,  6606,  1919, 17725,     5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁heraus', 'zufinden', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> heraus
+zufinden
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁zu ▁entdecken ▁.
+indices:  tensor([[1714,  604,   27,   49,    4,    8, 6606,   20, 5552,    5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁entdecken', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> entdecken
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁heraus zufinden ▁.
+indices:  tensor([[ 1714,   604,    27,    49,     4,     8,  6606,  1919, 17725,     5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁heraus', 'zufinden', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> heraus
+zufinden
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁zu ▁finden ▁.
+indices:  tensor([[1714,  604,   27,   49,    4,    8, 6606,   20,  488,    5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁finden', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> finden
+-> .
+
+words string:  ▁mein ▁Ziel ▁besteht ▁darin ▁, ▁die ▁Wahrheit ▁zu ▁entdecken ▁.
+indices:  tensor([[1714,  604,  766, 1273,    4,    8, 6606,   20, 5552,    5]])
+words:  ['▁mein', '▁Ziel', '▁besteht', '▁darin', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁entdecken', '▁.']
+-> mein
+-> Ziel
+-> besteht
+-> darin
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> entdecken
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁zu ▁erkennen ▁.
+indices:  tensor([[1714,  604,   27,   49,    4,    8, 6606,   20, 3920,    5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁erkennen', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> erkennen
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁aufzu decken ▁.
+indices:  tensor([[ 1714,   604,    27,    49,     4,     8,  6606,  5533, 12768,     5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁aufzu', 'decken', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> aufzu
+decken
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁, ▁die ▁Wahrheit ▁zu ▁entdecken ▁.
+indices:  tensor([[1714,  604,   27,    4,    8, 6606,   20, 5552,    5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁entdecken', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> entdecken
+-> .
+
+words string:  ▁mein ▁Ziel ▁besteht ▁darin ▁, ▁die ▁Wahrheit ▁heraus zufinden ▁.
+indices:  tensor([[ 1714,   604,   766,  1273,     4,     8,  6606,  1919, 17725,     5]])
+words:  ['▁mein', '▁Ziel', '▁besteht', '▁darin', '▁,', '▁die', '▁Wahrheit', '▁heraus', 'zufinden', '▁.']
+-> mein
+-> Ziel
+-> besteht
+-> darin
+-> ,
+-> die
+-> Wahrheit
+-> heraus
+zufinden
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁es ▁, ▁die ▁Wahrheit ▁zu ▁erfahren ▁.
+indices:  tensor([[1714,  604,   27,   49,    4,    8, 6606,   20, 3579,    5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁es', '▁,', '▁die', '▁Wahrheit', '▁zu', '▁erfahren', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> es
+-> ,
+-> die
+-> Wahrheit
+-> zu
+-> erfahren
+-> .
+
+words string:  ▁mein ▁Ziel ▁ist ▁die ▁Entdeckung ▁der ▁Wahrheit ▁.
+indices:  tensor([[ 1714,   604,    27,     8, 18641,    10,  6606,     5]])
+words:  ['▁mein', '▁Ziel', '▁ist', '▁die', '▁Entdeckung', '▁der', '▁Wahrheit', '▁.']
+-> mein
+-> Ziel
+-> ist
+-> die
+-> Entdeckung
+-> der
+-> Wahrheit
+-> .
+
+words string:  ▁the ▁fire f igh ters ▁were ▁amazing ▁.
+indices:  tensor([[    6,  4401,   255,  5507,   865,   235, 11408,     5]])
+words:  ['▁the', '▁fire', 'f', 'igh', 'ters', '▁were', '▁amazing', '▁.']
+-> the
+-> fire
+f
+igh
+ters
+-> were
+-> amazing
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁haben ▁Groß art iges ▁geleistet ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,    88,  2882,   942,   929,  5361,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁haben', '▁Groß', 'art', 'iges', '▁geleistet', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> haben
+-> Groß
+art
+iges
+-> geleistet
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁erstaun lich ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709, 15120,   277,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁erstaun', 'lich', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> erstaun
+lich
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁überr asch end ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709, 19097,  4139,   363,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁überr', 'asch', 'end', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> überr
+asch
+end
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁wunder bar ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709,  8588,   558,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁wunder', 'bar', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> wunder
+bar
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁unglaub lich ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709, 14243,   277,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁unglaub', 'lich', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> unglaub
+lich
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁beeindruck end ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709,  6676,   363,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁beeindruck', 'end', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> beeindruck
+end
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁ersta unt ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709, 22380,  4786,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁ersta', 'unt', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> ersta
+unt
+-> .
+
+words string:  ▁die ▁Feuer wehr ▁war ▁erstaun lich ▁.
+indices:  tensor([[    8,  8349, 11582,   168, 15120,   277,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', '▁war', '▁erstaun', 'lich', '▁.']
+-> die
+-> Feuer
+wehr
+-> war
+-> erstaun
+lich
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁super ▁.
+indices:  tensor([[    8,  8349, 11582, 11230,   709,  5239,     5]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁super', '▁.']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> super
+-> .
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁erstaun lich ▁!
+indices:  tensor([[    8,  8349, 11582, 11230,   709, 15120,   277,   103]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁erstaun', 'lich', '▁!']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> erstaun
+lich
+-> !
+
+words string:  ▁die ▁Feuer wehr leute ▁waren ▁wunder bar ▁!
+indices:  tensor([[    8,  8349, 11582, 11230,   709,  8588,   558,   103]])
+words:  ['▁die', '▁Feuer', 'wehr', 'leute', '▁waren', '▁wunder', 'bar', '▁!']
+-> die
+-> Feuer
+wehr
+leute
+-> waren
+-> wunder
+bar
+-> !
+
+words string:  ▁new ▁York ▁City ▁is ▁looking ▁into ▁one ▁.
+indices:  tensor([[ 145, 2957, 2642,   18, 1983,  210,  119,    5]])
+words:  ['▁new', '▁York', '▁City', '▁is', '▁looking', '▁into', '▁one', '▁.']
+-> new
+-> York
+-> City
+-> is
+-> looking
+-> into
+-> one
+-> .
+
+words string:  ▁New ▁York ▁City ▁erw ägt ▁ebenfalls ▁ein ▁solches ▁.
+indices:  tensor([[ 1161,  2957,  2642,  7268, 19412,  1280,    50,  9773,     5]])
+words:  ['▁New', '▁York', '▁City', '▁erw', 'ägt', '▁ebenfalls', '▁ein', '▁solches', '▁.']
+-> New
+-> York
+-> City
+-> erw
+ägt
+-> ebenfalls
+-> ein
+-> solches
+-> .
+
+words string:  ▁New ▁York ▁City ▁sucht ▁nach ▁einem ▁.
+indices:  tensor([[ 1161,  2957,  2642, 13339,   101,   118,     5]])
+words:  ['▁New', '▁York', '▁City', '▁sucht', '▁nach', '▁einem', '▁.']
+-> New
+-> York
+-> City
+-> sucht
+-> nach
+-> einem
+-> .
+
+words string:  ▁New ▁York ▁City ▁sucht ▁nach ▁einer ▁.
+indices:  tensor([[ 1161,  2957,  2642, 13339,   101,    90,     5]])
+words:  ['▁New', '▁York', '▁City', '▁sucht', '▁nach', '▁einer', '▁.']
+-> New
+-> York
+-> City
+-> sucht
+-> nach
+-> einer
+-> .
+
+words string:  ▁New ▁York ▁City ▁untersucht ▁eines ▁.
+indices:  tensor([[ 1161,  2957,  2642, 10861,   223,     5]])
+words:  ['▁New', '▁York', '▁City', '▁untersucht', '▁eines', '▁.']
+-> New
+-> York
+-> City
+-> untersucht
+-> eines
+-> .
+
+words string:  ▁New ▁York ▁City ▁prü ft ▁eines ▁.
+indices:  tensor([[ 1161,  2957,  2642, 20028,  1275,   223,     5]])
+words:  ['▁New', '▁York', '▁City', '▁prü', 'ft', '▁eines', '▁.']
+-> New
+-> York
+-> City
+-> prü
+ft
+-> eines
+-> .
+
+words string:  ▁New ▁York ▁City ▁beschäftigt ▁sich ▁mit ▁einem ▁.
+indices:  tensor([[1161, 2957, 2642, 6583,   59,   29,  118,    5]])
+words:  ['▁New', '▁York', '▁City', '▁beschäftigt', '▁sich', '▁mit', '▁einem', '▁.']
+-> New
+-> York
+-> City
+-> beschäftigt
+-> sich
+-> mit
+-> einem
+-> .
+
+words string:  ▁New ▁York ▁City ▁prü ft ▁einen ▁.
+indices:  tensor([[ 1161,  2957,  2642, 20028,  1275,    99,     5]])
+words:  ['▁New', '▁York', '▁City', '▁prü', 'ft', '▁einen', '▁.']
+-> New
+-> York
+-> City
+-> prü
+ft
+-> einen
+-> .
+
+words string:  ▁New ▁York ▁City ▁untersucht ▁einen ▁.
+indices:  tensor([[ 1161,  2957,  2642, 10861,    99,     5]])
+words:  ['▁New', '▁York', '▁City', '▁untersucht', '▁einen', '▁.']
+-> New
+-> York
+-> City
+-> untersucht
+-> einen
+-> .
+
+words string:  ▁New ▁York ▁City ▁prü ft ▁eine ▁.
+indices:  tensor([[ 1161,  2957,  2642, 20028,  1275,    44,     5]])
+words:  ['▁New', '▁York', '▁City', '▁prü', 'ft', '▁eine', '▁.']
+-> New
+-> York
+-> City
+-> prü
+ft
+-> eine
+-> .
+
+words string:  ▁New ▁York ▁City ▁bl ickt ▁auf ▁einen ▁.
+indices:  tensor([[1161, 2957, 2642, 1528, 7443,   30,   99,    5]])
+words:  ['▁New', '▁York', '▁City', '▁bl', 'ickt', '▁auf', '▁einen', '▁.']
+-> New
+-> York
+-> City
+-> bl
+ickt
+-> auf
+-> einen
+-> .
+
+words string:  ▁New ▁York ▁City ▁bl ickt ▁auf ▁eine ▁.
+indices:  tensor([[1161, 2957, 2642, 1528, 7443,   30,   44,    5]])
+words:  ['▁New', '▁York', '▁City', '▁bl', 'ickt', '▁auf', '▁eine', '▁.']
+-> New
+-> York
+-> City
+-> bl
+ickt
+-> auf
+-> eine
+-> .
+
+words string:  ▁Nev ada ▁has ▁already ▁completed ▁a ▁pilot ▁.
+indices:  tensor([[20504,  4606,    75,   528,  5603,    16, 12507,     5]])
+words:  ['▁Nev', 'ada', '▁has', '▁already', '▁completed', '▁a', '▁pilot', '▁.']
+-> Nev
+ada
+-> has
+-> already
+-> completed
+-> a
+-> pilot
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁ein ▁Pilot projekt ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,   413,    50, 14230, 10553,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁ein', '▁Pilot', 'projekt', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> ein
+-> Pilot
+projekt
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pilot ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 14230,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pilot', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pilot
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pil oten ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 11773,  2784,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pil', 'oten', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pil
+oten
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pilot ▁fertig gestellt ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 14230,  8946,  5182,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pilot', '▁fertig', 'gestellt', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pilot
+-> fertig
+gestellt
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pilot ▁absolv iert ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 14230, 19349,   301,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pilot', '▁absolv', 'iert', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pilot
+-> absolv
+iert
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pilot ▁fertig ▁gestellt ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 14230,  8946,  2195,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pilot', '▁fertig', '▁gestellt', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pilot
+-> fertig
+-> gestellt
+-> .
+
+words string:  ▁Nev ada ▁hat ▁schon ▁einen ▁Pilot ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,   544,    99, 14230,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁schon', '▁einen', '▁Pilot', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> schon
+-> einen
+-> Pilot
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pil oten ▁fertig ▁gestellt ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 11773,  2784,  8946,  2195,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pil', 'oten', '▁fertig', '▁gestellt', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pil
+oten
+-> fertig
+-> gestellt
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁ein ▁Pilot projekt ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,   413,    50, 14230, 10553,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁ein', '▁Pilot', 'projekt', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> ein
+-> Pilot
+projekt
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁einen ▁Pilot ▁bereits ▁abgeschlossen ▁.
+indices:  tensor([[20504,  4606,    91,    99, 14230,   413,  5448,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁einen', '▁Pilot', '▁bereits', '▁abgeschlossen', '▁.']
+-> Nev
+ada
+-> hat
+-> einen
+-> Pilot
+-> bereits
+-> abgeschlossen
+-> .
+
+words string:  ▁Nev ada ▁hat ▁bereits ▁einen ▁Pil oten ▁fertig ▁.
+indices:  tensor([[20504,  4606,    91,   413,    99, 11773,  2784,  8946,     5]])
+words:  ['▁Nev', 'ada', '▁hat', '▁bereits', '▁einen', '▁Pil', 'oten', '▁fertig', '▁.']
+-> Nev
+ada
+-> hat
+-> bereits
+-> einen
+-> Pil
+oten
+-> fertig
+-> .
+
+words string:  ▁the ▁latter ▁story ▁is ▁now ▁particularly ▁significant ▁.
+indices:  tensor([[   6, 7244, 5780,   18,  230,  885, 2030,    5]])
+words:  ['▁the', '▁latter', '▁story', '▁is', '▁now', '▁particularly', '▁significant', '▁.']
+-> the
+-> latter
+-> story
+-> is
+-> now
+-> particularly
+-> significant
+-> .
+
+words string:  ▁diese ▁Geschichte ▁ist ▁jetzt ▁besonders ▁sign ifik ant ▁.
+indices:  tensor([[  97, 1712,   27,  487,  862, 2503, 7641,  415,    5]])
+words:  ['▁diese', '▁Geschichte', '▁ist', '▁jetzt', '▁besonders', '▁sign', 'ifik', 'ant', '▁.']
+-> diese
+-> Geschichte
+-> ist
+-> jetzt
+-> besonders
+-> sign
+ifik
+ant
+-> .
+
+words string:  ▁letzter es ▁ist ▁jetzt ▁besonders ▁bedeut sam ▁.
+indices:  tensor([[ 6478,    78,    27,   487,   862, 10052,  6860,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁jetzt', '▁besonders', '▁bedeut', 'sam', '▁.']
+-> letzter
+es
+-> ist
+-> jetzt
+-> besonders
+-> bedeut
+sam
+-> .
+
+words string:  ▁letzter es ▁ist ▁jetzt ▁von ▁besonderer ▁Bedeutung ▁.
+indices:  tensor([[ 6478,    78,    27,   487,    22, 10603,   884,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁jetzt', '▁von', '▁besonderer', '▁Bedeutung', '▁.']
+-> letzter
+es
+-> ist
+-> jetzt
+-> von
+-> besonderer
+-> Bedeutung
+-> .
+
+words string:  ▁letzter es ▁ist ▁nun ▁von ▁besonderer ▁Bedeutung ▁.
+indices:  tensor([[ 6478,    78,    27,   572,    22, 10603,   884,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁nun', '▁von', '▁besonderer', '▁Bedeutung', '▁.']
+-> letzter
+es
+-> ist
+-> nun
+-> von
+-> besonderer
+-> Bedeutung
+-> .
+
+words string:  ▁letzter es ▁ist ▁nun ▁besonders ▁bedeut sam ▁.
+indices:  tensor([[ 6478,    78,    27,   572,   862, 10052,  6860,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁nun', '▁besonders', '▁bedeut', 'sam', '▁.']
+-> letzter
+es
+-> ist
+-> nun
+-> besonders
+-> bedeut
+sam
+-> .
+
+words string:  ▁letzter es ▁ist ▁heute ▁besonders ▁bedeut sam ▁.
+indices:  tensor([[ 6478,    78,    27,   362,   862, 10052,  6860,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁heute', '▁besonders', '▁bedeut', 'sam', '▁.']
+-> letzter
+es
+-> ist
+-> heute
+-> besonders
+-> bedeut
+sam
+-> .
+
+words string:  ▁letzter es ▁ist ▁jetzt ▁besonders ▁wichtig ▁.
+indices:  tensor([[6478,   78,   27,  487,  862,  765,    5]])
+words:  ['▁letzter', 'es', '▁ist', '▁jetzt', '▁besonders', '▁wichtig', '▁.']
+-> letzter
+es
+-> ist
+-> jetzt
+-> besonders
+-> wichtig
+-> .
+
+words string:  ▁letzter es ▁ist ▁heute ▁von ▁besonderer ▁Bedeutung ▁.
+indices:  tensor([[ 6478,    78,    27,   362,    22, 10603,   884,     5]])
+words:  ['▁letzter', 'es', '▁ist', '▁heute', '▁von', '▁besonderer', '▁Bedeutung', '▁.']
+-> letzter
+es
+-> ist
+-> heute
+-> von
+-> besonderer
+-> Bedeutung
+-> .
+
+words string:  ▁letzter es ▁ist ▁nun ▁besonders ▁wichtig ▁.
+indices:  tensor([[6478,   78,   27,  572,  862,  765,    5]])
+words:  ['▁letzter', 'es', '▁ist', '▁nun', '▁besonders', '▁wichtig', '▁.']
+-> letzter
+es
+-> ist
+-> nun
+-> besonders
+-> wichtig
+-> .
+
+words string:  ▁letzter e ▁Geschichte ▁ist ▁jetzt ▁besonders ▁bedeut sam ▁.
+indices:  tensor([[ 6478,   131,  1712,    27,   487,   862, 10052,  6860,     5]])
+words:  ['▁letzter', 'e', '▁Geschichte', '▁ist', '▁jetzt', '▁besonders', '▁bedeut', 'sam', '▁.']
+-> letzter
+e
+-> Geschichte
+-> ist
+-> jetzt
+-> besonders
+-> bedeut
+sam
+-> .
+
+words string:  ▁die ▁letzt gen annte ▁Geschichte ▁ist ▁jetzt ▁besonders ▁wichtig ▁.
+indices:  tensor([[    8, 23606,   654,  6070,  1712,    27,   487,   862,   765,     5]])
+words:  ['▁die', '▁letzt', 'gen', 'annte', '▁Geschichte', '▁ist', '▁jetzt', '▁besonders', '▁wichtig', '▁.']
+-> die
+-> letzt
+gen
+annte
+-> Geschichte
+-> ist
+-> jetzt
+-> besonders
+-> wichtig
+-> .
+
+words string:  ▁on ▁the ▁happiness ▁of ▁dre aming ▁cam els
+indices:  tensor([[   28,     6, 22413,     9,  5216,  4564, 20466,  1414]])
+words:  ['▁on', '▁the', '▁happiness', '▁of', '▁dre', 'aming', '▁cam', 'els']
+-> on
+-> the
+-> happiness
+-> of
+-> dre
+aming
+-> cam
+els
+
+words string:  ▁vom ▁Glück ▁der ▁tr äum enden ▁K ame le
+indices:  tensor([[  231,  4906,    10,  1660, 11809,   687,   182,  1847,   336]])
+words:  ['▁vom', '▁Glück', '▁der', '▁tr', 'äum', 'enden', '▁K', 'ame', 'le']
+-> vom
+-> Glück
+-> der
+-> tr
+äum
+enden
+-> K
+ame
+le
+
+words string:  ▁das ▁Glück ▁der ▁tr äum enden ▁Kam els
+indices:  tensor([[   24,  4906,    10,  1660, 11809,   687, 16126,  1414]])
+words:  ['▁das', '▁Glück', '▁der', '▁tr', 'äum', 'enden', '▁Kam', 'els']
+-> das
+-> Glück
+-> der
+-> tr
+äum
+enden
+-> Kam
+els
+
+words string:  ▁das ▁Glück ▁der ▁tr äum enden ▁Kam elle
+indices:  tensor([[   24,  4906,    10,  1660, 11809,   687, 16126,  1415]])
+words:  ['▁das', '▁Glück', '▁der', '▁tr', 'äum', 'enden', '▁Kam', 'elle']
+-> das
+-> Glück
+-> der
+-> tr
+äum
+enden
+-> Kam
+elle
+
+words string:  ▁auf ▁dem ▁Glück ▁der ▁tr äum enden ▁Kam els
+indices:  tensor([[   30,    56,  4906,    10,  1660, 11809,   687, 16126,  1414]])
+words:  ['▁auf', '▁dem', '▁Glück', '▁der', '▁tr', 'äum', 'enden', '▁Kam', 'els']
+-> auf
+-> dem
+-> Glück
+-> der
+-> tr
+äum
+enden
+-> Kam
+els
+
+words string:  ▁das ▁Glück ▁der ▁tr äum enden ▁Kam el
+indices:  tensor([[   24,  4906,    10,  1660, 11809,   687, 16126,   324]])
+words:  ['▁das', '▁Glück', '▁der', '▁tr', 'äum', 'enden', '▁Kam', 'el']
+-> das
+-> Glück
+-> der
+-> tr
+äum
+enden
+-> Kam
+el
+
+words string:  ▁das ▁Glück ▁tr äum ender ▁Kam els
+indices:  tensor([[   24,  4906,  1660, 11809,  4322, 16126,  1414]])
+words:  ['▁das', '▁Glück', '▁tr', 'äum', 'ender', '▁Kam', 'els']
+-> das
+-> Glück
+-> tr
+äum
+ender
+-> Kam
+els
+
+words string:  ▁das ▁Glück ▁tr äum er ischer ▁Kam els
+indices:  tensor([[   24,  4906,  1660, 11809,    94,   551, 16126,  1414]])
+words:  ['▁das', '▁Glück', '▁tr', 'äum', 'er', 'ischer', '▁Kam', 'els']
+-> das
+-> Glück
+-> tr
+äum
+er
+ischer
+-> Kam
+els
+
+words string:  ▁über ▁das ▁Glück ▁tr äum ender ▁Kam els
+indices:  tensor([[   79,    24,  4906,  1660, 11809,  4322, 16126,  1414]])
+words:  ['▁über', '▁das', '▁Glück', '▁tr', 'äum', 'ender', '▁Kam', 'els']
+-> über
+-> das
+-> Glück
+-> tr
+äum
+ender
+-> Kam
+els
+
+words string:  ▁das ▁Glück ▁tr äum er ischer ▁Kam elle
+indices:  tensor([[   24,  4906,  1660, 11809,    94,   551, 16126,  1415]])
+words:  ['▁das', '▁Glück', '▁tr', 'äum', 'er', 'ischer', '▁Kam', 'elle']
+-> das
+-> Glück
+-> tr
+äum
+er
+ischer
+-> Kam
+elle
+
+words string:  ▁das ▁Glück ▁tr äum ender ▁Kam elle
+indices:  tensor([[   24,  4906,  1660, 11809,  4322, 16126,  1415]])
+words:  ['▁das', '▁Glück', '▁tr', 'äum', 'ender', '▁Kam', 'elle']
+-> das
+-> Glück
+-> tr
+äum
+ender
+-> Kam
+elle
+
+words string:  ▁über ▁das ▁Glück ▁tr äumen der ▁Kam els
+indices:  tensor([[   79,    24,  4906,  1660,  8814,   378, 16126,  1414]])
+words:  ['▁über', '▁das', '▁Glück', '▁tr', 'äumen', 'der', '▁Kam', 'els']
+-> über
+-> das
+-> Glück
+-> tr
+äumen
+der
+-> Kam
+els
+
+words string:  ▁Ge ch ingen ▁: ▁absolute ▁protection ▁not ▁possible
+indices:  tensor([[ 968,  502, 1758,   57, 5408,  810,   61,  410]])
+words:  ['▁Ge', 'ch', 'ingen', '▁:', '▁absolute', '▁protection', '▁not', '▁possible']
+-> Ge
+ch
+ingen
+-> :
+-> absolute
+-> protection
+-> not
+-> possible
+
+words string:  ▁Ge ch ingen ▁: ▁kein ▁absol uter ▁Schutz ▁möglich
+indices:  tensor([[  968,   502,  1758,    57,   878, 13161,  4816,   910,   689]])
+words:  ['▁Ge', 'ch', 'ingen', '▁:', '▁kein', '▁absol', 'uter', '▁Schutz', '▁möglich']
+-> Ge
+ch
+ingen
+-> :
+-> kein
+-> absol
+uter
+-> Schutz
+-> möglich
+
+words string:  ingen ▁: ▁absolute ▁protection ▁is ▁not ▁possible
+indices:  tensor([[1758,   57, 5408,  810,   18,   61,  410]])
+words:  ['ingen', '▁:', '▁absolute', '▁protection', '▁is', '▁not', '▁possible']
+ingen

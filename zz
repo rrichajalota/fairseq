@@ -1,0 +1,12 @@
+
+only stop words
+tokens:  tensor([[  24, 4864,  149,   51,    5]])
+words:  ['▁das', '▁wollte', '▁man', '▁nicht', '▁.']
+
+only stop words
+tokens:  tensor([[9456,  831, 6086]])
+words:  ['▁ill', 'men', 'see']
+
+only stop words
+tokens:  tensor([[17576,  3278]])
+words:  ['▁königs', 'feld']
