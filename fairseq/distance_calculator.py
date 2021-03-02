@@ -16,11 +16,19 @@ logger.setLevel(logging.WARNING)
 #logging.basicConfig(level=logging.DEBUG)
 
 stopwords = dict()
-stopwords["en"] = set(get_stop_words('en'))
 stopwords["de"] = set(get_stop_words('de'))
+stopwords["en"] = set()
+tmp = get_stop_words('en')
+for w_en in tmp:
+    sp = w_en.split("'")
+    for i in sp:
+        stopwords["en"].add(i)
+
+
 #TODO piece for sentencepiece, for other BPE algorithms change also function
 piece = "▁"
-
+q1 = piece + "'"
+q2 = piece + '"'
 
 class DistanceCalculator():
     def __init__(
@@ -35,13 +43,6 @@ class DistanceCalculator():
         self.pad = tgt_dict.pad()
         self.unk = tgt_dict.unk()
         self.eos = tgt_dict.eos() if eos is None else eos
-        '''
-        self.symbols_to_strip_from_output = (
-            symbols_to_strip_from_output.union({self.eos})
-            if symbols_to_strip_from_output is not None
-            else {self.eos}
-        )
-        '''
         self.vocab_size = len(tgt_dict)
         self.normalize_scores = normalize_scores ### ??? brauche ich???
         self.model = model
@@ -57,59 +58,68 @@ class DistanceCalculator():
 
 
     def filter_stop_words(self, lang, tokens):
-        #TODO dict.string methode - eigentlich brauche ich die splitted
-        #print("\nwords string: ", self.tgt_dict.string(tokens))
-        print("\n\nlang", lang)
+        #TODO: evtl find index2string and string2index for BPEs
         words = self.tgt_dict.string(tokens).lower().split(" ")
         # print("\n###", type(tokens), type(tokens[0][0].item()))
         indices = tokens.tolist()[0]
 
-        #tmp = []
         tmp = ["", []]
         dict_list = []
         assert (len(words) == len(indices)), "Words and indices are of different length!"
-        print("indices: ", tokens)
-        print("words: ", words, " -- len: ", len(words))
+        noquote = True
         for i in range(len(words)):
             if words[i].startswith(piece):
                 tmp = [words[i][1:], [indices[i]]]
-                print("->", words[i][1:])
+                #print("->", words[i][1:])
                 dict_list.append(tmp)
+                if words[i] == q1 or words[i] == q2:
+                    noquote = False
             else:
-                print(words[i])
-                tmp[0] += words[i]
-                tmp[1].append(indices[i])
-        print("dl: ",dict_list)
+                if noquote:
+                    #print(words[i])
+                    tmp[0] += words[i]
+                    tmp[1].append(indices[i])
+                else:
+                    tmp = [words[i], [indices[i]]]
+                    #print("->*", words[i])
+                    dict_list.append(tmp)
+                    noquote = True
+
+        #print("dl: ",dict_list)
         str2tok = dict(dict_list)
-        print(str2tok)
+        #print(str2tok)
 
         new_tokens = []
-        print("check stopwords")
+        stopword_cnt = 0
+        #print("check stopwords")
         #TODO reverse logic again; not stopword and not punctuation
         for w in str2tok:
-            print("w", w)
+            #print("w", w)
             if w in stopwords[lang]:
-                print("+++ w is stopwword", w, " -- ", str2tok[w])
-            elif re.match(r'[^\w\s]', w) :
-                print("*** is punctuation", w, " -- ", str2tok[w])
+                stopword_cnt += 1
+                #print("+++ w is stopwword", w, " -- ", str2tok[w])
+            elif re.match(r'[^\w\s]*(?!\w)', w) :
+                #print("*** is punctuation", w, " -- ", str2tok[w])
+                pass
             else:
                 new_tokens.extend(str2tok[w])
                 #pass
-                print("not stopword", w)
-        print("new tokens", new_tokens)
-        # if everything is stopwords
-        if (len(new_tokens) == 0):
+                #print("not stopword", w)
+        #print("new tokens", new_tokens)
+        # if almost everything is stopwords
+        if (len(new_tokens) == 0 or len(new_tokens) < (0.2 * len(tokens[0]))):  ### new_tokens is what remains after filtering of stopwords and puctuation; keep the sentence if it contains more than 80% punctuation
+            '''
             print("\n### only stop words")
             print("tokens: ", tokens)
             print("words: ", words)
+            print("len not stopwords and punct: ", len(new_tokens), " -- len tokens", len(tokens[0]) )
+            '''
             return tokens
         new_tensor = torch.tensor(new_tokens)
         new_tensor = new_tensor.unsqueeze(0)
         device = tokens.get_device()
         if device >= 0:
-            print("device: ", device)
-            new_tensor.to(device)
-        #exit(0)
+            return new_tensor.to(tokens.device)
         return new_tensor
 
 

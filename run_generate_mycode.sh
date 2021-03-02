@@ -17,10 +17,8 @@ model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
 testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
 outdir="/raid/data/daga01/fairseq_out_nostopwords"
 
-#--cpu
-#CUDA_VISIBLE_DEVICES=0
-python fairseq_cli/generate.py $testdir --path $model \
- --cpu \
+#--cpu \
+CUDA_VISIBLE_DEVICES=4,5 python fairseq_cli/generate.py $testdir --path $model \
  --batch-size 128 --beam 10 --nbest 10 \
  --dataset-impl lazy \
  --print-alignment \

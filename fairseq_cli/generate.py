@@ -342,7 +342,7 @@ def _main(cfg: DictConfig, output_file):
                         printed_row['src'] = src_str
                         printed_row['tgt'] = target_str
                         printed_row['beam'] = "hyp" + str(j)
-                        printed_row['hyp'] = hypo_str
+                        printed_row['hyp'] = detok_hypo_str
                         printed_row['score'] = score.item()
                         printed_row.update(hypo['distances'])
 
