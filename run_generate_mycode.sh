@@ -39,7 +39,7 @@ outdir="/raid/data/daga01/fairseq_out_test"
 mkdir -p "$outdir"
 #--cpu \
 CUDA_VISIBLE_DEVICES=7 python fairseq_cli/generate.py $testdir --path $model \
- --batch-size 8 --beam 2 --nbest 12 \
+ --batch-size 8 --beam 2 --nbest 2 \
  --dataset-impl lazy \
  --print-alignment \
  --tokenizer moses -s $src -t $tgt \
