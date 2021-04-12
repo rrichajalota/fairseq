@@ -7,7 +7,6 @@ import sys
 from stop_words import get_stop_words
 import re
 
-
 import logging
 logger = logging.getLogger('logger')
 #handler = logging.StreamHandler(sys.stderr)
@@ -30,11 +29,20 @@ piece = "▁"
 q1 = piece + "'"
 q2 = piece + '"'
 
+
+### +LM
+#from fairseq import hub_utils
+from fairseq.models.transformer_lm import TransformerLanguageModel
+custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
+
+
 class DistanceCalculator():
     def __init__(
             self,
             model,
             tgt_dict,
+            lm = None,
+            lm_weight_4dist = 1,
             eos=None,
             normalize_scores=True,
             temperature=1.0,
@@ -54,13 +62,23 @@ class DistanceCalculator():
         #TODO: get from config
         self.src_lang = "en"
         self.tgt_lang = "de"
-        self.remove_stopwords = True
+        self.remove_stopwords = False
+        self.lm_model = custom_lm
+        if self.lm_model:
+            self.lm_model.eval()
+        self.lm_weight_4dist = lm_weight_4dist
 
+
+    def check_lm(self, tokens):
+        ppl = self.lm_model.score(self.check_token2word(tokens))['positional_scores'].mean().neg().exp().item()
+        #print("tokens: ", self.check_token2word(tokens), " ppl: ", ppl)
+        return ppl
 
     def filter_stop_words(self, lang, tokens):
         #TODO: evtl find index2string and string2index for BPEs
+        #tokens = torch.tensor([[17, 17926, 23127]])
         words = self.tgt_dict.string(tokens).lower().split(" ")
-        # print("\n###", type(tokens), type(tokens[0][0].item()))
+        #print("\n###\nwords", words)
         indices = tokens.tolist()[0]
 
         tmp = ["", []]
@@ -76,9 +94,10 @@ class DistanceCalculator():
                     noquote = False
             else:
                 if noquote:
-                    #print(words[i])
+                    #print("W", words[i])
                     tmp[0] += words[i]
                     tmp[1].append(indices[i])
+                    #print("tmp", tmp)
                 else:
                     tmp = [words[i], [indices[i]]]
                     #print("->*", words[i])
@@ -98,7 +117,7 @@ class DistanceCalculator():
             if w in stopwords[lang]:
                 stopword_cnt += 1
                 #print("+++ w is stopwword", w, " -- ", str2tok[w])
-            elif re.match(r'[^\w\s]*(?!\w)', w) :
+            elif re.match(r'[^\w\s]*(?!\w+)', w) :
                 #print("*** is punctuation", w, " -- ", str2tok[w])
                 pass
             else:
@@ -114,6 +133,7 @@ class DistanceCalculator():
             print("words: ", words)
             print("len not stopwords and punct: ", len(new_tokens), " -- len tokens", len(tokens[0]) )
             '''
+
             return tokens
         new_tensor = torch.tensor(new_tokens)
         new_tensor = new_tensor.unsqueeze(0)
@@ -168,7 +188,7 @@ class DistanceCalculator():
     def forward_decoder_posminus(self, tokens, encoder_out=None):
         #TODO: use incremental states if the model has such
         decoder_copy = deepcopy(self.decoder)
-        if decoder_copy is self.decoder: print("same decoder")
+        #if decoder_copy is self.decoder: print("same decoder")
         decoder_copy.embed_positions = None
         decoder_out, extra = decoder_copy.forward(tokens, encoder_out=encoder_out, features_only=True)
         #TODO: why here call forward explicitely?
@@ -177,6 +197,8 @@ class DistanceCalculator():
 
 
     def calculate_distances(self, sample, finalized):
+        #self.set_custom_lm(custom_lm)
+
         prev_output_tokens = sample['net_input']['prev_output_tokens']
         gold_tgt_mask = (prev_output_tokens.ne(self.pad) & prev_output_tokens.ne(self.eos))
 
@@ -205,6 +227,9 @@ class DistanceCalculator():
             gold_tok = prev_output_tokens[i][gold_tgt_mask[i]].unsqueeze(0)
             if self.remove_stopwords:
                 gold_tok = self.filter_stop_words(self.tgt_lang, gold_tok)
+            # only for testing
+            #if self.lm_model is not None:
+            #    gold_tok_probs = self.check_lm(gold_tok)
             gold_enc_out = self.encoder.forward(gold_tok, torch.tensor(gold_tok.shape[1]))  # torch.Size([20, 512])
             semb_enc_gold = self.emb_tok2sent(gold_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f"gold_tok: {self.check_token2word(gold_tok)}")
@@ -244,6 +269,9 @@ class DistanceCalculator():
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
                 if self.remove_stopwords:
                     hypo_tok = self.filter_stop_words(self.tgt_lang, hypo_tok)
+                if self.lm_model is not None:
+                    hypo_tok_ppl = self.check_lm(hypo_tok)
+                    data_sub["hypo_ppl_lm"] = hypo_tok_ppl
                 logger.info(f'hyp_tok {j}: {self.check_token2word(hypo["tokens"])}')
 
                 # Encoder Repr

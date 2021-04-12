@@ -23,9 +23,12 @@ fairseq-train --task language_modeling \
   --lr 0.0005 --lr-scheduler inverse_sqrt --warmup-updates 4000 --warmup-init-lr 1e-07 \
   --tokens-per-sample 512 --sample-break-mode none \
   --max-tokens 2048 --update-freq 16 \
-  --max-update 50000 \
+  --num-workers 4 \
+  --max-update 80000 \
+  --save-interval-updates 10 --keep-interval-updates 5 --keep-best-checkpoints 15 \
   --dataset-impl lazy
 
+  #--patience 200 \
 }
 
 

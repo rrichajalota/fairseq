@@ -532,7 +532,8 @@ class SequenceGenerator(nn.Module):
             reorder_state = active_bbsz_idx
 
         # initialize distance calculator
-        dc = DistanceCalculator(self.model.single_model, self.tgt_dict)
+        dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None) #lm=self.lm_model)#, lm_weight=self.lm_weight)
+
         # sort by score descending
         for sent in range(len(finalized)):
             scores = torch.tensor(

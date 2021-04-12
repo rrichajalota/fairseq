@@ -344,6 +344,7 @@ def _main(cfg: DictConfig, output_file):
                         printed_row['beam'] = "hyp" + str(j)
                         printed_row['hyp'] = detok_hypo_str
                         printed_row['score'] = score.item()
+                        printed_row['hypo_ppl_orig'] = hypo["positional_scores"].mean().neg().exp2().item() ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiter
                         printed_row.update(hypo['distances'])
 
                         print(

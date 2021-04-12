@@ -307,7 +307,6 @@ class LanguageModelingTask(LegacyFairseqTask):
                 prefix_tokens = sample["net_input"]["src_tokens"]
                 if prefix_tokens[:, 0].eq(bos_token).all():
                     prefix_tokens = prefix_tokens[:, 1:]
-
             return generator.generate(
                 models, sample, prefix_tokens=prefix_tokens, bos_token=bos_token
             )
