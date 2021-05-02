@@ -11,6 +11,7 @@ import logging
 logger = logging.getLogger('logger')
 #handler = logging.StreamHandler(sys.stderr)
 logger.setLevel(logging.WARNING)
+#logger.setLevel(logging.INFO)
 #logger.addHandler(handler)
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -24,7 +25,7 @@ for w_en in tmp:
         stopwords["en"].add(i)
 
 
-#TODO piece for sentencepiece, for other BPE algorithms change also function
+# TODO piece for sentencepiece, for other BPE algorithms change also function
 piece = "▁"
 q1 = piece + "'"
 q2 = piece + '"'
@@ -33,7 +34,9 @@ q2 = piece + '"'
 ### +LM
 #from fairseq import hub_utils
 from fairseq.models.transformer_lm import TransformerLanguageModel
+# TODO: try with 2 monolingual models - penalize repeating of src sequences
 custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
+#custom_lm = None
 
 
 class DistanceCalculator():
@@ -66,13 +69,17 @@ class DistanceCalculator():
         self.lm_model = custom_lm
         if self.lm_model:
             self.lm_model.eval()
-        self.lm_weight_4dist = lm_weight_4dist
+        #self.lm_weight_4dist = lm_weight_4dist
 
 
     def check_lm(self, tokens):
-        ppl = self.lm_model.score(self.check_token2word(tokens))['positional_scores'].mean().neg().exp().item()
+        calc = self.lm_model.score(self.check_token2word(tokens))['positional_scores']
+        #print("POS LM: ", calc)
+        ppl = calc.mean().neg().exp().item()
+        #lm_score = calc.item()
+        lm_score =  self.lm_model.score(self.check_token2word(tokens))['score'].item()
         #print("tokens: ", self.check_token2word(tokens), " ppl: ", ppl)
-        return ppl
+        return ppl, lm_score
 
     def filter_stop_words(self, lang, tokens):
         #TODO: evtl find index2string and string2index for BPEs
@@ -198,14 +205,12 @@ class DistanceCalculator():
 
     def calculate_distances(self, sample, finalized):
         #self.set_custom_lm(custom_lm)
-
         prev_output_tokens = sample['net_input']['prev_output_tokens']
         gold_tgt_mask = (prev_output_tokens.ne(self.pad) & prev_output_tokens.ne(self.eos))
 
         sample_src_tok = sample["net_input"]["src_tokens"]
         sample_src_mask = (sample_src_tok.ne(self.pad) & sample_src_tok.ne(self.eos))
 
-        #print(self.model.__class__)
 
         for i in range(sample["id"].shape[0]):
             logger.info(f"\n\ni: {i}")
@@ -220,6 +225,7 @@ class DistanceCalculator():
 
             semb_enc_src = self.emb_tok2sent(src_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f'src_tok: {self.check_token2word(src_tok)}')
+            logger.info(f'src_tok: {src_tok}   ---    shape: {src_tok.shape}')
             logger.debug(f"src - tok: {src_tok.shape}, enc_out: {src_enc_out['encoder_out'][0].shape}, semb: {semb_enc_src.shape}")
 
 
@@ -233,6 +239,7 @@ class DistanceCalculator():
             gold_enc_out = self.encoder.forward(gold_tok, torch.tensor(gold_tok.shape[1]))  # torch.Size([20, 512])
             semb_enc_gold = self.emb_tok2sent(gold_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f"gold_tok: {self.check_token2word(gold_tok)}")
+            logger.info(f"gold_tok: {gold_tok}    ---   shape: {gold_tok.shape}")
             logger.debug(f"gold - tok: {gold_tok.shape}, enc_out: { gold_enc_out['encoder_out'][0].shape}, semb: {semb_enc_gold.shape}")
 
             ### Decoder Representations (src and gold_tgt)
@@ -263,16 +270,19 @@ class DistanceCalculator():
             for j in range(len(hypos)):
                 data_sub = dict()
                 #data_sub["beam"] = "hyp" + str(j)
-
                 hypo = hypos[j]
+                #print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
                 hypo_mask = (hypo["tokens"].ne(self.eos))
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
                 if self.remove_stopwords:
                     hypo_tok = self.filter_stop_words(self.tgt_lang, hypo_tok)
                 if self.lm_model is not None:
-                    hypo_tok_ppl = self.check_lm(hypo_tok)
+                    hypo_tok_ppl, hypo_tok_lm_score = self.check_lm(hypo_tok)
+                    data_sub["hypo_score_lm"] = hypo_tok_lm_score
                     data_sub["hypo_ppl_lm"] = hypo_tok_ppl
                 logger.info(f'hyp_tok {j}: {self.check_token2word(hypo["tokens"])}')
+                logger.info(f'hyp_tok {j}: {hypo["tokens"]}   ---   shape: {hypo["tokens"].shape}')
+                logger.info(f'hyp_tok_alignment {j}: {hypo["alignment"]}')
 
                 # Encoder Repr
                 #print("<<< ERROR HERE: ", hypo_tok.shape, type(hypo_tok.shape), type(hypo_tok.shape[1]))

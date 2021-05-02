@@ -137,6 +137,7 @@ def _main(cfg: DictConfig, output_file):
     # Load alignment dictionary for unknown word replacement
     # (None if no unknown word replacement, empty if no path to align dictionary)
     align_dict = utils.load_align_dict(cfg.generation.replace_unk)
+    #print("align_dict: ", align_dict) None
 
     # Load dataset (possibly sharded)
     itr = task.get_batch_iterator(
@@ -272,7 +273,9 @@ def _main(cfg: DictConfig, output_file):
                 )
                 detok_hypo_str = decode_fn(hypo_str)
                 if not cfg.common_eval.quiet:
+                    print("score before: ", hypo["score"])
                     score = hypo["score"] / math.log(2)  # convert to base 2
+                    print("score: ", score)
                     # original hypothesis (after tokenization and BPE)
                     print(
                         "H-{}\t{}\t{}".format(sample_id, score, hypo_str),
@@ -283,6 +286,8 @@ def _main(cfg: DictConfig, output_file):
                         "D-{}\t{}\t{}".format(sample_id, score, detok_hypo_str),
                         file=output_file,
                     )
+
+                    #print("POS: ", hypo["positional_scores"])
                     print(
                         "P-{}\t{}".format(
                             sample_id,
@@ -300,6 +305,7 @@ def _main(cfg: DictConfig, output_file):
                     )
 
                     if cfg.generation.print_alignment:
+                        #print("alignment: ", alignment)
                         print(
                             "A-{}\t{}".format(
                                 sample_id,
@@ -344,7 +350,10 @@ def _main(cfg: DictConfig, output_file):
                         printed_row['beam'] = "hyp" + str(j)
                         printed_row['hyp'] = detok_hypo_str
                         printed_row['score'] = score.item()
-                        printed_row['hypo_ppl_orig'] = hypo["positional_scores"].mean().neg().exp2().item() ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiter
+                        ### use sum here instead of mean, because pos scores are here already length normalized
+                        printed_row['hypo_ppl_orig'] = hypo["positional_scores"].sum().neg().exp2().item() ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiter
+                        if 'hypo_score_lm' in hypo['distances']:
+                            hypo['distances']['hypo_score_lm'] = hypo['distances']['hypo_score_lm'] / math.log(2) ### convert also to base 2
                         printed_row.update(hypo['distances'])
 
                         print(
