@@ -10,11 +10,14 @@ import re
 import logging
 logger = logging.getLogger('logger')
 #handler = logging.StreamHandler(sys.stderr)
+
 logger.setLevel(logging.WARNING)
 #logger.setLevel(logging.INFO)
 #logger.addHandler(handler)
 #logging.basicConfig(level=logging.DEBUG)
 
+# FOR REMOVING STOPWORDS IN CALCULATION
+'''
 stopwords = dict()
 stopwords["de"] = set(get_stop_words('de'))
 stopwords["en"] = set()
@@ -24,18 +27,21 @@ for w_en in tmp:
     for i in sp:
         stopwords["en"].add(i)
 
+'''
 
 # TODO piece for sentencepiece, for other BPE algorithms change also function
+'''
 piece = "▁"
 q1 = piece + "'"
 q2 = piece + '"'
-
+'''
 
 ### +LM
 #from fairseq import hub_utils
 from fairseq.models.transformer_lm import TransformerLanguageModel
-# TODO: try with 2 monolingual models - penalize repeating of src sequences
-custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
+# TODO: try with 2 monolingual models
+#custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
+custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de', 'checkpoint_best.pt')
 #custom_lm = None
 
 
@@ -61,15 +67,18 @@ class DistanceCalculator():
         ### set and unset encoder ???
         self.encoder = model.encoder
         self.decoder = model.decoder
-        self.distance_type = "cosine_similarity"
+        # TODO: define constants/option dicts with possible values for distance_type and sentence_repr
+        self.distance_type = "cosine_similarity" # cosine_similarity, euclidean
+        self.sentence_repr = "vector_bertscore_aligned"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
         #TODO: get from config
         self.src_lang = "en"
         self.tgt_lang = "de"
+        #TODO: pass options for remove_stopwords and lm_model
         self.remove_stopwords = False
         self.lm_model = custom_lm
         if self.lm_model:
             self.lm_model.eval()
-        #self.lm_weight_4dist = lm_weight_4dist
+        print("bertscore new added")
 
 
     def check_lm(self, tokens):
@@ -156,11 +165,61 @@ class DistanceCalculator():
         return words
 
     def emb_tok2sent(self, args):
-        return args.mean(0)
-        # return args.sum(0)
+        if self.sentence_repr == "scalar_mean":
+            return args.mean(0)
+        elif self.sentence_repr == "vector_bertscore":
+            return args
+
+    def distance_funct(self, v1, v2, alignment=None):
+        distance = None
+        if self.sentence_repr == "scalar_mean":
+            distance = self.distance_funct_scalar(v1, v2)
+        elif self.sentence_repr == "vector_bertscore":
+            distance = self.distance_bertscore(v1, v2)
+        elif self.sentence_repr == "vector_bertscore_aligned":
+            distance = self.distance_bertscore_aligned(v1, v2, alignment)
+        return distance
 
 
-    def distance_funct(self, v1, v2, dim=0):
+    def distance_bertscore_aligned(self, src, hypo, alignment):
+        distance = None
+        print("src: ", src.shape)
+        distance = [(self.distance_funct_scalar(src[s]), self.distance_funct_scalar(hypo[t].unsqueeze(0))) for
+             s, t in alignment]
+
+        return distance
+
+
+    def distance_bertscore(self, v1, v2):
+        #TODO: check the thing with "all_layers"
+        '''
+        print("shape v1: ", v1.shape)
+        print("shape v2: ", v2.T.shape)
+        '''
+        v1.div_(torch.norm(v1, dim=-1).unsqueeze(-1))
+        v2.div_(torch.norm(v2, dim=-1).unsqueeze(-1))
+        #sim = torch.bmm(v1, v2.T) #TODO: use bmm with batch
+        sim = torch.matmul(v1, v2.T)
+        word_p = sim.max(dim=0)[0]
+        word_r = sim.max(dim=1)[0]
+        '''
+        print("sim.shape: ", sim.shape)
+        print("word_p: ", word_p)
+        print("word_p.shape: ", word_p.shape)
+        '''
+        # difference to original Bertscore:  I use mean instead of idf-rescaling
+        P = word_p.mean(dim=0)
+        R = word_r.mean(dim=0)
+        F = 2 * P * R / (P + R)
+        '''
+        print("P: ", P)
+        print("R: ", R)
+        print("F: ", F)
+        '''
+        return F.item()
+
+
+    def distance_funct_scalar(self, v1, v2, dim=0):
         distance = None
         if self.distance_type == "cosine_similarity":
             distance = torch.nn.functional.cosine_similarity(v1, v2, dim=dim)
@@ -211,9 +270,9 @@ class DistanceCalculator():
         sample_src_tok = sample["net_input"]["src_tokens"]
         sample_src_mask = (sample_src_tok.ne(self.pad) & sample_src_tok.ne(self.eos))
 
-
+        # each sentence in the batch
         for i in range(sample["id"].shape[0]):
-            logger.info(f"\n\ni: {i}")
+            #logger.info(f"\n\ni: {i}")
             ### Encoder Representations (src and gold_tgt)
             #### src:
             # src_len = sample["net_input"]["src_lengths"][i] # includes eos
@@ -226,7 +285,8 @@ class DistanceCalculator():
             semb_enc_src = self.emb_tok2sent(src_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f'src_tok: {self.check_token2word(src_tok)}')
             logger.info(f'src_tok: {src_tok}   ---    shape: {src_tok.shape}')
-            logger.debug(f"src - tok: {src_tok.shape}, enc_out: {src_enc_out['encoder_out'][0].shape}, semb: {semb_enc_src.shape}")
+            print("src_tok:", src_tok)
+            logger.debug(f'src - tok: {src_tok.shape}, enc_out: {src_enc_out["encoder_out"][0].shape}, semb: {semb_enc_src.shape}')
 
 
             #### gold:
@@ -271,6 +331,7 @@ class DistanceCalculator():
                 data_sub = dict()
                 #data_sub["beam"] = "hyp" + str(j)
                 hypo = hypos[j]
+                hypo_alignment = hypo["alignment"]
                 #print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
                 hypo_mask = (hypo["tokens"].ne(self.eos))
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
@@ -283,6 +344,16 @@ class DistanceCalculator():
                 logger.info(f'hyp_tok {j}: {self.check_token2word(hypo["tokens"])}')
                 logger.info(f'hyp_tok {j}: {hypo["tokens"]}   ---   shape: {hypo["tokens"].shape}')
                 logger.info(f'hyp_tok_alignment {j}: {hypo["alignment"]}')
+                #print("### hypo alignment len: ", len(hypo["alignment"]))
+                #print("### hypo token len: ", len(hypo_tok[0]))
+
+                '''
+                m = [(src_tok.squeeze()[s],hypo_tok.squeeze()[t]) for s,t in hypo["alignment"] ]
+                print("m: ", m)
+                #print("m0: ", src_tok[0][0].unsqueeze(0) )
+                m = [(self.check_token2word(src_tok[0][s].unsqueeze(0)), self.check_token2word(hypo_tok[0][t].unsqueeze(0))) for s, t in hypo["alignment"]]
+                print("m: ", m)
+                '''
 
                 # Encoder Repr
                 #print("<<< ERROR HERE: ", hypo_tok.shape, type(hypo_tok.shape), type(hypo_tok.shape[1]))
@@ -298,7 +369,7 @@ class DistanceCalculator():
 
                 #### Distances
                 # 1. Goal: dec(src)-dec(gold)
-                data_sub["[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_gold, semb_dec_hyp_enc_src)
+                data_sub["[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_gold, semb_dec_hyp_enc_src, alignment=hypo_alignment)   #######################
                 logger.info(f'DIST - [GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp): {data_sub["[GOAL]:dist-dec(src+enc:gold_tgt)-dec(hyp)"]}')
 
                 # 2. Try to approach Goal: dec(src)-dec(hyp)
@@ -307,7 +378,7 @@ class DistanceCalculator():
                 logger.debug(
                     f"hyp - src_dec_out_enc_hyp: {src_dec_out_enc_hyp.shape}, semb_dec_out_enc_src: {semb_dec_src_enc_hyp.shape}")
 
-                data_sub["[try_to_approach_GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_hyp, semb_dec_hyp_enc_src)
+                data_sub["[try_to_approach_GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_hyp, semb_dec_hyp_enc_src, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - [try_to_approach_GOAL]:dist-dec(src+enc:hyp)-dec(hyp): {data_sub["[try_to_approach_GOAL]:dist-dec(src+enc:hyp)-dec(hyp)"]}')
 
@@ -317,7 +388,7 @@ class DistanceCalculator():
                 logger.debug(
                     f"hyp - hyp_dec_posplus_out_enc_none: {hyp_dec_posplus_out_enc_none.shape}, semb_dec_hyp_posplus_enc_none: {semb_dec_hyp_posplus_enc_none.shape}")
 
-                data_sub["dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)"] = self.distance_funct(semb_dec_src_posplus_enc_none, semb_dec_hyp_posplus_enc_none)
+                data_sub["dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)"] = self.distance_funct(semb_dec_src_posplus_enc_none, semb_dec_hyp_posplus_enc_none, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - dist-dec(src_noenc_posplus)-dec(hyp_noenc_possemb_hyp_noenc_posminusplus): {data_sub["dist-dec(src_noenc_posplus)-dec(hyp_noenc_posplus)"]}')
 
@@ -327,27 +398,27 @@ class DistanceCalculator():
                 logger.debug(
                     f"hyp - dec_hyp_noenc_posminus: {dec_hyp_noenc_posminus.shape}, semb_dec_hyp_posminus_enc_none: {semb_dec_hyp_posminus_enc_none.shape}")
 
-                data_sub["dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)"] = self.distance_funct(semb_dec_src_posminus_enc_none, semb_dec_hyp_posminus_enc_none)
+                data_sub["dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)"] = self.distance_funct(semb_dec_src_posminus_enc_none, semb_dec_hyp_posminus_enc_none, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus): {data_sub["dist-dec(src_noenc_posminus)-dec(hyp_noenc_posminus)"]}')
 
                 # 5.
-                data_sub["dist-enc(src)-enc(hyp)"] = self.distance_funct(semb_enc_src, semb_enc_hyp)
+                data_sub["dist-enc(src)-enc(hyp)"] = self.distance_funct(semb_enc_src, semb_enc_hyp, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - dist-enc(src)-enc(hyp): {data_sub["dist-enc(src)-enc(hyp)"]}')
 
 
                 ### Unnecessary
                 # 6. enc(src)-dec(hyp)
-                data_sub["maybe-nosense-dist-enc(src)-dec(hyp)"] = self.distance_funct(semb_enc_src, semb_dec_hyp_enc_src)
+                data_sub["maybe-nosense-dist-enc(src)-dec(hyp)"] = self.distance_funct(semb_enc_src, semb_dec_hyp_enc_src, alignment=hypo_alignment)
                 logger.info(f'DIST - maybe-nosense-dist-enc(src)-dec(hyp): {data_sub["maybe-nosense-dist-enc(src)-dec(hyp)"]}')
 
                 # 7.
-                data_sub["nosense-dist-dec(src_noenc_posplus)-dec(hyp)"] = self.distance_funct(semb_dec_src_posplus_enc_none, semb_dec_hyp_enc_src)
+                data_sub["nosense-dist-dec(src_noenc_posplus)-dec(hyp)"] = self.distance_funct(semb_dec_src_posplus_enc_none, semb_dec_hyp_enc_src, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - nosense-dist-dec(src_noenc_posplus)-dec(hyp): {data_sub["nosense-dist-dec(src_noenc_posplus)-dec(hyp)"]}')
                 # 8.
-                data_sub["nosense-dist-dec(2args<-src)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_src, semb_dec_hyp_enc_src)
+                data_sub["nosense-dist-dec(2args<-src)-dec(hyp)"] = self.distance_funct(semb_dec_src_enc_src, semb_dec_hyp_enc_src, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - nosense-dist-dec(2args<-src)-dec(hyp): {data_sub["nosense-dist-dec(2args<-src)-dec(hyp)"]}')
 
@@ -355,35 +426,37 @@ class DistanceCalculator():
                 semb_dec_hyp_enc_hyp = self.emb_tok2sent(self.forward_decoder(hypo_tok, hyp_enc_out).squeeze())
                 logger.debug(
                     f"hyp - dec_hyp_enc_hyp: direkt, semb_dec_hyp_enc_hyp: {semb_dec_hyp_enc_hyp.shape}")
-                data_sub["nosense-dist-dec(2args<-src)-dec(2args<-hyp)"] = self.distance_funct(semb_dec_src_enc_src, semb_dec_hyp_enc_hyp)
+                data_sub["nosense-dist-dec(2args<-src)-dec(2args<-hyp)"] = self.distance_funct(semb_dec_src_enc_src, semb_dec_hyp_enc_hyp, alignment=hypo_alignment)
                 logger.info(
                     f'DIST - nosense-dist-dec(2args<-src)-dec(2args<-hyp): {data_sub["nosense-dist-dec(2args<-src)-dec(2args<-hyp)"]}')
 
                 ### proof of concept: dist hyp-gold - enc, dec, noenc-posplus, noenc-posminus
 
+                poc = False
+                if (poc):
                 # 10. hyp-gold enc
-                data_sub["poc-dict-enc(hyp)-enc(gold)"] = self.distance_funct(semb_enc_hyp, semb_enc_gold)
-                logger.info(
-                    f'DIST - poc-dict-enc(hyp)-enc(gold): {data_sub["poc-dict-enc(hyp)-enc(gold)"]}')
+                    data_sub["poc-dict-enc(hyp)-enc(gold)"] = self.distance_funct(semb_enc_hyp, semb_enc_gold)
+                    logger.info(
+                        f'DIST - poc-dict-enc(hyp)-enc(gold): {data_sub["poc-dict-enc(hyp)-enc(gold)"]}')
 
-                # 11. hyp-gold dec
-                data_sub["poc-dist-dec(hyp)-dec(gold)"] = self.distance_funct(semb_dec_hyp_enc_src, semb_dec_gold)
-                logger.info(
-                    f'DIST -poc-dist-dec(hyp)-dec(gold): {data_sub["poc-dist-dec(hyp)-dec(gold)"]}')
+                    # 11. hyp-gold dec
+                    data_sub["poc-dist-dec(hyp)-dec(gold)"] = self.distance_funct(semb_dec_hyp_enc_src, semb_dec_gold)
+                    logger.info(
+                        f'DIST -poc-dist-dec(hyp)-dec(gold): {data_sub["poc-dist-dec(hyp)-dec(gold)"]}')
 
-                # 12. hyp-gold noenc-posplus
-                semb_dec_gold_posplus_enc_none = self.emb_tok2sent(self.forward_decoder(gold_tok).squeeze())
-                logger.debug(
-                    f"hyp - dec_hyp_enc_hyp: direkt, semb_dec_hyp_enc_hyp: {semb_dec_gold_posplus_enc_none.shape}")
-                data_sub["poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus)"] = self.distance_funct(semb_dec_hyp_posplus_enc_none, semb_dec_gold_posplus_enc_none)
-                logger.info(
-                    f'DIST - poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus): {data_sub["poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus)"]}')
+                    # 12. hyp-gold noenc-posplus
+                    semb_dec_gold_posplus_enc_none = self.emb_tok2sent(self.forward_decoder(gold_tok).squeeze())
+                    logger.debug(
+                        f"hyp - dec_hyp_enc_hyp: direkt, semb_dec_hyp_enc_hyp: {semb_dec_gold_posplus_enc_none.shape}")
+                    data_sub["poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus)"] = self.distance_funct(semb_dec_hyp_posplus_enc_none, semb_dec_gold_posplus_enc_none)
+                    logger.info(
+                        f'DIST - poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus): {data_sub["poc-dist-dec(hyp_noenc_posplus)-dec(gold_noenc_posplus)"]}')
 
-                # 13. hyp-gold noenc-posminus
-                semb_dec_gold_posminus_enc_none = self.emb_tok2sent(self.forward_decoder_posminus(gold_tok).squeeze())
-                data_sub["poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus)"] = self.distance_funct(semb_dec_hyp_posminus_enc_none, semb_dec_gold_posminus_enc_none)
-                logger.info(
-                    f'DIST - poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus): {data_sub["poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus)"]}')
+                    # 13. hyp-gold noenc-posminus
+                    semb_dec_gold_posminus_enc_none = self.emb_tok2sent(self.forward_decoder_posminus(gold_tok).squeeze())
+                    data_sub["poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus)"] = self.distance_funct(semb_dec_hyp_posminus_enc_none, semb_dec_gold_posminus_enc_none)
+                    logger.info(
+                        f'DIST - poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus): {data_sub["poc-dist-dec(hyp_noenc_posminus)-dec(gold_noenc_posminus)"]}')
 
                 finalized[i][j]["distances"] = data_sub
         return finalized

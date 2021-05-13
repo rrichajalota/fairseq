@@ -14,13 +14,15 @@ src="$1"
 tgt="$2"
 
 model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
-#testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
 
+#testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
 testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
-#outdir="/raid/data/daga01/fairseq_out_nostopwords"
 
 lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
-outdir="/raid/data/daga01/fairseq_out_probscore"
+
+#outdir="/raid/data/daga01/fairseq_out_nostopwords"
+#outdir="/raid/data/daga01/fairseq_out_pplscore2"
+outdir="/raid/data/daga01/fairseq_out_bertscore_1_myLMde"
 
 mkdir -p "$outdir"
 
@@ -28,7 +30,7 @@ mkdir -p "$outdir"
 CUDA_VISIBLE_DEVICES=4,5,6,7 python fairseq_cli/generate.py $testdir --path $model \
  --lm-path $lm_model \
  --lm-weight 0.0 \
- --batch-size 40 --beam 10 --nbest 10 \
+ --batch-size 20 --beam 10 --nbest 10 \
  --dataset-impl lazy \
  --print-alignment \
  --tokenizer moses -s $src -t $tgt \
@@ -49,9 +51,7 @@ outdir="/raid/data/daga01/fairseq_out_test"
 lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 mkdir -p "$outdir"
 #--cpu \
-#CUDA_VISIBLE_DEVICES=7 
-python fairseq_cli/generate.py $testdir \
- --cpu \
+CUDA_VISIBLE_DEVICES=7 python fairseq_cli/generate.py $testdir \
  --path $model \
  --lm-path $lm_model \
  --lm-weight 0.0 \

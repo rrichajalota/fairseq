@@ -273,9 +273,7 @@ def _main(cfg: DictConfig, output_file):
                 )
                 detok_hypo_str = decode_fn(hypo_str)
                 if not cfg.common_eval.quiet:
-                    print("score before: ", hypo["score"])
                     score = hypo["score"] / math.log(2)  # convert to base 2
-                    print("score: ", score)
                     # original hypothesis (after tokenization and BPE)
                     print(
                         "H-{}\t{}\t{}".format(sample_id, score, hypo_str),
