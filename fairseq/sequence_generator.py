@@ -958,7 +958,8 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
                 attn[i], src_tokens[i], tgt_tokens[i], self.pad, self.eos
             )
             finalized[i // beam_size][i % beam_size]["alignment"] = alignment
-
+        #print("self.lm_model: ", self.lm_model)
+        #TODO: pass better LM
         dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None)
         finalized = dc.calculate_distances(sample, finalized)
         return finalized

@@ -22,15 +22,17 @@ lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
-outdir="/raid/data/daga01/fairseq_out_bertscore_1_myLMde"
+outdir="/raid/data/daga01/fairseq_out_new/fairseq_out_scalarmean_myLMde_beam50"
 
 mkdir -p "$outdir"
 
 #--cpu \
+#--lm-path $lm_model \
+#--lm-weight 0.0 \
+
 CUDA_VISIBLE_DEVICES=4,5,6,7 python fairseq_cli/generate.py $testdir --path $model \
- --lm-path $lm_model \
- --lm-weight 0.0 \
- --batch-size 20 --beam 10 --nbest 10 \
+ --batch-size 20 \
+ --beam 50 --nbest 50 \
  --dataset-impl lazy \
  --print-alignment \
  --tokenizer moses -s $src -t $tgt \
@@ -46,15 +48,16 @@ tgt="$2"
 
 model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
 testdir="${top}/data/data-bin-32k-red-lazy-new-shorter-minitest-5st-renamed"
-outdir="/raid/data/daga01/fairseq_out_test"
+outdir="/raid/data/daga01/fairseq_out_all/fairseq_out_test"
 #lm_model="${top}/lm_models/adaptive_lm_wiki103.v2/model.pt"
 lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 mkdir -p "$outdir"
 #--cpu \
+#--lm-path $lm_model \
+# --lm-weight 0.0 \
+
 CUDA_VISIBLE_DEVICES=7 python fairseq_cli/generate.py $testdir \
  --path $model \
- --lm-path $lm_model \
- --lm-weight 0.0 \
  --batch-size 8 --beam 2 --nbest 2 \
  --dataset-impl lazy \
  --print-alignment \

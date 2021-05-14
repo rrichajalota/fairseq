@@ -69,7 +69,7 @@ class DistanceCalculator():
         self.decoder = model.decoder
         # TODO: define constants/option dicts with possible values for distance_type and sentence_repr
         self.distance_type = "cosine_similarity" # cosine_similarity, euclidean
-        self.sentence_repr = "vector_bertscore_aligned"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
+        self.sentence_repr = "scalar_mean"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
         #TODO: get from config
         self.src_lang = "en"
         self.tgt_lang = "de"
@@ -78,7 +78,7 @@ class DistanceCalculator():
         self.lm_model = custom_lm
         if self.lm_model:
             self.lm_model.eval()
-        print("bertscore new added")
+        self.print_poc = True
 
 
     def check_lm(self, tokens):
@@ -285,7 +285,7 @@ class DistanceCalculator():
             semb_enc_src = self.emb_tok2sent(src_enc_out["encoder_out"][0].transpose(0, 1).squeeze())  # torch.Size([512])
             logger.info(f'src_tok: {self.check_token2word(src_tok)}')
             logger.info(f'src_tok: {src_tok}   ---    shape: {src_tok.shape}')
-            print("src_tok:", src_tok)
+            #print("src_tok:", src_tok)
             logger.debug(f'src - tok: {src_tok.shape}, enc_out: {src_enc_out["encoder_out"][0].shape}, semb: {semb_enc_src.shape}')
 
 
@@ -432,7 +432,7 @@ class DistanceCalculator():
 
                 ### proof of concept: dist hyp-gold - enc, dec, noenc-posplus, noenc-posminus
 
-                poc = False
+                poc = self.print_poc
                 if (poc):
                 # 10. hyp-gold enc
                     data_sub["poc-dict-enc(hyp)-enc(gold)"] = self.distance_funct(semb_enc_hyp, semb_enc_gold)
