@@ -22,16 +22,17 @@ lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
-outdir="/raid/data/daga01/fairseq_out_new/fairseq_out_scalarmean_myLMde_beam50"
+outdir="/raid/data/daga01/fairseq_out_new/fairseq_out_vectorbertscore_euclidean_myLMde_beam50"
 
 mkdir -p "$outdir"
 
 #--cpu \
 #--lm-path $lm_model \
 #--lm-weight 0.0 \
+#--num-workers 8 \
 
-CUDA_VISIBLE_DEVICES=4,5,6,7 python fairseq_cli/generate.py $testdir --path $model \
- --batch-size 20 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python fairseq_cli/generate.py $testdir --path $model \
+ --batch-size 40 \
  --beam 50 --nbest 50 \
  --dataset-impl lazy \
  --print-alignment \
