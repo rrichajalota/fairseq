@@ -105,16 +105,26 @@ call_huge_m2m(){
 src="$1"
 tgt="$2"
 
+
+top="/raid/data/daga01"
+name="my_m2m_out_scalarmean_cosine"
+bindir="${top}/${name}/binarized"
+outdir="${top}/${name}"
+
+mkdir -p "$outdir"
+
 testdir="${bindir}/${src}-${tgt}"
 outfile="${outdir}/generated-${src}-${tgt}"
 
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 fairseq-generate $testdir \
+#--print-alignment \
+#CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 fairseq-generate $testdir \
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python fairseq_cli/generate.py $testdir \
     --batch-size 1 \
     --path "${modeldir}/12b_last_chk_8_gpus.pt" \
     --fixed-dictionary "${modeldir}/model_dict.128k.txt" \
     -s "$src" -t "$tgt" \
     --remove-bpe 'sentencepiece' \
-    --beam 5 \
+    --beam 50 --nbest 50 \
     --task translation_multi_simple_epoch \
     --lang-pairs $modeldir/language_pairs.txt \
     --decoder-langtok --encoder-langtok src \
@@ -147,10 +157,10 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 fairseq-generate $testdir \
 #binarize_m2m "en" "de"
 #binarize_m2m "de" "en"
 
-#call_huge_m2m "en" "de"
+call_huge_m2m "en" "de"
 #call_huge_m2m "de" "en"
 
-fairseq_test_mycode "en" "de"
-fairseq_test_mycode "de" "en"
+#fairseq_test_mycode "en" "de"
+#fairseq_test_mycode "de" "en"
 
 

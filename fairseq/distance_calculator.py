@@ -246,6 +246,7 @@ class DistanceCalculator():
 
     @torch.no_grad()
     def forward_encoder(self, tokens, shape):
+        print("shape encoder: ", shape)
         return self.encoder(tokens, shape)
 
 
@@ -268,7 +269,7 @@ class DistanceCalculator():
         #print("Decoder Posminus Positions", decoder_copy.embed_positions)
         return decoder_out
 
-
+    @torch.no_grad()
     def calculate_distances(self, sample, finalized):
         #self.set_custom_lm(custom_lm)
         prev_output_tokens = sample['net_input']['prev_output_tokens']

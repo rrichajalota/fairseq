@@ -18,7 +18,7 @@ model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
 #testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
 testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
 
-lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
+#lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"

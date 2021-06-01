@@ -532,7 +532,7 @@ class SequenceGenerator(nn.Module):
             reorder_state = active_bbsz_idx
 
         # initialize distance calculator
-        #dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None) #lm=self.lm_model)#, lm_weight=self.lm_weight)
+        dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None) #lm=self.lm_model)#, lm_weight=self.lm_weight)
 
         # sort by score descending
         for sent in range(len(finalized)):
@@ -544,7 +544,7 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(
                 List[Dict[str, Tensor]], finalized[sent]
             )
-        #finalized = dc.calculate_distances(sample, finalized)
+        finalized = dc.calculate_distances(sample, finalized)
 
         return finalized
 
@@ -960,8 +960,8 @@ class SequenceGeneratorWithAlignment(SequenceGenerator):
             finalized[i // beam_size][i % beam_size]["alignment"] = alignment
         #print("self.lm_model: ", self.lm_model)
         #TODO: pass better LM
-        dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None)
-        finalized = dc.calculate_distances(sample, finalized)
+        #dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=None)
+        #finalized = dc.calculate_distances(sample, finalized)
         return finalized
 
     def _prepare_batch_for_alignment(self, sample, hypothesis):
