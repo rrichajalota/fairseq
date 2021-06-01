@@ -64,7 +64,11 @@ class _FP16OptimizerMixin(object):
             fp32_params = []
             for p in params:
                 p32 = torch.nn.Parameter(p.data.float())
+                if hasattr(p, 'expert'):
+                    p32.expert = True
                 p32.grad = torch.zeros_like(p32.data)
+                if hasattr(p, "param_group"):
+                    p32.param_group = p.param_group
                 fp32_params.append(p32)
             return fp32_params
 
@@ -198,15 +202,15 @@ class _FP16OptimizerMixin(object):
 
         return grad_norm
 
-    def step(self, closure=None):
+    def step(self, closure=None, groups=None):
         """Performs a single optimization step."""
         self._sync_fp16_grads_to_fp32()
 
         if getattr(self, "supports_step_with_scale", False):
-            self.fp32_optimizer.step(closure, scale=(1.0 / self._multiply_factor))
+            self.fp32_optimizer.step(closure, scale=(1.0 / self._multiply_factor), groups=groups)
         else:
             self._unscale_grads()
-            self.fp32_optimizer.step(closure)
+            self.fp32_optimizer.step(closure, groups=groups)
 
         if self.scaler is not None:
             self.scaler.update()
@@ -304,6 +308,10 @@ class FP16Optimizer(_FP16OptimizerMixin, optim.FairseqOptimizer):
         self.fp32_optimizer.optimizer = optimizer
 
     @property
+    def lr_scheduler(self):
+        return getattr(self.fp32_optimizer, "lr_scheduler", None)
+
+    @property
     def optimizer_config(self):
         return self.fp32_optimizer.optimizer_config
 
@@ -315,6 +323,10 @@ class FP16Optimizer(_FP16OptimizerMixin, optim.FairseqOptimizer):
 
     def all_reduce_grads(self, module):
         self.fp32_optimizer.all_reduce_grads(module)
+
+    @property
+    def supports_flat_params(self):
+        return self.fp32_optimizer.supports_flat_params
 
 
 class _MemoryEfficientFP16OptimizerMixin(object):
@@ -416,14 +428,14 @@ class _MemoryEfficientFP16OptimizerMixin(object):
 
         return grad_norm
 
-    def step(self, closure=None):
+    def step(self, closure=None, groups=None):
         """Performs a single optimization step."""
         if getattr(self, "supports_step_with_scale", False):
             # NOTE(msb) optimizer divides by scale factor
-            self.wrapped_optimizer.step(closure, scale=(1.0 / self._multiply_factor))
+            self.wrapped_optimizer.step(closure, scale=(1.0 / self._multiply_factor), groups=groups)
         else:
             self._unscale_grads()
-            self.wrapped_optimizer.step(closure)
+            self.wrapped_optimizer.step(closure, groups=groups)
 
         if self.scaler is not None:
             self.scaler.update()
@@ -435,6 +447,10 @@ class _MemoryEfficientFP16OptimizerMixin(object):
             self._multiply_factor = 1.0 / float(self.scaler.loss_scale)
         else:
             self._multiply_factor = 1.0
+
+    @property
+    def supports_flat_params(self):
+        return self.wrapped_optimizer.supports_flat_params
 
 
 class MemoryEfficientFP16Optimizer(
@@ -455,8 +471,10 @@ class MemoryEfficientFP16Optimizer(
     *supports_memory_efficient_fp16* property.
     """
 
-    def __init__(self, cfg: DictConfig, params, optimizer, **kwargs):
-        if not optimizer.supports_memory_efficient_fp16:
+    def __init__(
+        self, cfg: DictConfig, params, optimizer, allow_unsupported=False, **kwargs
+    ):
+        if not allow_unsupported and not optimizer.supports_memory_efficient_fp16:
             raise ValueError(
                 "Unsupported optimizer: {}".format(optimizer.__class__.__name__)
             )
@@ -474,7 +492,7 @@ class MemoryEfficientFP16Optimizer(
                 cfg.distributed_training.distributed_world_size
                 / cfg.common.model_parallel_size
             )
-            scale_window = (
+            scale_window = int(
                 2 ** 14 / data_parallel_size / cfg.optimization.update_freq[0]
             )
         else:
@@ -513,6 +531,10 @@ class MemoryEfficientFP16Optimizer(
     @property
     def optimizer_config(self):
         return self.wrapped_optimizer.optimizer_config
+
+    @property
+    def lr_scheduler(self):
+        return getattr(self.wrapped_optimizer, "lr_scheduler", None)
 
     def get_lr(self):
         return self.wrapped_optimizer.get_lr()
