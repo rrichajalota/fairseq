@@ -18,7 +18,7 @@ from itertools import chain
 import numpy as np
 import torch
 from fairseq import checkpoint_utils, options, scoring, tasks, utils
-#from fairseq.data import encoders
+from fairseq.data import encoders
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
@@ -137,7 +137,6 @@ def _main(cfg: DictConfig, output_file):
     # Load alignment dictionary for unknown word replacement
     # (None if no unknown word replacement, empty if no path to align dictionary)
     align_dict = utils.load_align_dict(cfg.generation.replace_unk)
-    #print("align_dict: ", align_dict) None
 
     # Load dataset (possibly sharded)
     itr = task.get_batch_iterator(
@@ -171,8 +170,8 @@ def _main(cfg: DictConfig, output_file):
     )
 
     # Handle tokenization and BPE
-    tokenizer = task.build_tokenizer(cfg.tokenizer)
-    bpe = task.build_bpe(cfg.bpe)
+    tokenizer = encoders.build_tokenizer(cfg.tokenizer)
+    bpe = encoders.build_bpe(cfg.bpe)
 
     def decode_fn(x):
         if bpe is not None:
@@ -284,8 +283,6 @@ def _main(cfg: DictConfig, output_file):
                         "D-{}\t{}\t{}".format(sample_id, score, detok_hypo_str),
                         file=output_file,
                     )
-
-                    #print("POS: ", hypo["positional_scores"])
                     print(
                         "P-{}\t{}".format(
                             sample_id,
@@ -302,7 +299,8 @@ def _main(cfg: DictConfig, output_file):
                         file=output_file,
                     )
 
-                    if cfg.generation.print_alignment == "hard":
+                    if cfg.generation.print_alignment:
+                        #print("alignment: ", alignment)
                         print(
                             "A-{}\t{}".format(
                                 sample_id,
@@ -310,19 +308,6 @@ def _main(cfg: DictConfig, output_file):
                                     [
                                         "{}-{}".format(src_idx, tgt_idx)
                                         for src_idx, tgt_idx in alignment
-                                    ]
-                                ),
-                            ),
-                            file=output_file,
-                        )
-                    if cfg.generation.print_alignment == "soft":
-                        print(
-                            "A-{}\t{}".format(
-                                sample_id,
-                                " ".join(
-                                    [
-                                        ",".join(src_probs)
-                                        for src_probs in alignment
                                     ]
                                 ),
                             ),
@@ -360,10 +345,15 @@ def _main(cfg: DictConfig, output_file):
                         printed_row['beam'] = "hyp" + str(j)
                         printed_row['hyp'] = detok_hypo_str
                         printed_row['score'] = score.item()
-                        ### use sum here instead of mean, because pos scores are here already length normalized
-                        printed_row['hypo_ppl_orig'] = hypo["positional_scores"].sum().neg().exp2().item() ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiter
+                        ### mean of positional_scores !!!
+                        if not cfg.common_eval.quiet:
+                            printed_row['hypo_ppl_orig'] = hypo["positional_scores"].mean().neg().exp2().item() ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiet
+                        else:
+                            printed_row['hypo_ppl_orig'] = hypo["positional_scores"].mean().neg().exp().item()  #
                         if 'hypo_score_lm' in hypo['distances']:
-                            hypo['distances']['hypo_score_lm'] = hypo['distances']['hypo_score_lm'] / math.log(2) ### convert also to base 2
+                            if not cfg.common_eval.quiet:
+                                hypo['distances']['hypo_score_lm'] = hypo['distances']['hypo_score_lm'] / math.log(2) ### convert also to base 2
+
                         printed_row.update(hypo['distances'])
 
                         print(
@@ -396,7 +386,7 @@ def _main(cfg: DictConfig, output_file):
 
     logger.info("NOTE: hypothesis and token scores are output in base 2")
     logger.info(
-        "Translated {:,} sentences ({:,} tokens) in {:.1f}s ({:.2f} sentences/s, {:.2f} tokens/s)".format(
+        "Translated {} sentences ({} tokens) in {:.1f}s ({:.2f} sentences/s, {:.2f} tokens/s)".format(
             num_sentences,
             gen_timer.n,
             gen_timer.sum,

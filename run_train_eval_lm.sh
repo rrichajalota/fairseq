@@ -35,7 +35,7 @@ fairseq-train --task language_modeling \
 
 train_lm_de(){
 traindata="${top}/lm_models/my_LM_de/data-bin"
-outdir="${top}/lm_models/my_LM_de/chackpoints"
+outdir="${top}/lm_models/my_LM_de_2/checkpoints"
 mkdir -p $outdir
 fairseq-train --task language_modeling \
   $traindata \
@@ -51,9 +51,9 @@ fairseq-train --task language_modeling \
   --update-freq 16 \
   --num-workers 8 \
   --max-update 200000 \
-  --save-interval-updates 10 --keep-interval-updates 5 --keep-best-checkpoints 7 \
-  --reset-dataloader \
-  --dataset-impl lazy
+  --save-interval-updates 10 --keep-interval-updates 5 --keep-best-checkpoints 7 
+#  --reset-dataloader \
+#  --dataset-impl lazy
 
 }
 
@@ -62,11 +62,16 @@ fairseq-train --task language_modeling \
 eval_lm() {
 lang="$1"
 #outdir="${top}/lm_models/my_LM_de/chackpoints"
-outdir="${top}/lm_models/my_LM_de/chp_copy_ca52000updates"
+outdir="${top}/lm_models/my_LM_de_2"
+#outdir="${top}/lm_models/my_LM_de/chp_copy_ca52000updates"
 echo "Language: $lang"
 #test_data="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm/${lang}"
-test_data="/raid/data/daga01/fairseq_train/lm_models/my_LM_de/data-bin"
+test_data="/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/data-bin"
 #--cpu \
+
+# I call calculate distances at every generate, for both LM and translation task. The path is actually in my code
+# TODO: should actually receive it as an argument
+
 fairseq-eval-lm ${test_data} \
     --path "${outdir}/checkpoint_best.pt" \
     --batch-size 2 \

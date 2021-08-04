@@ -40,10 +40,11 @@ q2 = piece + '"'
 ### +LM
 #from fairseq import hub_utils
 from fairseq.models.transformer_lm import TransformerLanguageModel
-# TODO: try with 2 monolingual models
+# TODO: remove <2tgt>
+# TODO: find a way to get the LM path as an argument. The path in my code overrides the one from command line also for LM evaluation task !!! (uses same generate)
 #custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
-#custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de', 'checkpoint_best.pt')
-custom_lm = None
+custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/', 'checkpoint_best.pt')
+#custom_lm = None
 
 
 class DistanceCalculator():
@@ -80,10 +81,11 @@ class DistanceCalculator():
         if self.lm_model:
             self.lm_model.eval()
         self.print_poc = True
-        print("\n\ncosine", "scalar_mean", "None")
+        print("\n\ncosine", "scalar_mean", "lm model type:", type(self.lm_model))
 
 
     def check_lm(self, tokens):
+        #TODO: remove <2en> at calculation
         calc = self.lm_model.score(self.check_token2word(tokens))['positional_scores']
         #print("POS LM: ", calc)
         ppl = calc.mean().neg().exp().item()
@@ -246,7 +248,7 @@ class DistanceCalculator():
 
     @torch.no_grad()
     def forward_encoder(self, tokens, shape):
-        print("shape encoder: ", shape)
+        #print("shape encoder: ", shape)
         return self.encoder(tokens, shape)
 
 
