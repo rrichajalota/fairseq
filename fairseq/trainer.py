@@ -61,7 +61,7 @@ class Trainer(object):
         else:
             self.device = torch.device("cpu")
 
-        if self.cfg.distributed_training.ddp_backend == "fully_sharded":
+        if self.is_fsdp:
             if self.cfg.common.bf16:
                 raise ValueError(
                     "FullyShardedDataParallel is not compatible with --bf16 or "
@@ -73,13 +73,16 @@ class Trainer(object):
                     "option (it's already built in)"
                 )
         else:
-            if self.cfg.distributed_training.cpu_offload:
+            if (
+                hasattr(self.cfg.distributed_training, "cpu_offload")
+                and self.cfg.distributed_training.cpu_offload
+            ):
                 raise ValueError("--cpu-offload requires --ddp-backend=fully_sharded")
 
         # copy model and criterion to current device/dtype
         self._criterion = criterion
         self._model = model
-        if cfg.distributed_training.ddp_backend != "fully_sharded":
+        if not self.is_fsdp:
             if cfg.common.fp16:
                 assert not cfg.common.amp, "Cannot use fp16 and AMP together"
                 self._criterion = self._criterion.half()
@@ -188,16 +191,14 @@ class Trainer(object):
         return (
             self.data_parallel_world_size > 1 and not self.cfg.optimization.use_bmuf
         ) or (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and self.cfg.distributed_training.cpu_offload
+            self.is_fsdp and self.cfg.distributed_training.cpu_offload
         )
 
     @property
     def should_save_checkpoint_on_current_rank(self) -> bool:
         """Indicates whether to save checkpoints on the current DDP rank."""
         if (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and self.cfg.distributed_training.use_sharded_state
+            self.is_fsdp and self.cfg.distributed_training.use_sharded_state
         ) or getattr(self.cfg.model, "base_layers", 0) > 0:
             return True
         else:
@@ -205,10 +206,7 @@ class Trainer(object):
 
     @property
     def always_call_state_dict_during_save_checkpoint(self) -> bool:
-        if (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and not self.cfg.distributed_training.use_sharded_state
-        ):
+        if self.is_fsdp and not self.cfg.distributed_training.use_sharded_state:
             # FSDP calls communication collective when consolidating checkpoints
             return True
         else:
@@ -217,10 +215,7 @@ class Trainer(object):
     @property
     def checkpoint_suffix(self) -> str:
         """Suffix to add to the checkpoint file name."""
-        if (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and self.cfg.distributed_training.use_sharded_state
-        ):
+        if self.is_fsdp and self.cfg.distributed_training.use_sharded_state:
             return self.cfg.checkpoint.checkpoint_suffix + "-shard{0}".format(
                 self.data_parallel_rank
             )
@@ -275,10 +270,7 @@ class Trainer(object):
             )
         )
 
-        if (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and self.cfg.common.fp16
-        ):
+        if self.is_fsdp and self.cfg.common.fp16:
             # FullyShardedDataParallel always uses MemoryEfficientFP16 wrapper,
             # mostly for the grad scaling. But if we don't have the
             # --memory-efficient-fp16 flag set, then we're effectively doing
@@ -310,7 +302,7 @@ class Trainer(object):
                 logger.info("NOTE: your device may support faster training with --fp16 or --amp")
             self._optimizer = optim.build_optimizer(self.cfg.optimizer, params)
 
-        if self.cfg.distributed_training.ddp_backend == "fully_sharded":
+        if self.is_fsdp:
             assert (
                 not self.cfg.optimization.use_bmuf
             ), "--ddp-backend=fully_sharded is not compatible with BMUF"
@@ -348,6 +340,10 @@ class Trainer(object):
         )
         self._lr_scheduler.step_update(0)
 
+    @property
+    def is_fsdp(self):
+        return self.cfg.distributed_training.ddp_backend == "fully_sharded"
+
     def consolidate_optimizer(self):
         """For OSS, we need to consolidate the state dict."""
         if self.cfg.checkpoint.no_save_optimizer_state:
@@ -355,11 +351,7 @@ class Trainer(object):
         self._gathered_optim_state = None
         if hasattr(self.optimizer.optimizer, "consolidate_state_dict"):
             self.optimizer.optimizer.consolidate_state_dict()
-
-        elif (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
-            and not self.model.use_sharded_state
-        ):
+        elif self.is_fsdp and not self.model.use_sharded_state:
             st = self.model.gather_full_optim_state_dict(
                 self.optimizer
             )  # only returns on rank 0
@@ -400,7 +392,7 @@ class Trainer(object):
                 self._gathered_optim_state = None
             else:
                 state_dict["last_optimizer_state"] = self.optimizer.state_dict()
-        if self.cfg.distributed_training.ddp_backend == "fully_sharded":
+        if self.is_fsdp:
             # save meta data for recombining checkpoint upon loading
             state_dict["fsdp_metadata"] = self.model.local_metadata_dict()
         return state_dict
@@ -444,10 +436,7 @@ class Trainer(object):
                 # on every worker for now
                 or self.tpu
                 # FSDP requires loading checkpoint shards on all ranks
-                or (
-                    self.cfg.distributed_training.ddp_backend == "fully_sharded"
-                    and self.cfg.distributed_training.use_sharded_state
-                )
+                or (self.is_fsdp and self.cfg.distributed_training.use_sharded_state)
                 or getattr(self.cfg.model, "base_layers", 0) > 0
             )
 
@@ -518,10 +507,7 @@ class Trainer(object):
             if not reset_lr_scheduler:
                 self.lr_scheduler.load_state_dict(last_optim["lr_scheduler_state"])
 
-            if (
-                self.cfg.distributed_training.ddp_backend == "fully_sharded"
-                and not self.model.use_sharded_state
-            ):
+            if self.is_fsdp and not self.model.use_sharded_state:
                 # if use_sharded_state, the last_optim_state is already sharded, skip this
                 last_optim_state = self.model.get_shard_from_optim_state_dict(
                     last_optim_state
@@ -693,6 +679,11 @@ class Trainer(object):
                     self.data_parallel_world_size > 1
                     and hasattr(self.model, "no_sync")
                     and i < len(samples) - 1
+                    # The no_sync context manager results in increased memory
+                    # usage with FSDP, since full-size gradients will be
+                    # accumulated on each GPU. It's typically a better tradeoff
+                    # to do the extra communication with FSDP.
+                    and not self.is_fsdp
                 ):
                     return self.model.no_sync()
                 else:
@@ -1103,7 +1094,7 @@ class Trainer(object):
             return total_norm ** 0.5
 
         should_agg_norm = (
-            self.cfg.distributed_training.ddp_backend == "fully_sharded"
+            self.is_fsdp
             and (
                 self.data_parallel_process_group is not None
                 or torch.distributed.is_initialized()
@@ -1124,6 +1115,25 @@ class Trainer(object):
         """Aggregate training time in seconds."""
         return time.time() - self._start_time + self._previous_training_time
 
+    def _fp_convert_sample(self, sample):
+        def apply_half(t):
+            if t.dtype is torch.float32:
+                return t.to(dtype=torch.half)
+            return t
+
+        def apply_bfloat16(t):
+            if t.dtype is torch.float32:
+                return t.to(dtype=torch.bfloat16)
+            return t
+
+        if self.cfg.common.fp16:
+            sample = utils.apply_to_sample(apply_half, sample)
+
+        if self.cfg.common.bf16:
+            sample = utils.apply_to_sample(apply_bfloat16, sample)
+
+        return sample
+
     def _prepare_sample(self, sample, is_dummy=False):
         if sample == "DUMMY":
             raise Exception(
@@ -1139,33 +1149,25 @@ class Trainer(object):
             sample, _ = self._prepare_sample(self._dummy_batch, is_dummy=True)
             return sample, True
 
+        # Given that PCIe/NVLink bandwidth is significantly smaller than DRAM bandwidth
+        # it makes sense to do the format conversion on the CPU and then transfer
+        # a smaller buffer to the device. This also saves GPU memory capacity.
+
+        if self.cfg.common.on_cpu_convert_precision:
+            sample = self._fp_convert_sample(sample)
+
         if self.cuda:
             if self.pipeline_model_parallel:
-                if "target" in sample:
-                    sample["target"] = utils.move_to_cuda(
-                        sample["target"], device=self.last_device
-                    )
+                if 'target' in sample:
+                    sample['target'] = utils.move_to_cuda(sample['target'], device=self.last_device)
             else:
                 sample = utils.move_to_cuda(sample)
         elif self.tpu and is_dummy:
             # the dummy batch may not be on the appropriate device
             sample = utils.move_to_cuda(sample, device=self.device)
 
-        def apply_half(t):
-            if t.dtype is torch.float32:
-                return t.half()
-            return t
-
-        def apply_bfloat16(t):
-            if t.dtype is torch.float32:
-                return t.to(dtype=torch.bfloat16)
-            return t
-
-        if self.cfg.common.fp16:
-            sample = utils.apply_to_sample(apply_half, sample)
-
-        if self.cfg.common.bf16:
-            sample = utils.apply_to_sample(apply_bfloat16, sample)
+        if not self.cfg.common.on_cpu_convert_precision:
+            sample = self._fp_convert_sample(sample)
 
         if self._dummy_batch == "DUMMY":
             self._dummy_batch = sample

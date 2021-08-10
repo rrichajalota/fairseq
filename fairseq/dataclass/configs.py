@@ -79,6 +79,22 @@ class FairseqDataclass:
     def _get_choices(self, attribute_name: str) -> Any:
         return self._get_meta(attribute_name, "choices")
 
+    @classmethod
+    def from_namespace(cls, args):
+        if isinstance(args, cls):
+            return args
+        else:
+            config = cls()
+            for k in config.__dataclass_fields__.keys():
+                if k.startswith("_"):
+                    # private member, skip
+                    continue
+                if hasattr(args, k):
+                    setattr(config, k, getattr(args, k))
+
+            return config
+
+
 
 @dataclass
 class CommonConfig(FairseqDataclass):
@@ -147,6 +163,13 @@ class CommonConfig(FairseqDataclass):
         metadata={
             "help": "pct of updates that can overflow before decreasing the loss scale"
         },
+    )
+    on_cpu_convert_precision: bool = field(
+        default=False,
+        metadata={
+            "help": "if set, the floating point conversion to fp16/bf16 runs on CPU. "
+            "This reduces bus transfer time and GPU memory usage."
+        }
     )
     min_loss_scale: float = field(
         default=1e-4,
@@ -220,6 +243,12 @@ class DistributedTrainingConfig(FairseqDataclass):
         default=max(1, torch.cuda.device_count()),
         metadata={
             "help": "total number of GPUs across all nodes (default: all visible GPUs)"
+        },
+    )
+    distributed_num_procs: Optional[int] = field(
+        default=max(1, torch.cuda.device_count()),
+        metadata={
+            "help": "total number of processes to fork (default: all visible GPUs)"
         },
     )
     distributed_rank: Optional[int] = field(
