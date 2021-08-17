@@ -15,26 +15,30 @@ src="$1"
 tgt="$2"
 
 cnt="$3"
-model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
+#model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
+model="${top}/checkpoints/basic-transf-sparse-200k/checkpoint7.pt"
 
 #testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
 #testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
 
-testdir="/raid/data/daga01/data/rest_beam500/data-bin"
+#testdir="/raid/data/daga01/fairseq_train/data/data_beam_8parts/data-bin"
+
+testdir="/raid/data/daga01/data/mt_train_sparse_200k/binarized"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
-outdir="/raid/data/daga01/fairseq_out_beam500/fairseq_out_scalarmean_cosine_LMorig_beam500/${cnt}"
+#outdir="/raid/data/daga01/fairseq_out_sparse_cp7_beam50/fairseq_out_scalarmean_cosine_LMorig_beam50/${cnt}"
+outdir="/raid/data/daga01/fairseq_out_sparse_cp7_beam50/fairseq_out_scalarmean_cosine_LMorig_beam50"
 
 mkdir -p "$outdir"
 
 #--print-alignment \
+#--gen-subset "test${cnt}" \
 
-#CUDA_VISIBLE_DEVICES="${cnt}" python fairseq_cli/generate.py $testdir --path $model \
-CUDA_VISIBLE_DEVICES=1 python fairseq_cli/generate.py $testdir --path $model \
- --batch-size 2 \
- --beam 500 --nbest 500 \
- --gen-subset "test${cnt}" \
+CUDA_VISIBLE_DEVICES="${cnt}" python fairseq_cli/generate.py $testdir --path $model \
+ --batch-size 20 \
+ --beam 50 --nbest 50 \
+ --gen-subset "test" \
  --dataset-impl lazy \
  --tokenizer moses -s $src -t $tgt \
  --remove-bpe sentencepiece \
@@ -69,12 +73,14 @@ CUDA_VISIBLE_DEVICES=7 python fairseq_cli/generate.py $testdir \
 }
 
 
-call_basic_model "en" "de" "0"
+#call_basic_model "en" "de" "0" &
 #call_basic_model "en" "de" "1" &
 #call_basic_model "en" "de" "2" &
 #call_basic_model "en" "de" "3" &
 #call_basic_model "en" "de" "4" &
 #call_basic_model "en" "de" "5" &
+#call_basic_model "en" "de" "6" &
+#call_basic_model "en" "de" "7" &
 
-#call_basic_model_smalltest "en" "de"
+call_basic_model "en" "de" 0
 

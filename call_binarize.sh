@@ -54,16 +54,18 @@ binarize_big_lazy_pieces() {
     #p2="/raid/data/daga01/fairseq_train/data/data_beam_8parts/8parts"
     #dest="/raid/data/daga01/fairseq_train/data/data_beam_8parts/data-bin"
     
-    p2="/raid/data/daga01/fairseq_train/data/data_beam_6parts/6parts"
-    dest="/raid/data/daga01/fairseq_train/data/data_beam_6parts/data-bin"
+    p2="/raid/data/daga01/fairseq_train/data/data_beam_4parts/4parts"
+    dest="/raid/data/daga01/fairseq_train/data/data_beam_4parts/data-bin"
 
     mkdir -p $dest
     
     #--testpref $p2/test.00,$p2/test.01,$p2/test.02,$p2/test.03,$p2/test.04,$p2/test.05,$p2/test.06,$p2/test.07 \
-    CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess \
+    #CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess \
+    fairseq-preprocess \
+    --cpu \
     --source-lang $src --target-lang $tgt \
     --trainpref $p1/corpus --validpref $p1/dev  \
-    --testpref $p2/test.00,$p2/test.01,$p2/test.02,$p2/test.03,$p2/test.04,$p2/test.05,$p2/test.06,$p2/test.07 \
+    --testpref $p2/test.00,$p2/test.01,$p2/test.02,$p2/test.03 \
     --destdir $dest \
     --joined-dictionary --dataset-impl lazy --workers 16
 
