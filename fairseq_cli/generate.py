@@ -24,6 +24,7 @@ from fairseq.logging.meters import StopwatchMeter, TimeMeter
 from omegaconf import DictConfig
 
 
+
 def main(cfg: DictConfig):
 
     if isinstance(cfg, Namespace):
@@ -80,7 +81,6 @@ def _main(cfg: DictConfig, output_file):
 
     # Load dataset splits
     task = tasks.setup_task(cfg.task)
-
 
     # Set dictionaries
     try:
@@ -345,6 +345,38 @@ def _main(cfg: DictConfig, output_file):
                                 "E-{}_{}\t{}".format(sample_id, step, h_str),
                                 file=output_file,
                             )
+                    #####
+                    calculate_distance = True  # TODO: add as fairseq option
+                    if calculate_distance:
+                        printed_row = dict()
+                        printed_row['sent_id'] = sample_id
+                        printed_row['src'] = src_str
+                        printed_row['tgt'] = target_str
+                        printed_row['beam'] = "hyp" + str(j)
+                        printed_row['hyp'] = detok_hypo_str
+                        printed_row['score'] = score.item()
+                        ### mean of positional_scores !!!
+                        if not cfg.common_eval.quiet:
+                            printed_row['hypo_ppl_orig'] = hypo[
+                                "positional_scores"].mean().neg().exp2().item()  ### !!!!! NB: exp2 because hypo["positional_scores"] was converted to base 2 in place above in if cfg.not_quiet
+                        else:
+                            printed_row['hypo_ppl_orig'] = hypo[
+                                "positional_scores"].mean().neg().exp().item()  #
+                        if 'hypo_score_lm' in hypo['distances']:
+                            if not cfg.common_eval.quiet:
+                                hypo['distances']['hypo_score_lm'] = hypo['distances'][
+                                                                         'hypo_score_lm'] / math.log(
+                                    2)  ### convert also to base 2
+
+                        printed_row.update(hypo['distances'])
+
+                        print(
+                            "DIST-{}-{}\t{}".format(sample_id, str(j), printed_row),
+                            file=output_file,
+                        )
+
+                    ###
+
 
                 # Score only the top hypothesis
                 if has_target and j == 0:

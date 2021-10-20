@@ -15,6 +15,8 @@ from fairseq.models import FairseqIncrementalDecoder
 from torch import Tensor
 from fairseq.ngram_repeat_block import NGramRepeatBlock
 
+from fairseq.distance_calculator import *
+
 
 class SequenceGenerator(nn.Module):
     def __init__(
@@ -549,6 +551,9 @@ class SequenceGenerator(nn.Module):
             # reorder incremental state in decoder
             reorder_state = active_bbsz_idx
 
+
+        custom_lm = TransformerLanguageModel.from_pretrained('/home/damyana/Dokumente/MA_QualityEstimation_SS19/fairseq_lm_models', 'checkpoint_best.pt')
+        dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=custom_lm)  #
         # sort by score descending
         for sent in range(len(finalized)):
             scores = torch.tensor(
@@ -559,6 +564,7 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(
                 List[Dict[str, Tensor]], finalized[sent]
             )
+        finalized = dc.calculate_distances(sample, finalized)
         return finalized
 
     def _prefix_tokens(
