@@ -49,12 +49,13 @@ call_basic_model_smalltest() {
 src="$1"
 tgt="$2"
 
-model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
-testdir="${top}/data/data-bin-32k-red-lazy-new-shorter-minitest-5st-renamed"
-outdir="/raid/data/daga01/fairseq_out_all/fairseq_out_test"
+loc="/home/damyana/Dokumente/MA_QualityEstimation_SS19"
+model="${loc}/fairseq_checkpoints/basic-transf/checkpoint_best.pt"
+testdir="${loc}/fairseq_testdata/data-bin-32k-red-lazy-new-shorter-minitest-5st-renamed"
+#outdir="/raid/data/daga01/fairseq_out_all/fairseq_out_test"
 #lm_model="${top}/lm_models/adaptive_lm_wiki103.v2/model.pt"
-lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
-mkdir -p "$outdir"
+#lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
+#mkdir -p "$outdir"
 #--cpu \
 #--lm-path $lm_model \
 # --lm-weight 0.0 \
