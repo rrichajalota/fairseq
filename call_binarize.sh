@@ -51,9 +51,6 @@ binarize_big_lazy_pieces() {
     
     p1="/raid/data/daga01/fairseq_train/data/BPE_32k_red_new_ende"
     
-    #p2="/raid/data/daga01/fairseq_train/data/data_beam_8parts/8parts"
-    #dest="/raid/data/daga01/fairseq_train/data/data_beam_8parts/data-bin"
-    
     p2="/raid/data/daga01/fairseq_train/data/data_beam_4parts/4parts"
     dest="/raid/data/daga01/fairseq_train/data/data_beam_4parts/data-bin"
 
@@ -110,7 +107,25 @@ echo "Done binarizing"
 }
 
 
-#binarize_de
+binarize_ende() {
+    p1="/raid/data/daga01/fairseq_train/data/BPE_32k_red_new_ende"
+    p2="/raid/data/daga01/fairseq_train/lm_models/my_LM_ende2"
+    
+    dest="${p2}/data-bin"
+    
+    #CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess \
+    fairseq-preprocess \
+    --cpu \
+    --source-lang $src --target-lang $tgt \
+    --trainpref $p1/corpus --validpref $p1/dev  \
+    --testpref $p1/test_14 \
+    --destdir $dest \
+    --joined-dictionary  --workers 16
+    #--dataset-impl lazy
+echo "Done binarizing"
+}
 
-binarize_big_lazy_pieces "en" "de"
+#binarize_de
+binarize_ende
+#binarize_big_lazy_pieces "en" "de"
 #binarize_big_lazy "de" "en"

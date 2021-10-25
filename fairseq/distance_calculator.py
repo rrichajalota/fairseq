@@ -42,8 +42,8 @@ q2 = piece + '"'
 from fairseq.models.transformer_lm import TransformerLanguageModel
 # TODO: remove <2tgt>
 # TODO: find a way to get the LM path as an argument. The path in my code overrides the one from command line also for LM evaluation task !!! (uses same generate)
-#custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
-custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/', 'checkpoint_best.pt')
+custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM/', 'checkpoint_best.pt')
+#custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/', 'checkpoint_best.pt')
 #custom_lm = None
 
 
@@ -81,7 +81,8 @@ class DistanceCalculator():
         if self.lm_model:
             self.lm_model.eval()
         self.print_poc = True
-        print("\n\ncosine", "scalar_mean", "lm model type:", type(self.lm_model))
+        print("\n\n")
+        print("distance type: {}, sentence repr: {}, lm model type: {}".format(self.distance_type, self.sentence_repr, type(self.lm_model) ) )
 
 
     def check_lm(self, tokens):

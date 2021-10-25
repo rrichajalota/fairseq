@@ -8,7 +8,7 @@ top="/raid/data/daga01/fairseq_train"
 
 
 train_lm(){
-outdir="${top}/lm_models/my_LM"
+outdir="${top}/lm_models/my_LM_ende2"
 traindata="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
 mkdir -p $outdir
 #fairseq-train --task cross_lingual_lm \
@@ -25,10 +25,10 @@ fairseq-train --task language_modeling \
   --max-tokens 2048 \
   --update-freq 16 \
   --num-workers 4 \
-  --max-update 800000 \
-  --save-interval-updates 10 --keep-interval-updates 5 --keep-best-checkpoints 7 \
-  --reset-dataloader \
-  --dataset-impl lazy
+  --max-update 200000 \
+  --save-interval-updates 10 --keep-interval-updates 5 --keep-best-checkpoints 7
+#  --reset-dataloader \
+#  --dataset-impl lazy
 
 }
 
@@ -82,5 +82,6 @@ fairseq-eval-lm ${test_data} \
 }
 
 #train_lm_de
-eval_lm "de"
+train_lm
+#eval_lm "de"
 #eval_lm "en"
