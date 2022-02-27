@@ -24,7 +24,7 @@ testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
-outdir="/raid/data/daga01/fairseq_out_beam${beam}_repeated/fairseq_out_scalarmean_cosine_LMende_beam${beam}"
+outdir="/raid/data/daga01/fairseq_out_beam${beam}_repeated/fairseq_out_scalarmean_cosine_LMende2_beam${beam}"
 
 mkdir -p "$outdir"
 
@@ -71,7 +71,7 @@ python fairseq_cli/generate.py $testdir \
 # --results-path $outdir
 }
 
-gpu=0
-beam=50
-call_basic_model "en" "de" "$gpu" "$beam"
-#call_basic_model_smalltest "en" "de"
+#gpu=0
+#beam=50
+#call_basic_model "en" "de" "$gpu" "$beam"
+call_basic_model_smalltest "en" "de"

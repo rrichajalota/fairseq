@@ -108,14 +108,14 @@ echo "Done binarizing"
 
 
 binarize_ende() {
+    src=$1
+    tgt=$2
     p1="/raid/data/daga01/fairseq_train/data/BPE_32k_red_new_ende"
     p2="/raid/data/daga01/fairseq_train/lm_models/my_LM_ende2"
     
     dest="${p2}/data-bin"
     
-    #CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess \
-    fairseq-preprocess \
-    --cpu \
+    CUDA_VISIBLE_DEVICES=1,2,3,4 fairseq-preprocess \
     --source-lang $src --target-lang $tgt \
     --trainpref $p1/corpus --validpref $p1/dev  \
     --testpref $p1/test_14 \
@@ -126,6 +126,6 @@ echo "Done binarizing"
 }
 
 #binarize_de
-binarize_ende
+binarize_ende "en" "de"
 #binarize_big_lazy_pieces "en" "de"
 #binarize_big_lazy "de" "en"

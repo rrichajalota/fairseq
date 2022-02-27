@@ -9,7 +9,8 @@ top="/raid/data/daga01/fairseq_train"
 
 train_lm(){
 outdir="${top}/lm_models/my_LM_ende2"
-traindata="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
+#traindata="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
+traindata="${top}/lm_models/my_LM_ende2/data-bin"
 mkdir -p $outdir
 #fairseq-train --task cross_lingual_lm \
 fairseq-train --task language_modeling \
@@ -62,18 +63,21 @@ fairseq-train --task language_modeling \
 eval_lm() {
 lang="$1"
 #outdir="${top}/lm_models/my_LM_de/chackpoints"
-outdir="${top}/lm_models/my_LM_de_2"
+outdir="${top}/lm_models/my_LM_ende2"
 #outdir="${top}/lm_models/my_LM_de/chp_copy_ca52000updates"
 echo "Language: $lang"
 #test_data="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm/${lang}"
-test_data="/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/data-bin"
+#test_data="/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2/data-bin"
+test_data="/raid/data/daga01/fairseq_train/lm_models/my_LM_ende2/data-bin/$lang"
 #--cpu \
 
 # I call calculate distances at every generate, for both LM and translation task. The path is actually in my code
 # TODO: should actually receive it as an argument
 
+#--path "${outdir}/checkpoint_best.pt" \
+
 fairseq-eval-lm ${test_data} \
-    --path "${outdir}/checkpoint_best.pt" \
+    --path "${outdir}/checkpoint60.pt" \
     --batch-size 2 \
     --tokens-per-sample 512 \
     --context-window 400
@@ -82,6 +86,6 @@ fairseq-eval-lm ${test_data} \
 }
 
 #train_lm_de
-train_lm
-#eval_lm "de"
-#eval_lm "en"
+#train_lm
+eval_lm "de"
+eval_lm "en"
