@@ -24,7 +24,8 @@ testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
-outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
+#outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
+outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_bertscoreSysAligned_cosine_beam${beam}"
 
 mkdir -p "$outdir"
 
@@ -41,6 +42,7 @@ CUDA_VISIBLE_DEVICES="${gpu}" python fairseq_cli/generate.py $testdir --path $mo
  --tokenizer moses -s $src -t $tgt \
  --remove-bpe sentencepiece \
  --sacrebleu \
+ --print-alignment \
  --results-path $outdir
 }
 
@@ -71,7 +73,7 @@ python fairseq_cli/generate.py $testdir \
 # --results-path $outdir
 }
 
-gpu=0
-beam=9
-#call_basic_model "en" "de" "$gpu" "$beam"
-call_basic_model_smalltest "en" "de"
+gpu="0,1,2,3,4,5,6"
+beam=50
+call_basic_model "en" "de" "$gpu" "$beam"
+#call_basic_model_smalltest "en" "de"

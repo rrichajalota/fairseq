@@ -23,6 +23,8 @@ from fairseq.logging import progress_bar
 from fairseq.logging.meters import StopwatchMeter, TimeMeter
 from omegaconf import DictConfig
 
+from fairseq.distance_calculator import *
+from fairseq.data import data_utils
 
 
 def main(cfg: DictConfig):
@@ -168,6 +170,12 @@ def _main(cfg: DictConfig, output_file):
         models, cfg.generation, extra_gen_cls_kwargs=extra_gen_cls_kwargs
     )
 
+
+    custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2',
+                                                         'checkpoint_best.pt')
+    dc = DistanceCalculator(model=models[0], tgt_dict=tgt_dict, lm=custom_lm)  #
+
+
     # Handle tokenization and BPE
     tokenizer = task.build_tokenizer(cfg.tokenizer)
     bpe = task.build_bpe(cfg.bpe)
@@ -207,6 +215,8 @@ def _main(cfg: DictConfig, output_file):
         )
         num_generated_tokens = sum(len(h[0]["tokens"]) for h in hypos)
         gen_timer.stop(num_generated_tokens)
+
+        hypos = dc.calculate_distances(sample, hypos)
 
         for i, sample_id in enumerate(sample["id"].tolist()):
             has_target = sample["target"] is not None

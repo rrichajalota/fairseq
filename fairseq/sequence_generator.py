@@ -553,8 +553,8 @@ class SequenceGenerator(nn.Module):
 
 
         #custom_lm = TransformerLanguageModel.from_pretrained('/home/damyana/Dokumente/MA_QualityEstimation_SS19/fairseq_lm_models', 'checkpoint_best.pt')
-        custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2', 'checkpoint_best.pt')
-        dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=custom_lm)  #
+        #custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2', 'checkpoint_best.pt')
+        #dc = DistanceCalculator(model=self.model.single_model, tgt_dict=self.tgt_dict, lm=custom_lm)  #
         # sort by score descending
         for sent in range(len(finalized)):
             scores = torch.tensor(
@@ -565,7 +565,7 @@ class SequenceGenerator(nn.Module):
             finalized[sent] = torch.jit.annotate(
                 List[Dict[str, Tensor]], finalized[sent]
             )
-        finalized = dc.calculate_distances(sample, finalized)
+        #finalized = dc.calculate_distances(sample, finalized)
         return finalized
 
     def _prefix_tokens(

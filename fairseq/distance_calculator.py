@@ -71,7 +71,7 @@ class DistanceCalculator():
         self.decoder = model.decoder
         # TODO: define constants/option dicts with possible values for distance_type and sentence_repr
         self.distance_type = "cosine_similarity" # cosine_similarity, euclidean
-        self.sentence_repr = "scalar_mean"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
+        self.sentence_repr = "vector_bertscore_aligned"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
         #TODO: get from config
         self.src_lang = "en"
         self.tgt_lang = "de"
@@ -81,8 +81,10 @@ class DistanceCalculator():
         if self.lm_model:
             self.lm_model.eval()
         self.print_poc = True
-        print("\n\ncosine", "scalar_mean", "lm model type:", type(self.lm_model))
-
+        #print("\n\ncosine", "scalar_mean", "lm model type:", type(self.lm_model))
+        print(f"distance: {self.distance_type}, sentence_repr: {self.sentence_repr}, LM: {type(self.lm_model)}" )
+        if self.sentence_repr == "vector_bertscore_aligned":
+            self.print_poc = False
 
     def check_lm(self, tokens):
         #TODO: remove <2en> at calculation
@@ -173,6 +175,8 @@ class DistanceCalculator():
             return args.mean(0)
         elif self.sentence_repr == "vector_bertscore":
             return args
+        elif self.sentence_repr == "vector_bertscore_aligned":
+            return args
 
     def distance_funct(self, v1, v2, alignment=None):
         distance = None
@@ -187,11 +191,10 @@ class DistanceCalculator():
 
     def distance_bertscore_aligned(self, src, hypo, alignment):
         distance = None
-        print("src: ", src.shape)
-        distance = [(self.distance_funct_scalar(src[s]), self.distance_funct_scalar(hypo[t].unsqueeze(0))) for
-             s, t in alignment]
-
-        return distance
+        distance = torch.tensor([(self.distance_funct_scalar(src[s], hypo[t])) for
+             s, t in alignment]).mean(0) #TODO unnötig
+        #print("distance: ", distance.item())
+        return distance.item()
 
 
     def distance_bertscore(self, v1, v2):
@@ -296,7 +299,6 @@ class DistanceCalculator():
             semb_enc_src = self.emb_tok2sent(src_enc_out["encoder_out"][0].transpose(0, 1).squeeze(0))  # torch.Size([512])
             logger.info(f'src_tok: {self.check_token2word(src_tok)}')
             logger.info(f'src_tok: {src_tok}   ---    shape: {src_tok.shape}')
-            #print("src_tok:", src_tok)
             logger.debug(f'src - tok: {src_tok.shape}, enc_out: {src_enc_out["encoder_out"][0].shape}, semb: {semb_enc_src.shape}')
 
 
@@ -344,7 +346,7 @@ class DistanceCalculator():
                 #data_sub["beam"] = "hyp" + str(j)
                 hypo = hypos[j]
                 hypo_alignment = hypo["alignment"]
-                #print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
+                print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
                 hypo_mask = (hypo["tokens"].ne(self.eos))
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
                 if self.remove_stopwords:
@@ -444,8 +446,7 @@ class DistanceCalculator():
 
                 ### proof of concept: dist hyp-gold - enc, dec, noenc-posplus, noenc-posminus
 
-                poc = self.print_poc
-                if (poc):
+                if (self.print_poc):
                 # 10. hyp-gold enc
                     data_sub["poc-dict-enc(hyp)-enc(gold)"] = self.distance_funct(semb_enc_hyp, semb_enc_gold)
                     logger.info(
