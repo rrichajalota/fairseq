@@ -24,13 +24,19 @@ from fairseq.logging.meters import StopwatchMeter, TimeMeter
 from omegaconf import DictConfig
 
 from fairseq.distance_calculator import *
-from fairseq.data import data_utils
+from fairseq.data import data_utils, backtranslation_dataset, monolingual_dataset, language_pair_dataset
+import copy
 
 
 def main(cfg: DictConfig):
 
     if isinstance(cfg, Namespace):
         cfg = convert_namespace_to_omegaconf(cfg)
+        '''
+        print("cfg: ", cfg.keys())
+        print(cfg.generation)
+        print("\n\n")
+        '''
 
     assert cfg.common_eval.path is not None, "--path required for generation!"
     assert (
@@ -83,7 +89,6 @@ def _main(cfg: DictConfig, output_file):
 
     # Load dataset splits
     task = tasks.setup_task(cfg.task)
-
     # Set dictionaries
     try:
         src_dict = getattr(task, "source_dictionary", None)
@@ -165,16 +170,25 @@ def _main(cfg: DictConfig, output_file):
     # Initialize generator
     gen_timer = StopwatchMeter()
 
+    # TODO: use for my arguments passing?
     extra_gen_cls_kwargs = {"lm_model": lms[0], "lm_weight": cfg.generation.lm_weight}
     generator = task.build_generator(
         models, cfg.generation, extra_gen_cls_kwargs=extra_gen_cls_kwargs
     )
 
+    calculate_distance = True  # TODO: add as fairseq option
+    #custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2', 'checkpoint_best.pt')
+    custom_lm = None
+    use_backtranslation = False
+    generate_tgt_verbatim = True
+    src_lang = cfg.task.source_lang or "de" #TODO set no defaults here - assert and break if not fulfilled
+    tgt_lang = cfg.task.target_lang or "en"
 
-    custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2',
-                                                         'checkpoint_best.pt')
-    dc = DistanceCalculator(model=models[0], tgt_dict=tgt_dict, lm=custom_lm)  #
+    dc = DistanceCalculator(model=models[0], tgt_dict=tgt_dict, custom_lm=custom_lm, use_backtranslation=use_backtranslation, src_lang=src_lang, tgt_lang=tgt_lang)  #
+    #/raid/data/daga01/fairseq_train/data/data-bin-32k-red-lazy-new-shorter-minitest-5st --path /raid/data/daga01/fairseq_train/checkpoints/basic-transf/checkpoint_best.pt
+    # --cpu --batch-size 2 --beam 2 --nbest 2 --sacrebleu --print-alignment --dataset-impl lazy
 
+    # /raid/data/daga01/WMT2020_models/tmp/bin --path  /raid/data/daga01/WMT2020_models/ro-en-models/ro-en.pt --batch-size 2 --beam 2 --nbest 2
 
     # Handle tokenization and BPE
     tokenizer = task.build_tokenizer(cfg.tokenizer)
@@ -192,19 +206,21 @@ def _main(cfg: DictConfig, output_file):
     num_sentences = 0
     has_target = True
     wps_meter = TimeMeter()
+
     for sample in progress:
         sample = utils.move_to_cuda(sample) if use_cuda else sample
         if "net_input" not in sample:
             continue
 
         prefix_tokens = None
-        if cfg.generation.prefix_size > 0:
+        if cfg.generation.prefix_size > 0 or generate_tgt_verbatim:
+            if generate_tgt_verbatim:
+                cfg.generation.prefix_size = sample["target"].shape[1]
             prefix_tokens = sample["target"][:, : cfg.generation.prefix_size]
 
         constraints = None
         if "constraints" in sample:
             constraints = sample["constraints"]
-
         gen_timer.start()
         hypos = task.inference_step(
             generator,
@@ -216,7 +232,42 @@ def _main(cfg: DictConfig, output_file):
         num_generated_tokens = sum(len(h[0]["tokens"]) for h in hypos)
         gen_timer.stop(num_generated_tokens)
 
-        hypos = dc.calculate_distances(sample, hypos)
+        # TODO: backtranslation and distance calculation
+        #calculate_distance = True # TODO: add as fairseq option
+        if calculate_distance:
+            if not use_backtranslation:
+                hypos = dc.calculate_distances(sample, hypos)
+            else:
+                hypos_bt_batches_list = []
+                for i, batched_sent in enumerate(hypos):
+                    hypos_sent_beam_list = []
+                    s_id = sample["id"][i].item()
+                    for j, beam_hyp in enumerate(batched_sent):
+                        beam_hyp_tokens = copy.deepcopy(beam_hyp["tokens"])
+                        beam_hyp_tokens = utils.move_to_cpu(beam_hyp_tokens)
+                        #hyp_words = tgt_dict.string(beam_hyp_tokens)
+                        #print("# i-j-hyp_words: ", i, j, hyp_words)
+                        dict_hypos = {"id": j, "source": beam_hyp_tokens}
+                        hypos_sent_beam_list.append(dict_hypos)
+
+                    sample_new = language_pair_dataset.collate(hypos_sent_beam_list, tgt_dict.pad(), generator.eos)
+                    sample_new = utils.move_to_cuda(sample_new) if use_cuda else sample_new
+                    #sample_new = utils.move_to_cuda(sample_new) if use_cuda else sample_new
+                    # print("back for sentence nr: ", i, " expected nr translations fornbest=1: ", sample_new["nsentences"])
+
+                    back = task.inference_step(
+                        generator,
+                        models,
+                        sample_new,
+                        prefix_tokens=prefix_tokens,
+                        constraints=constraints,
+                    )
+                    batch_back = []
+                    for batched_sent in back:
+                        back_best = batched_sent[0] # select top 1
+                        batch_back.append(back_best)
+                    hypos_bt_batches_list.append(batch_back)
+                hypos = dc.calculate_distances(sample, hypos, backtranslations=hypos_bt_batches_list)
 
         for i, sample_id in enumerate(sample["id"].tolist()):
             has_target = sample["target"] is not None
@@ -356,7 +407,6 @@ def _main(cfg: DictConfig, output_file):
                                 file=output_file,
                             )
                     #####
-                    calculate_distance = True  # TODO: add as fairseq option
                     if calculate_distance:
                         printed_row = dict()
                         printed_row['sent_id'] = sample_id
@@ -441,7 +491,7 @@ def _main(cfg: DictConfig, output_file):
 
 
 def cli_main():
-    parser = options.get_generation_parser()
+    parser = options.get_generation_parser(distance_calculation=True)
     # TODO: replace this workaround with refactoring of `AudioPretraining`
     parser.add_argument(
         '--arch', '-a', metavar='ARCH', default="transformer",
