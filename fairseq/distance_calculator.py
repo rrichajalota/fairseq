@@ -17,25 +17,6 @@ logger.setLevel(logging.WARNING)
 #logger.addHandler(handler)
 #logging.basicConfig(level=logging.DEBUG)
 
-# FOR REMOVING STOPWORDS IN CALCULATION
-stopwords = dict()
-'''
-stopwords["de"] = set(get_stop_words('de'))
-stopwords["en"] = set()
-tmp = get_stop_words('en')
-for w_en in tmp:
-    sp = w_en.split("'")
-    for i in sp:
-        stopwords["en"].add(i)
-
-'''
-
-# TODO piece for sentencepiece, for other BPE algorithms change also function
-'''
-piece = "▁"
-q1 = piece + "'"
-q2 = piece + '"'
-'''
 
 ### +LM
 #from fairseq import hub_utils
@@ -52,55 +33,75 @@ class DistanceCalculator():
             self,
             model,
             tgt_dict,
-            lm = None,
-            lm_weight_4dist = 1,
             eos=None,
-            normalize_scores=True,
-            temperature=1.0,
+            src_lang = "en",
+            tgt_lang = "de",
+            distance_type = "cosine_similarity", # cosine_similarity, euclidean
+            sentence_representation = "scalar_mean", #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
+            remove_stopwords = False,
+            custom_lm = None,
+            use_backtranslation = False,
+            print_poc = True
     ):
         self.tgt_dict = tgt_dict
         self.pad = tgt_dict.pad()
         self.unk = tgt_dict.unk()
         self.eos = tgt_dict.eos() if eos is None else eos
         self.vocab_size = len(tgt_dict)
-        self.normalize_scores = normalize_scores ### ??? brauche ich???
         self.model = model
         self.model.eval()
-        ### set and unset encoder ???
+        ### set encoder
         self.encoder = model.encoder
         self.decoder = model.decoder
-        # TODO: define constants/option dicts with possible values for distance_type and sentence_repr
-        self.distance_type = "cosine_similarity" # cosine_similarity, euclidean
-        self.sentence_repr = "vector_bertscore_aligned"   #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
+        self.distance_type = distance_type
+        self.sentence_representation = sentence_representation
         #TODO: get from config
-        self.src_lang = "en"
-        self.tgt_lang = "de"
-        #TODO: pass options for remove_stopwords and lm_model
-        self.remove_stopwords = False
-        self.lm_model = lm
-        if self.lm_model:
-            self.lm_model.eval()
-        self.print_poc = True
-        #print("\n\ncosine", "scalar_mean", "lm model type:", type(self.lm_model))
-        print(f"distance: {self.distance_type}, sentence_repr: {self.sentence_repr}, LM: {type(self.lm_model)}" )
-        if self.sentence_repr == "vector_bertscore_aligned":
+        self.src_lang = src_lang #"ro"
+        self.tgt_lang = tgt_lang #"en"
+        self.remove_stopwords = remove_stopwords
+        if self.remove_stopwords:
+            self.stopwords = self.init_stopwords()
+        self.custom_lm_model = custom_lm
+        if self.custom_lm_model:
+            self.custom_lm_model.eval()
+        self.print_poc = print_poc
+        if self.sentence_representation == "vector_bertscore_aligned":
             self.print_poc = False
+        self.use_backtranslation = use_backtranslation
+
+        print(f"distance: {self.distance_type}, sentence_repr: {self.sentence_representation}, LM: {type(self.custom_lm_model)}, use backtranslation: {self.use_backtranslation}")
+
 
     def check_lm(self, tokens):
-        #TODO: remove <2en> at calculation
-        calc = self.lm_model.score(self.check_token2word(tokens))['positional_scores']
-        #print("POS LM: ", calc)
+        calc = self.custom_lm_model.score(self.check_token2word(tokens))['positional_scores']
         ppl = calc.mean().neg().exp().item()
-        #lm_score = calc.item()
-        lm_score =  self.lm_model.score(self.check_token2word(tokens))['score'].item()
-        #print("tokens: ", self.check_token2word(tokens), " ppl: ", ppl)
+        lm_score =  self.custom_lm_model.score(self.check_token2word(tokens))['score'].item()
         return ppl, lm_score
+
+
+    def init_stopwords(self):
+        print("Removing stopwords")
+        self.stopwords = dict()
+        self.stopwords["de"] = set(get_stop_words('de'))
+        self.stopwords["en"] = set()
+        tmp = get_stop_words('en')
+        for w_en in tmp:
+            sp = w_en.split("'")
+            for i in sp:
+                self.stopwords["en"].add(i)
+
+        # TODO piece for sentencepiece, for other BPE algorithms change also function
+
+        piece = "▁"
+        self.stopwords["piece"] = piece
+        self.stopwords["q1"] = piece + "'"
+        self.stopwords["q2"] = piece + '"'
+
 
     def filter_stop_words(self, lang, tokens):
         #TODO: evtl find index2string and string2index for BPEs
         #tokens = torch.tensor([[17, 17926, 23127]])
         words = self.tgt_dict.string(tokens).lower().split(" ")
-        #print("\n###\nwords", words)
         indices = tokens.tolist()[0]
 
         tmp = ["", []]
@@ -108,35 +109,27 @@ class DistanceCalculator():
         assert (len(words) == len(indices)), "Words and indices are of different length!"
         noquote = True
         for i in range(len(words)):
-            if words[i].startswith(piece):
+            if words[i].startswith(self.stopwords["piece"]):
                 tmp = [words[i][1:], [indices[i]]]
-                #print("->", words[i][1:])
                 dict_list.append(tmp)
-                if words[i] == q1 or words[i] == q2:
+                if words[i] == self.stopwords["q1"] or words[i] == self.stopwords["q2"]:
                     noquote = False
             else:
                 if noquote:
-                    #print("W", words[i])
                     tmp[0] += words[i]
                     tmp[1].append(indices[i])
-                    #print("tmp", tmp)
                 else:
                     tmp = [words[i], [indices[i]]]
-                    #print("->*", words[i])
                     dict_list.append(tmp)
                     noquote = True
 
-        #print("dl: ",dict_list)
         str2tok = dict(dict_list)
-        #print(str2tok)
 
         new_tokens = []
         stopword_cnt = 0
-        #print("check stopwords")
         #TODO reverse logic again; not stopword and not punctuation
         for w in str2tok:
-            #print("w", w)
-            if w in stopwords[lang]:
+            if w in self.stopwords[lang]:
                 stopword_cnt += 1
                 #print("+++ w is stopwword", w, " -- ", str2tok[w])
             elif re.match(r'[^\w\s]*(?!\w+)', w) :
@@ -144,18 +137,8 @@ class DistanceCalculator():
                 pass
             else:
                 new_tokens.extend(str2tok[w])
-                #pass
-                #print("not stopword", w)
-        #print("new tokens", new_tokens)
         # if almost everything is stopwords
         if (len(new_tokens) == 0 or len(new_tokens) < (0.2 * len(tokens[0]))):  ### new_tokens is what remains after filtering of stopwords and puctuation; keep the sentence if it contains more than 80% punctuation
-            '''
-            print("\n### only stop words")
-            print("tokens: ", tokens)
-            print("words: ", words)
-            print("len not stopwords and punct: ", len(new_tokens), " -- len tokens", len(tokens[0]) )
-            '''
-
             return tokens
         new_tensor = torch.tensor(new_tokens)
         new_tensor = new_tensor.unsqueeze(0)
@@ -170,30 +153,32 @@ class DistanceCalculator():
         words = self.tgt_dict.string(tokens)
         return words
 
+
+
     def emb_tok2sent(self, args):
-        if self.sentence_repr == "scalar_mean":
+        if self.sentence_representation == "scalar_mean":
             return args.mean(0)
-        elif self.sentence_repr == "vector_bertscore":
+        elif self.sentence_representation == "vector_bertscore":
             return args
-        elif self.sentence_repr == "vector_bertscore_aligned":
+        elif self.sentence_representation == "vector_bertscore_aligned":
             return args
+
+
 
     def distance_funct(self, v1, v2, alignment=None):
         distance = None
-        if self.sentence_repr == "scalar_mean":
+        if self.sentence_representation == "scalar_mean":
             distance = self.distance_funct_scalar(v1, v2)
-        elif self.sentence_repr == "vector_bertscore":
+        elif self.sentence_representation == "vector_bertscore":
             distance = self.distance_bertscore(v1, v2)
-        elif self.sentence_repr == "vector_bertscore_aligned":
+        elif self.sentence_representation == "vector_bertscore_aligned":
             distance = self.distance_bertscore_aligned(v1, v2, alignment)
         return distance
 
 
     def distance_bertscore_aligned(self, src, hypo, alignment):
-        distance = None
         distance = torch.tensor([(self.distance_funct_scalar(src[s], hypo[t])) for
-             s, t in alignment]).mean(0) #TODO unnötig
-        #print("distance: ", distance.item())
+             s, t in alignment]).mean(0)
         return distance.item()
 
 
@@ -251,32 +236,23 @@ class DistanceCalculator():
 
     @torch.no_grad()
     def forward_encoder(self, tokens, shape):
-        #print("shape encoder: ", shape)
         return self.encoder(tokens, shape)
 
 
     @torch.no_grad()
     def forward_decoder(self, tokens, encoder_out=None):
-        #TODO: use incremental states if the model has such
         decoder_out, extra = self.decoder.forward(tokens, encoder_out=encoder_out, features_only=True)
-        #TODO: why here call forward explicitely?
-        #print("Decoder Positions", self.decoder.embed_positions)
         return decoder_out
 
     @torch.no_grad()
     def forward_decoder_posminus(self, tokens, encoder_out=None):
-        #TODO: use incremental states if the model has such
         decoder_copy = deepcopy(self.decoder)
-        #if decoder_copy is self.decoder: print("same decoder")
         decoder_copy.embed_positions = None
         decoder_out, extra = decoder_copy.forward(tokens, encoder_out=encoder_out, features_only=True)
-        #TODO: why here call forward explicitely?
-        #print("Decoder Posminus Positions", decoder_copy.embed_positions)
         return decoder_out
 
     @torch.no_grad()
-    def calculate_distances(self, sample, finalized):
-        print("calculating distances")
+    def calculate_distances(self, sample, finalized, backtranslations=None):
         #self.set_custom_lm(custom_lm)
         prev_output_tokens = sample['net_input']['prev_output_tokens']
         gold_tgt_mask = (prev_output_tokens.ne(self.pad) & prev_output_tokens.ne(self.eos))
@@ -284,9 +260,8 @@ class DistanceCalculator():
         sample_src_tok = sample["net_input"]["src_tokens"]
         sample_src_mask = (sample_src_tok.ne(self.pad) & sample_src_tok.ne(self.eos))
 
-        # each sentence in the batch
+        # each sentence i in the batch
         for i in range(sample["id"].shape[0]):
-            #logger.info(f"\n\n#####################################i: {i}")
             ### Encoder Representations (src and gold_tgt)
             #### src:
             # src_len = sample["net_input"]["src_lengths"][i] # includes eos
@@ -325,7 +300,6 @@ class DistanceCalculator():
             semb_dec_src_enc_gold = self.emb_tok2sent(src_dec_out_gold_enc.squeeze(0))
             logger.debug(f"src - src_dec_out_gold_enc: {src_dec_out_gold_enc.shape}, semb:{semb_dec_src_enc_gold.shape}")
 
-
             src_dec_posplus_out_enc_none = self.forward_decoder(src_tok)
             semb_dec_src_posplus_enc_none = self.emb_tok2sent(src_dec_posplus_out_enc_none.squeeze(0))
             logger.debug(f"src - src_dec_posplus_out_enc_none: {src_dec_posplus_out_enc_none.shape}, semb:{semb_dec_src_posplus_enc_none.shape}")
@@ -340,26 +314,30 @@ class DistanceCalculator():
 
 
             hypos = finalized[i]
+            if self.use_backtranslation:
+                assert len(finalized[i]) == len(backtranslations[i]), "Number of hypotheses is not the same as backtranslations"
+                hypos = backtranslations[i]
+
             for j in range(len(hypos)):
                 #print("\n######j: ", j)
                 data_sub = dict()
                 #data_sub["beam"] = "hyp" + str(j)
                 hypo = hypos[j]
                 hypo_alignment = hypo["alignment"]
-                print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
+                #print("in distance_calculator - HYPO! alignment: ", hypo["alignment"])
                 hypo_mask = (hypo["tokens"].ne(self.eos))
                 hypo_tok = hypo["tokens"][hypo_mask].unsqueeze(0)
                 if self.remove_stopwords:
                     hypo_tok = self.filter_stop_words(self.tgt_lang, hypo_tok)
-                if self.lm_model is not None:
+                if self.custom_lm_model is not None:
                     hypo_tok_ppl, hypo_tok_lm_score = self.check_lm(hypo_tok)
                     data_sub["hypo_score_lm"] = hypo_tok_lm_score
                     data_sub["hypo_ppl_lm"] = hypo_tok_ppl
-                logger.info(f'hyp_tok {j}: {self.check_token2word(hypo["tokens"])}')
+                if self.use_backtranslation:
+                    data_sub["backtranslation_sentence"] = self.check_token2word(hypo["tokens"])
+                logger.info(f'hyp_tok {j}: {self.check_token2word( hypo["tokens"])}')
                 logger.info(f'hyp_tok {j}: {hypo["tokens"]}   ---   shape: {hypo["tokens"].shape}')
                 logger.info(f'hyp_tok_alignment {j}: {hypo["alignment"]}')
-                #print("### hypo alignment len: ", len(hypo["alignment"]))
-                #print("### hypo token len: ", len(hypo_tok[0]))
 
                 '''
                 m = [(src_tok.squeeze()[s],hypo_tok.squeeze()[t]) for s,t in hypo["alignment"] ]
@@ -370,7 +348,6 @@ class DistanceCalculator():
                 '''
 
                 # Encoder Repr
-                #print("<<< ERROR HERE: ", hypo_tok.shape, type(hypo_tok.shape), type(hypo_tok.shape[1]))
                 hyp_enc_out = self.forward_encoder(hypo_tok, torch.tensor(hypo_tok.shape[1]))
                 semb_enc_hyp = self.emb_tok2sent(hyp_enc_out["encoder_out"][0].transpose(0, 1).squeeze(0) )
                 logger.debug(
