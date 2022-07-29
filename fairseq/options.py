@@ -43,7 +43,7 @@ def get_training_parser(default_task="translation"):
     return parser
 
 
-def get_generation_parser(interactive=False, default_task="translation"):
+def get_generation_parser(interactive=False, distance_calculation=False, default_task="translation"):
     parser = get_parser("Generation", default_task)
     add_dataset_args(parser, gen=True)
     add_distributed_training_args(parser, default_world_size=1)
@@ -51,7 +51,14 @@ def get_generation_parser(interactive=False, default_task="translation"):
     add_checkpoint_args(parser)
     if interactive:
         add_interactive_args(parser)
+    if distance_calculation:
+        add_distcalc_args(parser)
     return parser
+
+
+def add_distcalc_args(parser):
+    group = parser.add_argument_group("Distance Calculation")
+    group.add_argument('--sentence-representation', '-sr', default='cosine_similarity')
 
 
 def get_interactive_generation_parser(default_task="translation"):

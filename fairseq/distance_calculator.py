@@ -36,12 +36,13 @@ class DistanceCalculator():
             eos=None,
             src_lang = "en",
             tgt_lang = "de",
-            distance_type = "cosine_similarity", # cosine_similarity, euclidean
-            sentence_representation = "scalar_mean", #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
+            distance_type = "cosine_similarity",    # cosine_similarity, euclidean
+            sentence_representation = "scalar_mean",    #  scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
             remove_stopwords = False,
             custom_lm = None,
             use_backtranslation = False,
-            print_poc = True
+            print_poc = True,
+            arg_remark = ""
     ):
         self.tgt_dict = tgt_dict
         self.pad = tgt_dict.pad()
@@ -68,8 +69,11 @@ class DistanceCalculator():
         if self.sentence_representation == "vector_bertscore_aligned":
             self.print_poc = False
         self.use_backtranslation = use_backtranslation
+        self.arg_remark = arg_remark
 
-        print(f"distance: {self.distance_type}, sentence_repr: {self.sentence_representation}, LM: {type(self.custom_lm_model)}, use backtranslation: {self.use_backtranslation}")
+        print(f"\n\ndistance: {self.distance_type}, sentence_repr: {self.sentence_representation}, LM: {type(self.custom_lm_model)},\n src: {self.src_lang}, tgt: {self.tgt_lang}\n"
+              f" use backtranslation: {self.use_backtranslation},\n "
+              f"arg remark: {self.arg_remark}\n\n")
 
 
     def check_lm(self, tokens):

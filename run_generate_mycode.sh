@@ -14,18 +14,26 @@ src="$1"
 tgt="$2"
 gpu="$3"
 beam="$4"
+nbest="$5"
 
 model="${top}/checkpoints/basic-transf/checkpoint_best.pt"
 
 #testdir="${top}/data/data-bin-32k-red-lazy-new-renamed"
-testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
+#testdir="${top}/data/data-bin-32k-red-lazy-new-renamed-and-lm"
+
+testdir="/raid/data/daga01/data/qeAnnotatedWMT20and21/WMT21/en-de-da/data-bin-32k-lazy-ende"
 
 #lm_model="${top}/lm_models/my_LM/checkpoint_best.pt"
 
 #outdir="/raid/data/daga01/fairseq_out_nostopwords"
 #outdir="/raid/data/daga01/fairseq_out_pplscore2"
 #outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
-outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_bertscoreSysAligned_cosine_beam${beam}"
+#outdir="/raid/data/daga01/fairseq_out_${beam}/fairseq_out_bertscoreSysAligned_cosine_beam${beam}"
+#outdir="/raid/data/daga01/fairseq_out_backtranslation_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
+
+#outdir="/raid/data/daga01/fairseq_out_forcedecode_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
+#outdir="/raid/data/daga01/fairseq_out_forcedecode_${beam}/fairseq_out_vectorbertscore_cosine_beam${beam}"
+outdir="/raid/data/daga01/fairseq_out_free4CmpWithForcedecode_${beam}/fairseq_out_scalarmean_cosine_beam${beam}"
 
 mkdir -p "$outdir"
 
@@ -37,7 +45,7 @@ mkdir -p "$outdir"
 
 CUDA_VISIBLE_DEVICES="${gpu}" python fairseq_cli/generate.py $testdir --path $model \
  --batch-size 40 \
- --beam $beam --nbest $beam \
+ --beam $beam --nbest $nbest \
  --dataset-impl lazy \
  --tokenizer moses -s $src -t $tgt \
  --remove-bpe sentencepiece \
@@ -73,7 +81,8 @@ python fairseq_cli/generate.py $testdir \
 # --results-path $outdir
 }
 
-gpu="0,1,2,3,4,5,6"
-beam=50
-call_basic_model "en" "de" "$gpu" "$beam"
+gpu="0"
+beam=10
+nbest=10
+call_basic_model "en" "de" "$gpu" "$beam" "$nbest"
 #call_basic_model_smalltest "en" "de"

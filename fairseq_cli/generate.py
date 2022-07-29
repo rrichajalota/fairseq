@@ -176,15 +176,22 @@ def _main(cfg: DictConfig, output_file):
         models, cfg.generation, extra_gen_cls_kwargs=extra_gen_cls_kwargs
     )
 
-    calculate_distance = True  # TODO: add as fairseq option
+    # TODO: add as fairseq option
+    calculate_distance = True
     #custom_lm = TransformerLanguageModel.from_pretrained('/raid/data/daga01/fairseq_train/lm_models/my_LM_de_2', 'checkpoint_best.pt')
     custom_lm = None
     use_backtranslation = False
     generate_tgt_verbatim = True
-    src_lang = cfg.task.source_lang or "de" #TODO set no defaults here - assert and break if not fulfilled
-    tgt_lang = cfg.task.target_lang or "en"
+    src_lang = cfg.task.source_lang or "en" #TODO set no defaults here - assert and break if not fulfilled
+    tgt_lang = cfg.task.target_lang or "de"
+    #src_lang = "ro"
+    #tgt_lang = "en"
+    distance_type = "cosine_similarity"             # cosine_similarity, euclidean
+    sentence_representation = "vector_bertscore"    # scalar_mean, vector_bertscore, vector_bertscore_aligned (TODO: assert that the TransformerModel is WithAlignment )
 
-    dc = DistanceCalculator(model=models[0], tgt_dict=tgt_dict, custom_lm=custom_lm, use_backtranslation=use_backtranslation, src_lang=src_lang, tgt_lang=tgt_lang)  #
+    remark = "generate_tgt_verbatim - " + str(generate_tgt_verbatim)
+    dc = DistanceCalculator(model=models[0], tgt_dict=tgt_dict, custom_lm=custom_lm, use_backtranslation=use_backtranslation, src_lang=src_lang, tgt_lang=tgt_lang, arg_remark=remark,
+                            distance_type=distance_type, sentence_representation=sentence_representation)  #
     #/raid/data/daga01/fairseq_train/data/data-bin-32k-red-lazy-new-shorter-minitest-5st --path /raid/data/daga01/fairseq_train/checkpoints/basic-transf/checkpoint_best.pt
     # --cpu --batch-size 2 --beam 2 --nbest 2 --sacrebleu --print-alignment --dataset-impl lazy
 
@@ -232,11 +239,15 @@ def _main(cfg: DictConfig, output_file):
         num_generated_tokens = sum(len(h[0]["tokens"]) for h in hypos)
         gen_timer.stop(num_generated_tokens)
 
-        # TODO: backtranslation and distance calculation
-        #calculate_distance = True # TODO: add as fairseq option
         if calculate_distance:
             if not use_backtranslation:
                 hypos = dc.calculate_distances(sample, hypos)
+                if generate_tgt_verbatim:
+                    #print("\nhypos: ", hypos[0][0]["tokens"].tolist())
+                    #print("\nsample: ", sample["target"][0].tolist())
+                    tgt_pad = sample["target"][0].ne(tgt_dict.pad())
+                    #print(tgt_pad)
+                    assert hypos[0][0]["tokens"].tolist() == (sample["target"][0][tgt_pad]).tolist(), f' Hypothesis and target are different.\nhypothesis: {hypos[0][0]["tokens"]}\ntarget: {sample["target"][0]}'
             else:
                 hypos_bt_batches_list = []
                 for i, batched_sent in enumerate(hypos):
@@ -252,8 +263,6 @@ def _main(cfg: DictConfig, output_file):
 
                     sample_new = language_pair_dataset.collate(hypos_sent_beam_list, tgt_dict.pad(), generator.eos)
                     sample_new = utils.move_to_cuda(sample_new) if use_cuda else sample_new
-                    #sample_new = utils.move_to_cuda(sample_new) if use_cuda else sample_new
-                    # print("back for sentence nr: ", i, " expected nr translations fornbest=1: ", sample_new["nsentences"])
 
                     back = task.inference_step(
                         generator,
