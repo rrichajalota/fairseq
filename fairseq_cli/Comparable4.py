@@ -20,9 +20,12 @@ from fairseq import (
     checkpoint_utils, metrics, progress_bar, utils
 )
 
-def get_src_len(src, use_gpu):
+def get_src_len(src, use_gpu, device=""):
     if use_gpu:
-        return torch.tensor([src.size(0)]).cuda()
+        if device=="mps":
+            return torch.tensor([src.size(0)], device="mps") #.cuda()
+        else:
+            return torch.tensor([src.size(0)]).cuda()
     else:
         return torch.tensor([src.size(0)])
 
@@ -203,8 +206,15 @@ class PairBank():
         self.batch_size = args.max_sentences
         self.batcher = batcher
         self.use_gpu = False
+        self.mps = False
+        self.cuda = False
         if args.cpu == False:
             self.use_gpu = True
+            if torch.backends.mps.is_available():
+                self.mps = True
+                self.mps_device = torch.device("mps")
+            else:
+                self.cuda = True
         else:
             self.use_gpu = False
         self.update_freq = args.update_freq
@@ -237,8 +247,12 @@ class PairBank():
         # Get example from src/tgt and remove original padding
         src = PairBank.removePadding(src)
         tgt = PairBank.removePadding(tgt)
-        src_length = get_src_len(src, self.use_gpu)
-        tgt_length = get_src_len(tgt, self.use_gpu)
+        if self.mps:
+            src_length = get_src_len(src, self.use_gpu, device="mps")
+            tgt_length = get_src_len(tgt, self.use_gpu, device="mps")
+        else:
+            src_length = get_src_len(src, self.use_gpu)
+            tgt_length = get_src_len(tgt, self.use_gpu)
         index = None
         # Create CompExample object holding all information needed for later
         # batch creation.
@@ -385,13 +399,15 @@ class Comparable():
         self.threshold = args.threshold
         self.model_name = args.model_name
         self.save_dir = args.save_dir
-        self.use_phrase = args.use_phrase
+        self.use_phrase = False #args.use_phrase
         #self.model = trainer.get_model().encoder
         self.usepos =  args.usepos
         print("Use positional encoding = ", self.usepos)
         self.trainer = trainer
+        print(f"self.trainer: {self.trainer}")
         self.task = self.trainer.task
         self.encoder = self.trainer.get_model().encoder
+        print(f"self.encoder: {self.encoder}")
         self.batcher = BatchCreator(task, args)
         self.similar_pairs = PairBank(self.batcher, args)
         self.accepted = 0
@@ -403,7 +419,6 @@ class Comparable():
         self.cove_type = args.cove_type
         self.update_freq = args.update_freq
         self.k = 4
-        self.div = 2 * torch.tensor(self.k).cuda()
         self.trainstep = 0
         self.second = args.second
         self.representations = args.representations
@@ -412,15 +427,28 @@ class Comparable():
         self.no_swaps = False  # args.no_swaps
         self.symmetric = args.symmetric
         self.add_noise = args.add_noise
-        self.use_bt = args.use_bt
+        self.use_bt = False #args.use_bt
         self.stats = None
         self.progress = None
-        self.src, self.tgt = args.source_lang, args.target_lang
+        self.src, self.tgt = "de", "en" #args.source_lang, args.target_lang
         self.use_gpu = False
+        self.mps = False
+        self.cuda = False
+        print(f"args.cpu: {args.cpu}")
         if args.cpu == False:
             self.use_gpu = True
+            if torch.backends.mps.is_available():
+                self.mps = True
+                self.mps_device = torch.device("mps")
+                self.div = 2 * torch.tensor(self.k).to(self.mps_device) #.cuda()
+            else:
+                self.div = 2 * torch.tensor(self.k).to(self.mps_device).cuda()
+                self.cuda = True
         else:
             self.use_gpu = False
+            self.div = 2 * torch.tensor(self.k) #, device="mps") #.cuda()
+        print(f"use_gpu: {self.use_gpu}, self.mps: {self.mps}")
+        
 
         if self.use_phrase == True and self.args.phrase_method == 'stanford':
             from subword_nmt.apply_bpe import BPE
@@ -622,12 +650,17 @@ class Comparable():
 
         #print("Stacking the representations to cuda....................")
         #stack the representation list into a tensor and use that to compute the similarity
-        if self.use_gpu:
+        if self.mps:
+            srcRp=torch.stack(srcRep).to(self.mps_device) #.cuda()
+            tgtRp=torch.stack(tgtRep).to(self.mps_device) #.cuda()
+        elif self.cuda:
             srcRp=torch.stack(srcRep).cuda()
             tgtRp=torch.stack(tgtRep).cuda()
         else:
             srcRp = torch.stack(srcRep)
             tgtRp = torch.stack(tgtRep)
+
+        print(f"tgtRp: {tgtRp}")
 
         # Return cosine similarity if that is the scoring function
         if self.sim_measure == 'cosine':
@@ -642,6 +675,8 @@ class Comparable():
             return src2tgt, tgt2src, similarities, similarities
         else:
             sim_mt, sumDistSource, sumDistTarget = self.sim_matrix(srcRp, tgtRp)
+            print(f"sumDistSource: {sumDistSource}")
+            print(f"sim_mt: {sim_mt}")
             for i in range(len(srcSent)):
                 for j in range(len(tgtSent)):
                     if srcSent[i][0] == tgtSent[j][0]:
@@ -663,15 +698,20 @@ class Comparable():
         a_norm = a / torch.max(a_n, eps * torch.ones_like(a_n))
         b_norm = b / torch.max(b_n, eps * torch.ones_like(b_n))
         sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
+        print(f"sim_mt len in sim_matrix: {len(sim_mt)}")
         del a_n, b_n, a_norm, b_norm
         if self.sim_measure == 'cosine':
             return sim_mt
         nearestSrc = torch.topk(sim_mt, self.k, dim=1, largest=True, sorted=False, out=None)
         #sumDistSource = torch.sum(nearestSrc[0], 1)
+        print(f"nearestSrc: {nearestSrc}")
         nearestTgt = torch.topk(sim_mt, self.k, dim=0, largest=True, sorted=False, out=None)
         #sumDistTarget = torch.sum(nearestTgt[0], 0)
+        print(f"nearestTgt: {nearestTgt}")
+        print(f"self.div: {self.div}")
 
         return sim_mt, torch.sum(nearestSrc[0], 1)/self.div, torch.sum(nearestTgt[0], 0)/self.div
+
 
     def get_article_coves(self, article, representation='memory', mean=False,  side='phr', use_phrase=False):
         """ Get representations (C_e or C_h) for sentences in a document.
@@ -685,22 +725,31 @@ class Comparable():
                 list of sentences in their sequential (seq) and semantic representation (cove)
         """
         sents = []
+        print("inside get_article_coves")
         #for k in article:#tqdm(article):
         for k in article:
+            print("inside article!")
             sent_repr = None
             if self.args.modeltype == "lstm":  # if the model architecture is LSTM
                 lengths = k['net_input']['src_lengths']
                 texts = k['net_input']['src_tokens']
                 ordered_len, ordered_idx = lengths.sort(0, descending=True)
-                texts = texts[ordered_idx]
+                if self.use_gpu and self.mps:
+                    texts = texts[ordered_idx].to(self.mps_device)
+                    ordered_len = ordered_len.to(self.mps_device)
+                elif self.use_gpu and self.cuda:
+                    texts = texts[ordered_idx].cuda()
+                    ordered_len = ordered_len.cuda()
+                else:
+                    texts = texts[ordered_idx]
                 with torch.no_grad():
-                    output = self.encoder.forward(texts.cuda(), ordered_len)
+                    output = self.encoder.forward(texts, ordered_len) # texts.cuda()
 
                 if representation == 'memory':
                     sent_repr = output['encoder_out'][1].squeeze()
-                    # print("In the lstm representation",sent_repr)
+                    print("In the lstm representation",sent_repr)
                 elif representation == 'embed':
-                    # print("Collecting Embedding")
+                    print("Collecting Embedding")
                     hidden_embed = output['encoder_out'][0]
                     # print(hidden_embed)tr
                     if mean:
@@ -708,11 +757,24 @@ class Comparable():
                     else:
                         sent_repr = torch.sum(hidden_embed, dim=0)
             elif self.args.modeltype == "transformer":
-                # print("In the transformer representation")
+                print("In the transformer representation")
                 if representation == 'memory':
                     with torch.no_grad():
-                        encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
-                                                          k['net_input']['src_lengths'].cuda())
+                        # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
+                        # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
+                        # encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
+                        #                                   k['net_input']['src_lengths'].cuda())
+                        if self.use_gpu and self.mps:
+                            print("going into encoder forward")
+                            encoderOut = self.encoder.forward(k['net_input']['src_tokens'].to(self.mps_device),
+                                                            k['net_input']['src_lengths'].to(self.mps_device))
+                        elif self.use_gpu and self.cuda:
+                            print("going into encoder forward")
+                            encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
+                                                            k['net_input']['src_lengths'].cuda())
+                        else:
+                            encoderOut = self.encoder.forward(k['net_input']['src_tokens'],
+                                                          k['net_input']['src_lengths'])
                     hidden_embed = getattr(encoderOut, 'encoder_out')  # T x B x C
                     if mean:
                         sent_repr = torch.mean(hidden_embed, dim=0)
@@ -720,13 +782,32 @@ class Comparable():
                         sent_repr = torch.sum(hidden_embed, dim=0)
                 elif representation == 'embed':
                     with torch.no_grad():
+                        # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
+                        # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
+                        print("going into encoder forward emb")
                         if self.usepos:
-                            input_emb, _   = self.encoder.forward_embedding(k['net_input']['src_tokens'].cuda())
+                            if self.use_gpu and self.mps:
+                                input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens'].to(self.mps_device)) 
+                            elif self.use_gpu and self.cuda:
+                                input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens'].cuda()) 
+                            else:
+                                input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens']) 
                         else:
-                            _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens'].cuda())
+                            if self.use_gpu and self.mps:
+                                _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens'].to(self.mps_device)) # .to(self.mps_device)
+                            elif self.use_gpu and self.cuda:
+                                _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens'].cuda())
+                            else:
+                                 _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens']) 
+                        print(f"type(input_emb): {type(input_emb)}")
+                        
+                        if self.mps:
+                            input_emb = input_emb.to(self.mps_device)
+                        if self.cuda:
+                            input_emb = input_emb.cuda()
 
                     #input_emb = getattr(encoderOut, 'encoder_embedding')  # B x T x C
-                    # print(type(input_emb))
+                    print(f"type(input_emb): {type(input_emb)}")
                     input_emb = input_emb.transpose(0, 1)
                     if mean:
                         sent_repr = torch.mean(input_emb, dim=0)
@@ -745,6 +826,7 @@ class Comparable():
                 for i in range(texts.shape[0]):
                     sents.append((texts[i], sent_repr[i]))
 
+        print(f"len(sents): {len(sents)}")
         return sents
 
     def get_comparison_pool(self, src_embeds, tgt_embeds):
@@ -815,9 +897,9 @@ class Comparable():
             return candidates
 
         # Intersection as defined in low permissibility
-        #print("Length of s2t max",len(src_tgt_max))
-        #print("Length of t2s max", len(tgt_src_max))
-        #print("Intersection = ",list(src_tgt_max & tgt_src_max))
+        print("Length of s2t max",len(src_tgt_max))
+        print("Length of t2s max", len(tgt_src_max))
+        print("Intersection = ",list(src_tgt_max & tgt_src_max))
         candidates = list(src_tgt_max & tgt_src_max)
         return candidates
 
@@ -1031,7 +1113,8 @@ class Comparable():
             cur_article = 0
             for article_pair in comp_list:
                 cur_article += 1
-                articles = article_pair.split('\t')
+                articles = article_pair.split(' ')
+                print(f"len(articles): {len(articles)}")
                 # Discard malaligned documents
                 if len(articles) != 2:
                     continue
@@ -1046,7 +1129,7 @@ class Comparable():
                 # Get sentence representations
                 try:
                     if self.representations == 'embed-only':
-                        # print("Using Embeddings only for representation")
+                        print("Using Embeddings only for representation")
                         # C_e
                         src_sents += self.get_article_coves(src_article, representation='embed', mean=False)
                         tgt_sents += self.get_article_coves(tgt_article, representation='embed', mean=False)
@@ -1083,24 +1166,24 @@ class Comparable():
                 del tgt_mono
                 del src_mono
 
-
-
                 if len(src_sents) < 15 or len(tgt_sents) < 15:
                     #print("Length LEss tahn 15")
                     continue
-                #print("Proceeding")
+                print("Proceeding")
                 # Score src and tgt sentences
-                #print("In all we have got ", len(src_sents), "source sentences and ", len(tgt_sents), "target")
+                print("In all we have got ", len(src_sents), "source sentences and ", len(tgt_sents), "target")
                 try:
                     src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
                 except:
-                    # print('Error occurred in: {}\n'.format(article_pair), flush=True)
-                    print(src_sents, flush=True)
-                    print(tgt_sents, flush=True)
+                    print('Error occurred in: {}\n'.format(article_pair), flush=True)
+                    print("src_sents")
+                    # print(src_sents, flush=True)
+                    print("tgt_sents")
+                    # print(tgt_sents, flush=True)
                     src_sents = []
                     tgt_sents = []
                     continue
-                #print("source 2 target ", src2tgt)
+                print("source 2 target ", src2tgt)
                 # Keep statistics
                 #epoch_similarities += similarities
                 #epoch_scores += scores
@@ -1128,7 +1211,7 @@ class Comparable():
                 except:
                     # Skip document pair in case of errors
                     print("Error Occured!!!!")
-                    # print('Error occured in: {}\n'.format(article_pair), flush=True)
+                    print('Error occured in: {}\n'.format(article_pair), flush=True)
                     src_embeds = []
                     tgt_embeds = []
                     continue
@@ -1180,11 +1263,6 @@ class Comparable():
                 for stat in top_stats[:30]:
                     print(stat)
                     '''
-
-
-
-
-
 
                 # Train on remaining partial batch
             if len((self.similar_pairs.pairs)) > 0:
@@ -1246,7 +1324,7 @@ class Comparable():
 
                 for samples in self.progress:
                     with metrics.aggregate('train_inner'):
-                        # print("Size of the sampel = ",len(samples))
+                        print("Size of the samples = ",len(samples))
                         log_output = self.trainer.train_step(samples)
                         num_updates = self.trainer.get_num_updates()
                         if log_output is None:

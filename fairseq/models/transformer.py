@@ -271,6 +271,7 @@ class TransformerAlignModel(TransformerModel):
         return TransformerAlignModel(transformer_model.encoder, transformer_model.decoder, args)
 
     def forward(self, src_tokens, src_lengths, prev_output_tokens):
+        # print(f"src_tokens fdevice in forward: {src_tokens.get_device()}")
         encoder_out = self.encoder(src_tokens, src_lengths)
         return self.forward_decoder(prev_output_tokens, encoder_out)
 
@@ -329,8 +330,11 @@ class TransformerEncoder(FairseqEncoder):
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
         self.max_source_positions = args.max_source_positions
-
+        self.mps = torch.backends.mps.is_available() and not args.cpu
+        self.mps_device = torch.device("mps")
         self.embed_tokens = embed_tokens
+        if self.mps:
+            self.embed_tokens = embed_tokens.to(self.mps_device)
 
         self.embed_scale = 1.0 if args.no_scale_embedding else math.sqrt(embed_dim)
 
@@ -358,12 +362,25 @@ class TransformerEncoder(FairseqEncoder):
 
     def forward_embedding(self, src_tokens):
         # embed tokens and positions
+        # print("inside forward emb.")
+        # print(f"src_tokens: {src_tokens.get_device()}")
+        # print(f"self.embed_scale: {self.embed_scale}")
+        # print(f"self.embed_tokens: {self.embed_tokens}")
+        # print(f"self.embed_tokens(src_tokens): {self.embed_tokens(src_tokens)}")
         x = embed = self.embed_scale * self.embed_tokens(src_tokens)
+        # print(f"x: {x}")
+        if self.mps:
+            self.embed_positions = self.embed_positions.to(self.mps_device)
+        # print(f"self.embed_positions: {self.embed_positions}")
+        # print(f"self.layernorm_embedding: {self.layernorm_embedding}")
+        # print(f"self.embed_positions(src_tokens): {self.embed_positions(src_tokens)}")
         if self.embed_positions is not None:
             x = embed + self.embed_positions(src_tokens)
+        # print(f"x after posemb: {x}")
         if self.layernorm_embedding:
             x = self.layernorm_embedding(x)
         x = F.dropout(x, p=self.dropout, training=self.training)
+        # print(f"x after dropout: {x}")
         return x, embed
 
     def forward(self, src_tokens, src_lengths, cls_input=None, return_all_hiddens=False, **unused):
@@ -391,6 +408,7 @@ class TransformerEncoder(FairseqEncoder):
         if self.layer_wise_attention:
             return_all_hiddens = True
 
+        # print(f"src_tokens fdevice in forward: {src_tokens.get_device()}")
         x, encoder_embedding = self.forward_embedding(src_tokens)
 
         # B x T x C -> T x B x C

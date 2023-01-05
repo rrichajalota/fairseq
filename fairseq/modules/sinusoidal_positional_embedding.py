@@ -67,13 +67,18 @@ class SinusoidalPositionalEmbedding(nn.Module):
         """Input is expected to be of size [bsz x seqlen]."""
         bspair = torch.onnx.operators.shape_as_tensor(input)
         bsz, seq_len = bspair[0], bspair[1]
+        # print(f"bsz: {bsz}")
+        # print(f"seqlen: {seq_len}")
         max_pos = self.padding_idx + 1 + seq_len
+        # print(f"max_pos: {max_pos}")
         if self.weights is None or max_pos > self.weights.size(0):
             # recompute/expand embeddings if needed
             self.weights = SinusoidalPositionalEmbedding.get_embedding(
                 max_pos, self.embedding_dim, self.padding_idx
             )
         self.weights = self.weights.to(self._float_tensor)
+        # print(f"self.weights: {self.weights}")
+        # print(f"incremental_state: {incremental_state}")
 
         if incremental_state is not None:
             # positions is the same for every token when decoding a single step
@@ -86,9 +91,15 @@ class SinusoidalPositionalEmbedding(nn.Module):
                 )
             return self.weights[self.padding_idx + pos, :].expand(bsz, 1, -1)
 
+        # print(f"self.onnx_trace: {self.onnx_trace}")
+        # print(f"input: {input}")
+        # print(f"self.padding_idx: {self.padding_idx}")
+
         positions = utils.make_positions(
             input, self.padding_idx, onnx_trace=self.onnx_trace
         )
+        # print(f"positions: {positions}")
+        # print(f"self.onnx_trace: {self.onnx_trace}")
         if self.onnx_trace:
             flat_embeddings = self.weights.detach().index_select(0, positions.view(-1))
             embedding_shape = torch.cat(
@@ -97,6 +108,7 @@ class SinusoidalPositionalEmbedding(nn.Module):
             embeddings = torch.onnx.operators.reshape_from_tensor_shape(
                 flat_embeddings, embedding_shape
             )
+            # print(f"embeddings: {embeddings}")
             return embeddings
         return (
             self.weights.index_select(0, positions.view(-1))

@@ -43,13 +43,19 @@ class Trainer(object):
         # copy model and criterion to current device
         self._criterion = criterion
         self._model = model
+        self.mps = torch.backends.mps.is_available() and not args.cpu
+        self.mps_device = torch.device("mps") 
         self.cuda = torch.cuda.is_available() and not args.cpu
+        print(f"self.mps inside Trainer: {self.mps}")
         if args.fp16:
             self._criterion = self._criterion.half()
             self._model = self._model.half()
         if self.cuda:
             self._criterion = self._criterion.cuda()
             self._model = self._model.cuda()
+        if self.mps:
+            self._criterion = self._criterion.to(self.mps_device) 
+            self._model = self._model.to(self.mps_device)
 
         self._dummy_batch = dummy_batch
         self._oom_batch = oom_batch or dummy_batch
@@ -64,6 +70,8 @@ class Trainer(object):
 
         if self.cuda and args.distributed_world_size > 1:
             self._grad_norm_buf = torch.cuda.DoubleTensor(args.distributed_world_size)
+        elif self.mps and args.distributed_world_size > 1:
+            self._grad_norm_buf = torch.Tensor(args.distributed_world_size).to(self.mps_device)
         else:
             self._grad_norm_buf = None
 
@@ -563,6 +571,8 @@ class Trainer(object):
 
         if self.cuda:
             sample = utils.move_to_cuda(sample)
+        if self.mps_device:
+            sample = utils.move_to_mps(sample)
 
         def apply_half(t):
             if t.dtype is torch.float32:
@@ -651,10 +661,17 @@ class Trainer(object):
                 for k in sorted_keys
             ]
             stats = stats + [0.]*(min_buffer_size - len(stats))
-            buf = torch.cuda.DoubleTensor(stats)
-        else:
-            buf = torch.zeros(min_buffer_size, dtype=torch.double, device='cuda')
-            buf[0] = 1.  # flag to indicate we should fallback to _all_gather_list_sync
+            if self.cuda: 
+                buf = torch.cuda.DoubleTensor(stats)
+            if self.mps_device: # DoubleTensor not supported by mps. can support only upto float32 tensors
+                buf = torch.Tensor(stats).to(self.mps_device)
+        else: # TODO: test distributed training with MPS backend -- currently not officially supported. 
+            if self.cuda:
+                buf = torch.zeros(min_buffer_size, dtype=torch.double, device='cuda')
+                buf[0] = 1.  # flag to indicate we should fallback to _all_gather_list_sync
+            if self.mps_device:
+                buf = torch.zeros(min_buffer_size, dtype=torch.float32, device='mps')
+                buf[0] = 1.
 
         # stats buffer is organized like:
         # 0: flag to indicate whether fast-stat-sync should be disabled

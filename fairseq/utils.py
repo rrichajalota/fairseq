@@ -60,6 +60,13 @@ def move_to_cuda(sample):
 
     return apply_to_sample(_move_to_cuda, sample)
 
+def move_to_mps(sample):
+    mps_device = torch.device("mps")
+    def _move_to_mps(tensor):
+        return tensor.to(mps_device)
+
+    return apply_to_sample(_move_to_mps, sample)
+
 
 INCREMENTAL_STATE_INSTANCE_ID = {}
 
@@ -192,6 +199,9 @@ def make_positions(tensor, padding_idx: int, onnx_trace: bool = False):
     # prefers ints, cumsum defaults to output longs, and ONNX doesn't know
     # how to handle the dtype kwarg in cumsum.
     mask = tensor.ne(padding_idx).int()
+    # print(f"mask: {mask.shape}")
+    # print(f"torch.cumsum(mask, dim=1).type_as(mask): {torch.cumsum(mask, dim=1)}")
+    # print(f"torch.cumsum: {(torch.cumsum(mask, dim=1).type_as(mask) * mask).long() + padding_idx}")
     return (torch.cumsum(mask, dim=1).type_as(mask) * mask).long() + padding_idx
 
 

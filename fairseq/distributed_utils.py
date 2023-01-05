@@ -94,8 +94,11 @@ def distributed_init(args):
         ))
 
         # perform a dummy all-reduce to initialize the NCCL communicator
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and not args.cpu:
             dist.all_reduce(torch.zeros(1).cuda())
+        elif torch.backends.mps.is_available() and not args.cpu:
+            mps_device = torch.device("mps")
+            dist.all_reduce(torch.zeros(1).to(mps_device))
         else:
             dist.all_reduce(torch.zeros(1))
 
