@@ -38,6 +38,7 @@ def infer_init_method(args):
 
     # we can determine the init method automatically for Slurm
     elif args.distributed_port > 0:
+        print(f"args.distributed_port: {args.distributed_port}")
         node_list = os.environ.get('SLURM_STEP_NODELIST')
         if node_list is None:
             node_list = os.environ.get('SLURM_JOB_NODELIST')

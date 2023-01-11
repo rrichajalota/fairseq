@@ -430,10 +430,11 @@ class Comparable():
         self.use_bt = False #args.use_bt
         self.stats = None
         self.progress = None
-        self.src, self.tgt = "de", "en" #args.source_lang, args.target_lang
+        self.src, self.tgt = "tr", "og" #args.source_lang, args.target_lang
         self.use_gpu = False
         self.mps = False
         self.cuda = False
+        self.mps_device = None
         print(f"args.cpu: {args.cpu}")
         if args.cpu == False:
             self.use_gpu = True
@@ -442,7 +443,7 @@ class Comparable():
                 self.mps_device = torch.device("mps")
                 self.div = 2 * torch.tensor(self.k).to(self.mps_device) #.cuda()
             else:
-                self.div = 2 * torch.tensor(self.k).to(self.mps_device).cuda()
+                self.div = 2 * torch.tensor(self.k).cuda()
                 self.cuda = True
         else:
             self.use_gpu = False
@@ -727,6 +728,8 @@ class Comparable():
         sents = []
         print("inside get_article_coves")
         #for k in article:#tqdm(article):
+        print("next(article)")
+        print(f"next(article): {next(article)}")
         for k in article:
             print("inside article!")
             sent_repr = None
@@ -924,6 +927,9 @@ class Comparable():
                                                  required_batch_size_multiple=self.args.required_batch_size_multiple, )
         itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.args.seed,num_workers=self.args.num_workers, epoch=epoch)
         #data_iter = itrs.next_epoch_itr(shuffle=False, fix_batches_to_gpus=fix_batches_to_gpus)
+        print(f"itrs.state_dict: {itrs.state_dict()}")
+        print(f"next(itrs)")
+        print(f"{next(itrs)}")
 
         return itrs
         #return data_iter
@@ -963,6 +969,9 @@ class Comparable():
                                       tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
 
         del trainingSetSrc, trainingSetTgt
+        print("Monolingual data")
+        print(f"src_mono.num_tokens(1): {src_mono.num_tokens(1)}")
+        print(f"tgt_mono.num_tokens(1): {tgt_mono.num_tokens(1)}")
         return src_mono, tgt_mono
 
     def extract_phrase_train(self, srcPhrase, tgtPhrase, epoch):
@@ -1121,6 +1130,8 @@ class Comparable():
                 #load the dataset from the files for both source and target
                 src_mono, tgt_mono = self.getdata(articles)
                 # Prepare iterator objects for current src/tgt document
+                print(f"self.task.src_dict: {self.task.src_dict}")
+                print(f"self.args.max_source_positions: {self.args.max_source_positions}")
                 src_article = self._get_iterator(src_mono, dictn=self.task.src_dict,
                                                  max_position=self.args.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
                 tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict,

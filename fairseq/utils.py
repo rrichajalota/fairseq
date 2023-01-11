@@ -141,7 +141,7 @@ def parse_embedding(embed_path):
         at -0.0395 -0.1286  0.0275  0.0254 -0.0932
     """
     embed_dict = {}
-    with open(embed_path) as f_embed:
+    with open(embed_path, encoding='utf-8') as f_embed:
         next(f_embed)  # skip header
         for line in f_embed:
             pieces = line.rstrip().split(" ")
