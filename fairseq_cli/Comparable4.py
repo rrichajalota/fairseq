@@ -787,7 +787,7 @@ class Comparable():
                     with torch.no_grad():
                         # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
                         # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
-                        print("going into encoder forward emb")
+                        # print("going into encoder forward emb")
                         if self.usepos:
                             if self.use_gpu and self.mps:
                                 input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens'].to(self.mps_device)) 
@@ -802,7 +802,7 @@ class Comparable():
                                 _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens'].cuda())
                             else:
                                  _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens']) 
-                        print(f"type(input_emb): {type(input_emb)}")
+                        # print(f"type(input_emb): {type(input_emb)}")
                         
                         if self.mps:
                             input_emb = input_emb.to(self.mps_device)
@@ -810,7 +810,7 @@ class Comparable():
                             input_emb = input_emb.cuda()
 
                     #input_emb = getattr(encoderOut, 'encoder_embedding')  # B x T x C
-                    print(f"type(input_emb): {type(input_emb)}")
+                    # print(f"type(input_emb): {type(input_emb)}")
                     input_emb = input_emb.transpose(0, 1)
                     if mean:
                         sent_repr = torch.mean(input_emb, dim=0)
@@ -929,7 +929,6 @@ class Comparable():
         itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.args.seed,num_workers=self.args.num_workers, epoch=epoch)
         #data_iter = itrs.next_epoch_itr(shuffle=False, fix_batches_to_gpus=fix_batches_to_gpus)
         # print(f"itrs.state_dict: {itrs.state_dict()}")
-        itrs = itrs._get_iterator_for_epoch(epoch=epoch, shuffle=True)
         # print(f"itrs.n(): {itrs.n()}")
         # print(f"itrs.first_batch(): {itrs.first_batch()}")
         # print(f"next(itrs)")
@@ -1007,8 +1006,10 @@ class Comparable():
         if self.representations == 'embed-only':
             # print("Using Embeddings only for representation")
             # C_e
-            src_sents += self.get_article_coves(src_article, representation='embed', mean=False, side='src')
-            tgt_sents += self.get_article_coves(tgt_article, representation='embed', mean=False, side='tgt')
+            itr_src = src_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
+            itr_tgt = tgt_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
+            src_sents += self.get_article_coves(itr_src, representation='embed', mean=False, side='src')
+            tgt_sents += self.get_article_coves(itr_tgt, representation='embed', mean=False, side='tgt')
         else:
             # C_e and C_h
 
@@ -1146,22 +1147,29 @@ class Comparable():
                     if self.representations == 'embed-only':
                         print("Using Embeddings only for representation")
                         # C_e
-                        src_sents += self.get_article_coves(src_article, representation='embed', mean=False)
-                        tgt_sents += self.get_article_coves(tgt_article, representation='embed', mean=False)
+                        itr_src = src_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
+                        itr_tgt = tgt_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
+                        print(f"src article, rep=embed")
+                        src_sents += self.get_article_coves(itr_src, representation='embed', mean=False)
+                        print(f"tgt article, rep=embed")
+                        tgt_sents += self.get_article_coves(itr_tgt, representation='embed', mean=False)
                     else:
                         # C_e and C_h
                         '''it1, it2 = itertools.tee(src_article)
                         it3, it4 = itertools.tee(tgt_article)'''
-
+                        print(f"src article, rep=embed")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_embeds += self.get_article_coves(it1, representation='embed', mean=False, side='src',
                                                          use_phrase=self.use_phrase)
+                        print(f"src article, rep=memory")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_sents += self.get_article_coves(it1, representation='memory', mean=False, side='src')
-
+                        
+                        print(f"tgt article, rep=embed")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_embeds += self.get_article_coves(it3, representation='embed', mean=False, side='tgt',
                                                          use_phrase=self.use_phrase)
+                        print(f"tgt article, rep=memory")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_sents += self.get_article_coves(it3, representation='memory', mean=False, side='tgt')
 
