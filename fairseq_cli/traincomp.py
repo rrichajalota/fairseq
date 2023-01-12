@@ -40,7 +40,9 @@ def main(args, init_distributed=False):
 
     # Initialize CUDA and distributed training
     if torch.cuda.is_available() and not args.cpu:
+        print(f"args.device_id: {args.device_id}")
         torch.cuda.set_device(args.device_id)
+
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if init_distributed:
@@ -194,7 +196,7 @@ def distributed_main(i, args, start_rank=0):
 def cli_main(modify_parser=None):
     parser = options.get_training_parser()
     args = options.parse_args_and_arch(parser, modify_parser=modify_parser)
-    print(f"args.distributed_init_method: {args.distributed_init_method}")
+    # print(f"args.distributed_init_method: {args.distributed_init_method}")
 
     if args.distributed_init_method is None:
         distributed_utils.infer_init_method(args)

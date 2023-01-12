@@ -729,7 +729,7 @@ class Comparable():
         print("inside get_article_coves")
         #for k in article:#tqdm(article):
         print("next(article)")
-        print(f"next(article): {next(article)}")
+        # print(f"next(article): {next(article)}")
         for k in article:
             print("inside article!")
             sent_repr = None
@@ -925,11 +925,15 @@ class Comparable():
         max_sentences = self.args.max_sentences  # 30
         batch_sampler = batch_by_size(indices, sent.num_tokens, max_sentences=max_sentences,
                                                  required_batch_size_multiple=self.args.required_batch_size_multiple, )
+        # print(f"tuple(batch_sampler): {tuple(batch_sampler)}")
         itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.args.seed,num_workers=self.args.num_workers, epoch=epoch)
         #data_iter = itrs.next_epoch_itr(shuffle=False, fix_batches_to_gpus=fix_batches_to_gpus)
-        print(f"itrs.state_dict: {itrs.state_dict()}")
-        print(f"next(itrs)")
-        print(f"{next(itrs)}")
+        # print(f"itrs.state_dict: {itrs.state_dict()}")
+        itrs = itrs._get_iterator_for_epoch(epoch=epoch, shuffle=True)
+        # print(f"itrs.n(): {itrs.n()}")
+        # print(f"itrs.first_batch(): {itrs.first_batch()}")
+        # print(f"next(itrs)")
+        # print(f"{next(itrs)}")
 
         return itrs
         #return data_iter
