@@ -35,6 +35,8 @@ def infer_init_method(args):
         args.distributed_init_method = 'env://'
         args.distributed_world_size = int(os.environ['WORLD_SIZE'])
         args.distributed_rank = int(os.environ['RANK'])
+        logger.info(f"args.distributed_world_size: {args.distributed_world_size}")
+        args.distributed_no_spawn = True
 
     # we can determine the init method automatically for Slurm
     elif args.distributed_port > 0:
@@ -59,11 +61,14 @@ def infer_init_method(args):
                     assert ntasks % nnodes == 0
                     ntasks_per_node = int(ntasks / nnodes)
                 if ntasks_per_node == 1:
+                    logger.info(f"args.distributed_world_size: {args.distributed_world_size}")
                     assert args.distributed_world_size % nnodes == 0
-                    gpus_per_node = args.distributed_world_size // nnodes
+                    gpus_per_node = torch.cuda.device_count() #args.distributed_world_size // nnodes
                     node_id = int(os.environ.get('SLURM_NODEID'))
                     args.distributed_rank = node_id * gpus_per_node
+                    args.distributed_world_size = nnodes * gpus_per_node
                 else:
+                    logger.info(f"args.distributed_world_size: {args.distributed_world_size}")
                     assert ntasks_per_node == args.distributed_world_size // nnodes
                     args.distributed_no_spawn = True
                     args.distributed_rank = int(os.environ.get('SLURM_PROCID'))

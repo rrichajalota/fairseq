@@ -40,13 +40,15 @@ def main(args, init_distributed=False):
 
     # Initialize CUDA and distributed training
     if torch.cuda.is_available() and not args.cpu:
-        print(f"args.device_id: {args.device_id}")
+        logger.info(f"args.device_id: {args.device_id}")
         torch.cuda.set_device(args.device_id)
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     if init_distributed:
         args.distributed_rank = distributed_utils.distributed_init(args)
+    
+    logger.info(f"distributed_utils.is_master(args): {distributed_utils.is_master(args)}")
 
     if distributed_utils.is_master(args):
         checkpoint_utils.verify_checkpoint_directory(args.save_dir)
@@ -84,7 +86,6 @@ def main(args, init_distributed=False):
     #extra_state, epoch_itr = checkpoint_utils.load_checkpoint(args, trainer)
     if args.restore_file:
         extra_state, epoch = load_checkpoint(args, trainer)
-
     else:
         epoch = 1
 
@@ -96,6 +97,7 @@ def main(args, init_distributed=False):
     train_meter = StopwatchMeter()
     train_meter.start()
     valid_subsets = args.valid_subset.split(',')
+    print(f"valid_subsets: {valid_subsets}")
     if max_epoch == math.inf: max_epoch = 5  # if args.max_epoch was not set appropriately, then set it to 2
     if args.comparable:
         # 1. Initialize Comparable object
@@ -204,18 +206,19 @@ def cli_main(modify_parser=None):
     if args.distributed_init_method is not None:
         print(f"args.distributed_init_method: {args.distributed_init_method}")
         # distributed training
-        if torch.cuda.device_count() > 1 and not args.distributed_no_spawn:
+        if not args.distributed_no_spawn: # TODO: remove torch.cuda.device_count() > 1 for multi-gpu
             start_rank = args.distributed_rank
             args.distributed_rank = None  # assign automatically
             torch.multiprocessing.spawn(
                 fn=distributed_main,
                 args=(args, start_rank),
-                nprocs=torch.cuda.device_count(),
+                nprocs=min(torch.cuda.device_count(), args.distributed_world_size),
             )
         else:
             distributed_main(args.device_id, args)
     elif args.distributed_world_size > 1:
         # fallback for single node with multiple GPUs
+        print(f"fallback for single node with multiple GPUs")
         assert args.distributed_world_size <= torch.cuda.device_count()
         port = random.randint(10000, 20000)
         args.distributed_init_method = 'tcp://localhost:{port}'.format(port=port)
@@ -227,7 +230,6 @@ def cli_main(modify_parser=None):
             args=(args, ),
             nprocs=args.distributed_world_size,
         )
-
     else:
         # single GPU training
         main(args)

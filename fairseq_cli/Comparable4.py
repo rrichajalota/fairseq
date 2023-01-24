@@ -3,7 +3,7 @@ Classes and methods used for training and extraction of parallel pairs
 from a comparable dataset.
 Author: Alabi Jesujoba
 """
-#import tracemalloc
+import tracemalloc
 #import gc
 import re
 import itertools
@@ -305,10 +305,13 @@ class PairBank():
         random.shuffle(self.pairs)
         for ex in range(num_examples):
             example = self.pairs.pop()
+            src_len = example.src_length.item()
+            tgt_len = example.tgt_length.item()
+            # print(f"example.src_length: {src_len}")
             src_examples.append(example.src)
             tgt_examples.append(example.tgt)
-            src_lengths.append(example.src_length)
-            tgt_lengths.append(example.tgt_length)
+            src_lengths.append(src_len) # example.src_length
+            tgt_lengths.append(tgt_len) # example.tgt_length
             indices.append(example.index)
 
         dataset = None
@@ -359,6 +362,9 @@ class BatchCreator():
                 Returns:
                     batch(fairseq.data.LanguagePairDataset): batch object
                 """
+        # print(f"src_lengths type: {type(src_lengths)}")
+        # src_lengths = src_lengths.detach().cpu().numpy()
+        # tgt_lengths = tgt_lengths.detach().cpu().numpy()
         pairData = LanguagePairDataset(
             src_examples, src_lengths, self.task.src_dict,
             tgt_examples, tgt_lengths, self.task.tgt_dict,
@@ -374,7 +380,7 @@ class BatchCreator():
         batch_sampler = batch_by_size(indices, pairData.num_tokens, max_sentences=self.args.max_sentences,
                                                  required_batch_size_multiple=self.args.required_batch_size_multiple, )
         itrs = EpochBatchIterator(dataset=pairData, collate_fn=pairData.collater, batch_sampler=batch_sampler,
-                                            seed=self.args.seed, epoch=0)
+                                            seed=self.args.seed, epoch=0, num_workers=self.args.num_workers)
         indices = None
         return itrs
 
@@ -435,6 +441,7 @@ class Comparable():
         self.mps = False
         self.cuda = False
         self.mps_device = None
+        self.log_interval = 5
         print(f"args.cpu: {args.cpu}")
         if args.cpu == False:
             self.use_gpu = True
@@ -448,7 +455,8 @@ class Comparable():
         else:
             self.use_gpu = False
             self.div = 2 * torch.tensor(self.k) #, device="mps") #.cuda()
-        print(f"use_gpu: {self.use_gpu}, self.mps: {self.mps}")
+        print(f"use_gpu: {self.use_gpu}, self.mps: {self.mps}, self.cuda: {self.cuda}")
+        print(f"type(self.div): {type(self.div)}")
         
 
         if self.use_phrase == True and self.args.phrase_method == 'stanford':
@@ -661,13 +669,16 @@ class Comparable():
             srcRp = torch.stack(srcRep)
             tgtRp = torch.stack(tgtRep)
 
-        print(f"tgtRp: {tgtRp}")
+        # print(f"tgtRp: {tgtRp}")
+        # print(f"self.sim_measure: {self.sim_measure}")
 
         # Return cosine similarity if that is the scoring function
         if self.sim_measure == 'cosine':
             matx = self.sim_matrix(srcRp, tgtRp)
+            print(f"going into double loop")
             for i in range(len(srcSent)):
                 for j in range(len(tgtSent)):
+                    print(f"i: {i}, j: {j}")
                     if srcSent[i][0] == tgtSent[j][0]:
                         continue
                     src2tgt[srcSent[i]][tgtSent[j]] = matx[i][j].tolist()
@@ -676,10 +687,16 @@ class Comparable():
             return src2tgt, tgt2src, similarities, similarities
         else:
             sim_mt, sumDistSource, sumDistTarget = self.sim_matrix(srcRp, tgtRp)
-            print(f"sumDistSource: {sumDistSource}")
-            print(f"sim_mt: {sim_mt}")
+            # sim_mt, nearestSrc, nearestTgt = self.sim_matrix(srcRp, tgtRp)
+            # sumDistSource = torch.sum(nearestSrc, 1).cuda() /self.div
+            # sumDistTarget = torch.sum(nearestTgt, 0).cuda() /self.div
+            print(f"sumDistSource device: {sumDistSource.get_device()}")
+            # print(f"sim_mt: {sim_mt}")
+
+            print(f"going into double loop")
             for i in range(len(srcSent)):
                 for j in range(len(tgtSent)):
+                    print(f"i: {i}, j: {j}")
                     if srcSent[i][0] == tgtSent[j][0]:
                         continue
                     tgt2src[tgtSent[j]][srcSent[i]] = src2tgt[srcSent[i]][tgtSent[j]] = sim_mt[i][j].tolist() / (sumDistSource[i].tolist() + sumDistTarget[j].tolist())
@@ -689,6 +706,7 @@ class Comparable():
             # Get list of scores for statistics
         '''for src in list(src2tgt.keys()):
             scores += list(src2tgt[src].values())'''
+        print(f"finished with the double loop. going out of score_sents.")
         return src2tgt, tgt2src, similarities, scores
 
     def sim_matrix(self, a, b, eps=1e-8):
@@ -698,20 +716,34 @@ class Comparable():
         a_n, b_n = a.norm(dim=1)[:, None], b.norm(dim=1)[:, None]
         a_norm = a / torch.max(a_n, eps * torch.ones_like(a_n))
         b_norm = b / torch.max(b_n, eps * torch.ones_like(b_n))
-        sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
-        print(f"sim_mt len in sim_matrix: {len(sim_mt)}")
+        sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1)).detach().cpu()
+        # print(f"sim_mt: {sim_mt}")
+        print(f"sim_mt shape in sim_matrix: {sim_mt.shape}")
         del a_n, b_n, a_norm, b_norm
         if self.sim_measure == 'cosine':
-            return sim_mt
+            return sim_mt.cuda()
+        # print(f"self.k: {self.k}")
+        # print("nearestSrc")
+        # print(torch.topk(sim_mt, self.k, dim=1, largest=True, sorted=False, out=None))
         nearestSrc = torch.topk(sim_mt, self.k, dim=1, largest=True, sorted=False, out=None)
         #sumDistSource = torch.sum(nearestSrc[0], 1)
-        print(f"nearestSrc: {nearestSrc}")
+        # print(f"nearestSrc: {nearestSrc}")
+        # print("nearestTgt")
         nearestTgt = torch.topk(sim_mt, self.k, dim=0, largest=True, sorted=False, out=None)
         #sumDistTarget = torch.sum(nearestTgt[0], 0)
-        print(f"nearestTgt: {nearestTgt}")
-        print(f"self.div: {self.div}")
+        # print(f"nearestTgt: {nearestTgt}")
+        # print(f"device self.div: {self.div.get_device()}")
+        sim_mt = sim_mt.cuda()
+        # print(f"after sim_mt: {sim_mt}")
+        # return sim_mt, nearestSrc[0], nearestTgt[0]
+        c = torch.sum(nearestSrc[0], 1)/self.div.detach().cpu()
+        d = torch.sum(nearestTgt[0], 0)/self.div.detach().cpu()
+        print(f"torch.sum(nearestSrc[0], 1): {c.shape}")
+        # print(f"torch.sum(nearestTgt[0], 0): {d.shape}")
 
-        return sim_mt, torch.sum(nearestSrc[0], 1)/self.div, torch.sum(nearestTgt[0], 0)/self.div
+        return sim_mt , c.cuda(), d.cuda()
+        # return sim_mt, torch.sum(nearestSrc[0], 1)/self.div, torch.sum(nearestTgt[0], 0)/self.div
+        # return sim_mt, c, d
 
 
     def get_article_coves(self, article, representation='memory', mean=False,  side='phr', use_phrase=False):
@@ -726,12 +758,19 @@ class Comparable():
                 list of sentences in their sequential (seq) and semantic representation (cove)
         """
         sents = []
-        print("inside get_article_coves")
+        # print("inside get_article_coves")
         #for k in article:#tqdm(article):
-        print("next(article)")
+        # print("next(article)")
+        id = 0
         # print(f"next(article): {next(article)}")
+        print(f"len(article): {len(article)}")
         for k in article:
-            print("inside article!")
+            # print("inside article!")
+            print(f"article id: {id}")
+            # if id == 3013:
+            #     print("skipping 3013")
+            #     continue
+                # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
             sent_repr = None
             if self.args.modeltype == "lstm":  # if the model architecture is LSTM
                 lengths = k['net_input']['src_lengths']
@@ -768,11 +807,11 @@ class Comparable():
                         # encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
                         #                                   k['net_input']['src_lengths'].cuda())
                         if self.use_gpu and self.mps:
-                            print("going into encoder forward")
+                            # print("going into encoder forward")
                             encoderOut = self.encoder.forward(k['net_input']['src_tokens'].to(self.mps_device),
                                                             k['net_input']['src_lengths'].to(self.mps_device))
                         elif self.use_gpu and self.cuda:
-                            print("going into encoder forward")
+                            # print("going into encoder forward")
                             encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
                                                             k['net_input']['src_lengths'].cuda())
                         else:
@@ -817,7 +856,10 @@ class Comparable():
                     else:
                         sent_repr = torch.sum(input_emb, dim=0)
             if self.args.modeltype == "transformer":
+                # print(f"inside modeltype == transformer")
+                print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
                 for i in range(k['net_input']['src_tokens'].shape[0]):
+                    print(f"i : {i}")
                     sents.append((k['net_input']['src_tokens'][i], sent_repr[i]))
                     if side == 'src' and use_phrase is True:
                         st = removePadding(k['net_input']['src_tokens'][i])
@@ -828,6 +870,8 @@ class Comparable():
             elif self.args.modeltype == "lstm":
                 for i in range(texts.shape[0]):
                     sents.append((texts[i], sent_repr[i]))
+            # print(f"finishing {id}")
+            id += 1
 
         print(f"len(sents): {len(sents)}")
         return sents
@@ -844,6 +888,7 @@ class Comparable():
         # Scoring
         src2tgt_embed, tgt2src_embed, _, _ = self.score_sents(src_embeds, tgt_embeds)
         # Filtering (primary filter)
+        print("candidate filtering")
         candidates_embed = self.filter_candidates(src2tgt_embed, tgt2src_embed)
         # Create set of hashed pairs (for easy comparison in secondary filter)
         set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
@@ -873,9 +918,11 @@ class Comparable():
         tgt_src_max = set()
         src_tgt_second = set()
         tgt_src_second = set()
+        i = 0
 
         # For each src...
         for src in list(src2tgt.keys()):
+            print(f"src {i}")
             toplist = sorted(src2tgt[src].items(), key=lambda x: x[1], reverse=True)
             # ... get the top scoring tgt
             max_tgt = toplist[0]
@@ -885,13 +932,17 @@ class Comparable():
                 # If high permissibility mode, also get second-best tgt
                 second_tgt = toplist[1]
                 src_tgt_second.add((src, second_tgt[0], second_tgt[1]))
+            i += 1
 
         # For each tgt...
+        i = 0
         for tgt in list(tgt2src.keys()):
+            print(f"tgt {i}")
             toplist = sorted(tgt2src[tgt].items(), key=lambda x: x[1], reverse=True)
             # ... get the top scoring src
             max_src = toplist[0]
             tgt_src_max.add((max_src[0], tgt, max_src[1]))
+            i += 1 
 
         if second:
             # Intersection as defined in medium permissibility mode
@@ -902,7 +953,7 @@ class Comparable():
         # Intersection as defined in low permissibility
         print("Length of s2t max",len(src_tgt_max))
         print("Length of t2s max", len(tgt_src_max))
-        print("Intersection = ",list(src_tgt_max & tgt_src_max))
+        # print("Intersection = ",list(src_tgt_max & tgt_src_max))
         candidates = list(src_tgt_max & tgt_src_max)
         return candidates
 
@@ -1094,7 +1145,7 @@ class Comparable():
 
     def extract_and_train(self, comparable_data_list, epoch):
 
-        #tracemalloc.start()
+        tracemalloc.start()
         """ Manages the alternating extraction of parallel sentences and training.
         Args:
             comparable_data_list(str): path to list of mapped documents
@@ -1104,7 +1155,7 @@ class Comparable():
 
         self.accepted_file = open('{}_accepted-e{}.txt'.format(self.comp_log, epoch), 'w+', encoding='utf8')
         if self.use_phrase == True:
-                    self.accepted_phrase = open('{}_accepted_phrase-e{}.txt'.format(self.comp_log, epoch), 'w+',
+            self.accepted_phrase = open('{}_accepted_phrase-e{}.txt'.format(self.comp_log, epoch), 'w+',
                                                 encoding='utf8')
         self.status_file = '{}_status-e{}.txt'.format(self.comp_log, epoch)
         if self.write_dual:
@@ -1125,9 +1176,11 @@ class Comparable():
             comp_list = c.read().split('\n')
             #num_articles = len(comp_list)
             cur_article = 0
-            for article_pair in comp_list:
+            for ap, article_pair in enumerate(comp_list):
+                print(f"on article {ap}")
                 cur_article += 1
                 articles = article_pair.split(' ')
+                print(f"articles: {articles}")
                 print(f"len(articles): {len(articles)}")
                 # Discard malaligned documents
                 if len(articles) != 2:
@@ -1206,7 +1259,7 @@ class Comparable():
                     src_sents = []
                     tgt_sents = []
                     continue
-                print("source 2 target ", src2tgt)
+                # print("source 2 target ", src2tgt)
                 # Keep statistics
                 #epoch_similarities += similarities
                 #epoch_scores += scores
@@ -1272,7 +1325,7 @@ class Comparable():
                     # extract phrases using Stanford NLP/n-grams
 
 
-                #print("pair bank  = ",len((self.similar_pairs.pairs)))
+                print("pair bank  = ",len((self.similar_pairs.pairs)))
                 # Train on extracted sentences
                 self.train(epoch)
                 del src2tgt, tgt2src
@@ -1280,13 +1333,12 @@ class Comparable():
                 # Add to leaky code within python_script_being_profiled.py
 
 
-                '''snapshot = tracemalloc.take_snapshot()
+                snapshot = tracemalloc.take_snapshot()
                 top_stats = snapshot.statistics('lineno')
                 print("[ Top 10 ]")
                 for stat in top_stats[:30]:
                     print(stat)
-                    '''
-
+                    
                 # Train on remaining partial batch
             if len((self.similar_pairs.pairs)) > 0:
                 print("batching and training")
@@ -1349,14 +1401,21 @@ class Comparable():
                     with metrics.aggregate('train_inner'):
                         print("Size of the samples = ",len(samples))
                         log_output = self.trainer.train_step(samples)
-                        num_updates = self.trainer.get_num_updates()
-                        if log_output is None:
-                            continue
+                        if log_output is not None: # not OOM, overflow, ...
+                             # log mid-epoch stats
+                            num_updates = self.trainer.get_num_updates()
+                            if num_updates % self.log_interval == 0:
+                                stats = get_training_stats(metrics.get_smoothed_values("train_inner"))
+                                self.progress.log(stats, tag="train_inner", step=num_updates)
+                                metrics.reset_meters('train_inner')
+                        # end_of_epoch = not itr.has_next()
+                        # if log_output is None:
+                        #     continue
                     # log mid-epoch stats
-                    stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
-                    self.progress.print(stats, tag='train_inner', step=num_updates)
-                    self.progress.log(stats, tag='train_inner', step=num_updates)
-                    metrics.reset_meters('train_inner')
+                    # stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
+                    # self.progress.print(stats, tag='train_inner', step=num_updates)
+                    # self.progress.log(stats, tag='train_inner', step=num_updates)
+                    # metrics.reset_meters('train_inner')
         else:
             # numberofex = self.similar_pairs.get_num_examples()
             itrs = self.similar_pairs.yield_batch()
@@ -1387,6 +1446,7 @@ class Comparable():
 
         valid_losses = []
         for subset in subsets:
+            print(f"subset: {subset}")
             # Initialize data iterator
             itr = self.task.get_batch_iterator(
                 dataset=self.task.dataset(subset),
@@ -1412,12 +1472,12 @@ class Comparable():
             # create a new root metrics aggregator so validation metrics
             # don't pollute other aggregators (e.g., train meters)
             with metrics.aggregate(new_root=True) as agg:
-                for sample in progress:
+                for sample in self.progress:
                     self.trainer.valid_step(sample)
 
             # log validation stats
             stats = get_valid_stats(self.args, self.trainer, agg.get_smoothed_values())
-            progress.print(stats, tag=subset, step=self.trainer.get_num_updates())
+            self.progress.print(stats, tag=subset, step=self.trainer.get_num_updates())
 
             valid_losses.append(stats[self.args.best_checkpoint_metric])
         return valid_losses

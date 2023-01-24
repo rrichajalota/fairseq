@@ -167,8 +167,10 @@ class LanguagePairDataset(FairseqDataset):
             assert src_dict.unk() == tgt_dict.unk()
         self.src = src
         self.tgt = tgt
+        # print(f"type(src_sizes): {src_sizes}")
+        # print(f"torch.is_tensor(src_sizes): {torch.is_tensor(src_sizes)}")
         self.src_sizes = np.array(src_sizes)
-        self.tgt_sizes = np.array(tgt_sizes) if tgt_sizes is not None else None
+        self.tgt_sizes = np.array(tgt_sizes) if tgt_sizes is not None else None # 
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
         self.left_pad_source = left_pad_source
@@ -275,6 +277,8 @@ class LanguagePairDataset(FairseqDataset):
         else:
             indices = np.arange(len(self))
         if self.tgt_sizes is not None:
+            print(f"Num. pairs in dataset:, {len(self)}")
+            print(f"Num. targets in dataset:, {len(self.tgt_sizes)}")
             indices = indices[np.argsort(self.tgt_sizes[indices], kind='mergesort')]
         return indices[np.argsort(self.src_sizes[indices], kind='mergesort')]
 

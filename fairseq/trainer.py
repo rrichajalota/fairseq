@@ -571,7 +571,7 @@ class Trainer(object):
 
         if self.cuda:
             sample = utils.move_to_cuda(sample)
-        if self.mps_device:
+        if self.mps:
             sample = utils.move_to_mps(sample)
 
         def apply_half(t):
@@ -663,13 +663,13 @@ class Trainer(object):
             stats = stats + [0.]*(min_buffer_size - len(stats))
             if self.cuda: 
                 buf = torch.cuda.DoubleTensor(stats)
-            if self.mps_device: # DoubleTensor not supported by mps. can support only upto float32 tensors
+            if self.mps: # DoubleTensor not supported by mps. can support only upto float32 tensors
                 buf = torch.Tensor(stats).to(self.mps_device)
         else: # TODO: test distributed training with MPS backend -- currently not officially supported. 
             if self.cuda:
                 buf = torch.zeros(min_buffer_size, dtype=torch.double, device='cuda')
                 buf[0] = 1.  # flag to indicate we should fallback to _all_gather_list_sync
-            if self.mps_device:
+            if self.mps:
                 buf = torch.zeros(min_buffer_size, dtype=torch.float32, device='mps')
                 buf[0] = 1.
 
