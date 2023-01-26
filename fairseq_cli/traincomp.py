@@ -110,19 +110,25 @@ def main(args, init_distributed=False):
             '''
             comp.task.begin_epoch(epoch, comp.trainer.get_model())
             # 3. Extract parallel data and train
-            comp.extract_and_train(args.comparable_data, epoch)
+            num_updates = comp.extract_and_train(args.comparable_data, epoch)
 
-            if not args.disable_validation:
+            if (
+                not args.disable_validation
+                and args.save_interval_updates > 0
+                and num_updates % args.save_interval_updates == 0
+                and num_updates > 0
+            ):
                 valid_losses = comp.validate(epoch, valid_subsets)
             else:
                 valid_losses = [None]
 
             # only use first validation loss to update the learning rate
             lr = comp.trainer.lr_step(epoch, valid_losses[0])
-            #print('learning rate = ','{:.10f}'.format(lr), ' validation loss = ', '{:.10f}'.format(valid_losses[0] ))
+            # print('learning rate = ','{:.10f}'.format(lr), ' validation loss = ', '{:.10f}'.format(valid_losses[0] ))
 
             # 4.  save checkpoint
-            comp.save_comp_chkp(epoch)
+            # comp.save_comp_chkp(epoch)
+            checkpoint_utils.save_checkpoint(args, trainer, epoch, valid_losses[0])
             epoch += 1
 
             # early stop

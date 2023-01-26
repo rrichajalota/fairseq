@@ -10,6 +10,7 @@ import re
 import traceback
 from collections import OrderedDict
 from typing import Union
+from pathlib import Path
 
 import torch
 from fairseq.file_io import PathManager
@@ -20,8 +21,11 @@ from torch.serialization import default_restore_location
 logger = logging.getLogger(__name__)
 
 
-def save_checkpoint(args, trainer, epoch_itr, val_loss):
+def save_checkpoint(args, trainer, epoch, val_loss): # epoch_itr
     from fairseq import distributed_utils, meters
+
+    # logger.info(f"val_loss: {val_loss}")
+    # logger.info(f"save_checkpoint: {save_checkpoint}")
 
     prev_best = getattr(save_checkpoint, "best", val_loss)
     if val_loss is not None:
@@ -37,19 +41,21 @@ def save_checkpoint(args, trainer, epoch_itr, val_loss):
     write_timer = meters.StopwatchMeter()
     write_timer.start()
 
-    epoch = epoch_itr.epoch
-    end_of_epoch = epoch_itr.end_of_epoch()
+    # epoch = epoch_itr.epoch
+    # end_of_epoch = epoch_itr.end_of_epoch()
     updates = trainer.get_num_updates()
 
     checkpoint_conds = collections.OrderedDict()
     checkpoint_conds["checkpoint{}.pt".format(epoch)] = (
-        end_of_epoch
-        and not args.no_epoch_checkpoints
+        # end_of_epoch
+        # and 
+        not args.no_epoch_checkpoints
         and epoch % args.save_interval == 0
     )
     checkpoint_conds["checkpoint_{}_{}.pt".format(epoch, updates)] = (
-        not end_of_epoch
-        and args.save_interval_updates > 0
+        # not end_of_epoch
+        # and 
+        args.save_interval_updates > 0
         and updates % args.save_interval_updates == 0
     )
     checkpoint_conds["checkpoint_best.pt"] = val_loss is not None and (
@@ -64,7 +70,10 @@ def save_checkpoint(args, trainer, epoch_itr, val_loss):
         )
     checkpoint_conds["checkpoint_last.pt"] = not args.no_last_checkpoints
 
-    extra_state = {"train_iterator": epoch_itr.state_dict(), "val_loss": val_loss}
+    # {"train_iterator": {"epoch": epoch}}
+
+    # extra_state = {"train_iterator": epoch_itr.state_dict(), "val_loss": val_loss}
+    extra_state = {"train_iterator": {"epoch": epoch}, "val_loss": val_loss}
     if hasattr(save_checkpoint, "best"):
         extra_state.update({"best": save_checkpoint.best})
 
@@ -83,14 +92,14 @@ def save_checkpoint(args, trainer, epoch_itr, val_loss):
             )
         )
 
-    if not end_of_epoch and args.keep_interval_updates > 0:
-        # remove old checkpoints; checkpoints are sorted in descending order
-        checkpoints = checkpoint_paths(
-            args.save_dir, pattern=r"checkpoint_\d+_(\d+)\.pt"
-        )
-        for old_chk in checkpoints[args.keep_interval_updates :]:
-            if os.path.lexists(old_chk):
-                os.remove(old_chk)
+    # if not end_of_epoch and args.keep_interval_updates > 0:
+    #     # remove old checkpoints; checkpoints are sorted in descending order
+    #     checkpoints = checkpoint_paths(
+    #         args.save_dir, pattern=r"checkpoint_\d+_(\d+)\.pt"
+    #     )
+    #     for old_chk in checkpoints[args.keep_interval_updates :]:
+    #         if os.path.lexists(old_chk):
+    #             os.remove(old_chk)
 
     if args.keep_last_epochs > 0:
         # remove old epoch checkpoints; checkpoints are sorted in descending order
@@ -478,9 +487,13 @@ def load_pretrained_component_from_model(
 
 
 def verify_checkpoint_directory(save_dir: str) -> None:
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir, exist_ok=True)
+    print(f"save_dir: {save_dir}")
+    path = Path(save_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    # if not os.path.exists(save_dir):
+    #     os.makedirs(save_dir, exist_ok=True)
     temp_file_path = os.path.join(save_dir, "dummy")
+    print(f"temp_file_path: {temp_file_path}")
     try:
         with open(temp_file_path, "w"):
             pass
