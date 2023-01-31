@@ -97,7 +97,7 @@ def main(args, init_distributed=False):
     train_meter = StopwatchMeter()
     train_meter.start()
     valid_subsets = args.valid_subset.split(',')
-    print(f"valid_subsets: {valid_subsets}")
+    
     if max_epoch == math.inf: max_epoch = 5  # if args.max_epoch was not set appropriately, then set it to 2
     if args.comparable:
         # 1. Initialize Comparable object
@@ -180,18 +180,23 @@ def load_checkpoint(args, trainer, **passthrough_args):
         reset_meters=args.reset_meters,
     )
 
+    # if (
+    #     extra_state is not None
+    #     and "best" in extra_state
+    #     and not args.reset_optimizer
+    #     and not args.reset_meters
+    # ):
+    #     save_checkpoint.best = extra_state["best"]
+
     if extra_state is not None and not args.reset_dataloader:
         # restore iterator from checkpoint
         epoch = extra_state["train_iterator"]["epoch"] + 1
-
     else:
         epoch = 1
 
     trainer.lr_step(epoch)
 
     return extra_state, epoch
-
-
 
 
 def distributed_main(i, args, start_rank=0):

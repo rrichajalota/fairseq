@@ -369,6 +369,13 @@ def add_comparable_args(parser, train=True, gen=False):
                        help='Write phrase to file separately.')
     group.add_argument('--usepos', '-usepos', action="store_true",
                        help="""Use positional encoding for extracting possible sentence pairs""")
+    group.add_argument('--margin', '-margin', default='ratio', help='which margin definition - absolute, distance, ratio')
+    group.add_argument('--verbose', '-v', default=False, action='store_true', help='print info statements')
+    group.add_argument('--faiss', '-faiss', default=False, action='store_true', help='use faiss indexing with margin-based scoring.')
+    group.add_argument('--mode', '-mode', default='mine', choices=['search', 'score', 'mine'], help='Execution mode')
+    group.add_argument('--retrieval', choices=['fwd', 'bwd', 'max', 'intersect'], default='max', help='Retrieval strategy')
+    group.add_argument('--faiss-output', default='/netscratch/jalota/logs', help='faiss alignment output')
+    group.add_argument('--faiss-use-gpu', default=False, action='store_true', help='whether to store the index and perform search on GPU')
     return group
 
 def add_dataset_args(parser, train=False, gen=False):

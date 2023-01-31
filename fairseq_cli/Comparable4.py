@@ -8,6 +8,8 @@ import tracemalloc
 import re
 import itertools
 import random
+import faiss
+import numpy as np
 from collections import defaultdict
 import torch
 from fairseq.data import (
@@ -385,6 +387,97 @@ class BatchCreator():
         return itrs
 
 
+def knn(x, y, k, use_gpu):
+    '''
+    small query batch, small index: CPU is typically faster
+    small query batch, large index: GPU is typically faster
+    large query batch, small index: could go either way
+    large query batch, large index: GPU is typically faster
+    '''
+    return knnGPU(x, y, k) if use_gpu else knnCPU(x, y, k)
+    
+def knnCPU(x, y, k):
+    dim = x.shape[1]
+    idx = faiss.IndexFlatIP(dim)
+    idx.add(y)
+    sim, ind = idx.search(x, k)
+    # print(f"sim: {sim}")
+    # print(f"ind: {ind}")
+    return sim, ind
+
+def knnGPU(x, y, k, mem=5*1024*1024*1024):
+    # d = srcRep.shape[1]
+    # print(f"d: {d}")
+
+    # 1. take a query vector xq 2. identify the cell it belongs to
+    # 3. use IndexFlat2 to search btw query vector & all other vectors 
+    # belonging to that specific cell
+    # '''
+    # PQ = Product Quantization. IVF reduces the scope of our search, PQ approximates
+    # distance/similarity calculation. 
+    # 1. split OG vector into several subvectors. 
+    # 2. for each set of subvector, perform a clustering operation - creating multiple centroids 
+    # for each sub-vector set. 
+    # 3. In the vector of sub-vecs, replace each sub-vec with the ID of its nearest set-specific centroid
+    # '''
+    # m = 8 # number of centroid IDs in final compressed vectors
+    # bits = 8 # number of bits in each centroid
+    # nlist = 100  # how many cells
+    dim = x.shape[1]
+    batch_size = mem // (dim*4)
+    print(f"batch_size: {batch_size}")
+    if batch_size > x.shape[0]:
+        batch_size = x.shape[0] // 5
+        print(f"batch_size: {batch_size}")
+    sim = np.zeros((x.shape[0], k), dtype=np.float32)
+    ind = np.zeros((x.shape[0], k), dtype=np.int64)
+    for xfrom in range(0, x.shape[0], batch_size):
+        xto = min(xfrom + batch_size, x.shape[0]) # to_src_ind
+        bsims, binds = [], []
+        for yfrom in range(0, y.shape[0], batch_size):
+            yto = min(yfrom + batch_size, y.shape[0]) # to_trg_ind
+            # print('{}-{}  ->  {}-{}'.format(xfrom, xto, yfrom, yto))
+            idx = faiss.IndexFlatIP(dim)
+            # quantizer = faiss.IndexFlatL2(d)
+            # idx = faiss.IndexIVFFlat(quantizer, d, nlist)
+            # #idx = faiss.IndexIVFPQ(quantizer, d, nlist, m, bits)
+            # idx.train(srcRep)
+            # print(f"idx.is_trained: {idx.is_trained}")
+            # idx.add(srcRep)
+            # print(f"num embeddings indexed: {idx.ntotal}")
+
+            # idx.nprobe = 1 # to increase the search scope
+            # # large nprobe values = slower but more accurate search 
+    
+            idx = faiss.index_cpu_to_all_gpus(idx)
+            idx.add(y[yfrom:yto]) # added trg_batch = batch_size to the index  
+            bsim, bind = idx.search(x[xfrom:xto], min(k, yto-yfrom)) # find k nearest neighbours for the batched queries
+            bsims.append(bsim)
+            binds.append(bind + yfrom)
+            del idx
+        bsims = np.concatenate(bsims, axis=1)
+        binds = np.concatenate(binds, axis=1)
+        aux = np.argsort(-bsims, axis=1)
+        for i in range(xfrom, xto):
+            for j in range(k):
+                sim[i, j] = bsims[i-xfrom, aux[i-xfrom, j]]
+                ind[i, j] = binds[i-xfrom, aux[i-xfrom, j]]
+    return sim, ind
+
+def score(x, y, fwd_mean, bwd_mean, margin):
+    return margin(x.dot(y), (fwd_mean + bwd_mean) / 2)
+
+def score_candidates(x, y, candidate_inds, fwd_mean, bwd_mean, margin, verbose=False):
+    if verbose:
+        print(' - scoring {:d} candidates'.format(x.shape[0]))
+    scores = np.zeros(candidate_inds.shape)
+    for i in range(scores.shape[0]):
+        for j in range(scores.shape[1]):
+            k = candidate_inds[i, j]
+            scores[i, j] = score(x[i], y[k], fwd_mean[i], bwd_mean[k], margin)
+    return scores
+
+
 class Comparable():
     """
     Class that controls the extraction of parallel sentences and manages their
@@ -414,6 +507,7 @@ class Comparable():
         self.task = self.trainer.task
         self.encoder = self.trainer.get_model().encoder
         # print(f"self.encoder: {self.encoder}")
+        self.batch_size = args.max_sentences
         self.batcher = BatchCreator(task, args)
         self.similar_pairs = PairBank(self.batcher, args)
         self.accepted = 0
@@ -442,6 +536,13 @@ class Comparable():
         self.cuda = False
         self.mps_device = None
         self.log_interval = 5
+        self.margin = args.margin
+        self.verbose = args.verbose
+        self.mode = args.mode
+        self.faiss = args.faiss
+        self.retrieval = args.retrieval
+        self.faiss_use_gpu = args.faiss_use_gpu
+        self.faiss_output = args.faiss_output
         # print(f"args.cpu: {args.cpu}")
         if args.cpu == False:
             self.use_gpu = True
@@ -536,7 +637,8 @@ class Comparable():
         Extracts parallel sentences from candidates and adds them to the
         PairBank (secondary filter).
         Args:
-            candidates(list(tuple(torch.Tensor...)): list of src-tgt candidates
+            candidates(list): list of src, tgt pairs (C_h) # memory reps
+                            candidates(list(tuple(torch.Tensor...)): list of src-tgt candidates
             candidate_pool(list(hash)): list of hashed C_e candidates
         """
         # print("extract parallel")
@@ -580,7 +682,7 @@ class Comparable():
                 self.accepted += 1
                 if self.symmetric:
                     self.similar_pairs.add_example(tgt, src)
-                    #self.write_sentence(tgt, src, 'accepted', score)
+                    # self.write_sentence(tgt, src, 'accepted', score)
 
 
                 if self.use_phrase and phrasese is False:
@@ -621,8 +723,8 @@ class Comparable():
     def write_embed_only(self, candidates, cand_embed):
         """ Writes C_e scores to file (if --write-dual is set).
         Args:
-            candidates(list): list of src, tgt pairs (C_h)
-            cand_embed(list): list of src, tgt pairs (C_e)
+            candidates(list): list of src, tgt pairs (C_h) # memory reps
+            cand_embed(list): list of src, tgt pairs (C_e) # embed reps
         """
         candidate_pool = set([hash((str(c[0]), str(c[1]))) for c in candidates])
 
@@ -634,6 +736,164 @@ class Comparable():
                 tgt = candidate[1]
                 score = candidate[2]
                 self.write_sentence(src, tgt, 'embed_only', score)
+
+    
+    def faiss_sent_scoring(self, src_sents, tgt_sents):
+        """ Score source and target combinations.
+        Args:
+            src_sents(list(tuple(torch.Tensor...))):
+                list of src sentences in their sequential and semantic representation
+            tgt_sents(list(tuple(torch.Tensor...))): list of tgt sentences
+        Returns:
+            src2tgt(dict(dict(float))): dictionary mapping a src to a tgt and their score
+            tgt2src(dict(dict(float))): dictionary mapping a tgt to a src and their score
+            similarities(list(float)): list of cosine similarities
+            scores(list(float)): list of scores
+        """
+        srcSent, srcRep = zip(*src_sents)
+        tgtSent, tgtRep = zip(*tgt_sents)
+
+        # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
+        # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
+
+        x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
+        y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
+        
+        # print(f"x : {x}")
+        faiss.normalize_L2(x)
+        faiss.normalize_L2(y)
+        candidates = []
+
+        # torch.from_numpy(a)
+        
+        # calculate knn in both directions
+        if self.retrieval != 'bwd':
+            if self.verbose:
+                print(' - perform {:d}-nn source against target'.format(self.k))
+            x2y_sim, x2y_ind = knn(x, y, min(y.shape[0], self.k), self.faiss_use_gpu)
+            x2y_mean = x2y_sim.mean(axis=1)
+            print(f"x2y_sim.shape: {x2y_sim.shape}")
+            print(f"x2y_ind.shape: {x2y_ind.shape}")
+
+        if self.retrieval != 'fwd':
+            if self.verbose:
+                print(' - perform {:d}-nn target against source'.format(self.k))
+            y2x_sim, y2x_ind = knn(y, x, min(x.shape[0], self.k), self.faiss_use_gpu)
+            y2x_mean = y2x_sim.mean(axis=1)
+
+        # margin function
+        if self.margin == 'absolute':
+            margin = lambda a, b: a
+        elif self.margin == 'distance':
+            margin = lambda a, b: a - b
+        else:  # args.margin == 'ratio':
+            margin = lambda a, b: a / b
+
+        # print(f"margin: {margin}")
+
+        fout = open(self.faiss_output, mode='w', encoding='utf8', errors='surrogateescape')
+
+        src_inds=list(range(len(srcSent)))
+        trg_inds=list(range(len(tgtSent)))
+
+        if self.mode == 'search':
+            if self.verbose:
+                print(' - Searching for closest sentences in target')
+                print(' - writing alignments to {:s}'.format(self.faiss_output))
+            scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
+            best = x2y_ind[np.arange(x.shape[0]), scores.argmax(axis=1)]
+
+            print(f"best: {best}")
+
+            nbex = x.shape[0]
+            ref = np.linspace(0, nbex-1, nbex).astype(int)  # [0, nbex)
+            err = nbex - np.equal(best.reshape(nbex), ref).astype(int).sum()
+            print(' - errors: {:d}={:.2f}%'.format(err, 100*err/nbex))
+            for i in src_inds:
+                print(tgtSent[best[i]], file=fout)
+
+        elif self.mode == 'score':
+            for i, j in zip(src_inds, trg_inds):
+                s = score(x[i], y[j], x2y_mean[i], y2x_mean[j], margin)
+                src = srcSent[i]
+                tgt = tgtSent[j]
+                src_words = self.task.src_dict.string(src)
+                tgt_words = self.task.tgt_dict.string(tgt)
+                out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                            removeSpaces(' '.join(tgt_words)), s)
+                print(out, file=fout)
+
+        elif self.mode == 'mine':
+            if self.verbose:
+                print(' - mining for parallel data')
+            fwd_scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
+            bwd_scores = score_candidates(y, x, y2x_ind, y2x_mean, x2y_mean, margin, self.verbose)
+            fwd_best = x2y_ind[np.arange(x.shape[0]), fwd_scores.argmax(axis=1)]
+            # print(f"fwd_best: {fwd_best}")
+            bwd_best = y2x_ind[np.arange(y.shape[0]), bwd_scores.argmax(axis=1)]
+            # print(f"bwd_best: {bwd_best}")
+            if self.verbose:
+                print(' - writing alignments to {:s}'.format(self.faiss_output))
+                if self.threshold > 0:
+                    print(' - with threshold of {:f}'.format(self.threshold))
+            if self.retrieval == 'fwd':
+                for i, j in enumerate(fwd_best):
+                    s = fwd_scores[i].max()
+                    src = srcSent[i]
+                    tgt = tgtSent[j]
+                    src_words = self.task.src_dict.string(src)
+                    tgt_words = self.task.tgt_dict.string(tgt)
+                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                removeSpaces(' '.join(tgt_words)), s)
+                    print(out, file=fout)
+                    # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+            if self.retrieval == 'bwd':
+                for j, i in enumerate(bwd_best):
+                    s = bwd_scores[j].max()
+                    src = srcSent[i]
+                    tgt = tgtSent[j]
+                    src_words = self.task.src_dict.string(src)
+                    tgt_words = self.task.tgt_dict.string(tgt)
+                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                removeSpaces(' '.join(tgt_words)), s)
+                    print(out, file=fout)
+                    # print(bwd_scores[j].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+            if self.retrieval == 'intersect':
+                for i, j in enumerate(fwd_best):
+                    if bwd_best[j] == i:
+                        s = fwd_scores[i].max()
+                        src = srcSent[i]
+                        tgt = tgtSent[j]
+                        src_words = self.task.src_dict.string(src)
+                        tgt_words = self.task.tgt_dict.string(tgt)
+                        out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                    removeSpaces(' '.join(tgt_words)), s)
+                        print(out, file=fout)
+                        # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+            if self.retrieval == 'max':
+                indices = np.stack((np.concatenate((np.arange(x.shape[0]), bwd_best)),
+                                    np.concatenate((fwd_best, np.arange(y.shape[0])))), axis=1)
+                scores = np.concatenate((fwd_scores.max(axis=1), bwd_scores.max(axis=1)))
+                seen_src, seen_trg = set(), set()
+                for i in np.argsort(-scores):
+                    src_ind, trg_ind = indices[i]
+                    if not src_ind in seen_src and not trg_ind in seen_trg:
+                        seen_src.add(src_ind)
+                        seen_trg.add(trg_ind)
+                        if scores[i] > self.threshold:
+                            s = scores[i]
+                            src = srcSent[src_ind]
+                            tgt = tgtSent[trg_ind]
+                            src_words = self.task.src_dict.string(src)
+                            tgt_words = self.task.tgt_dict.string(tgt)
+                            out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                        removeSpaces(' '.join(tgt_words)), s)
+                            print(out, file=fout)
+                            # print(scores[i], srcSent[src_ind], tgtSent[trg_ind], sep='\t', file=fout)
+                            candidates.append((srcSent[src_ind], tgtSent[trg_ind], scores[i]))
+
+        fout.close()
+        return candidates
 
     def score_sents(self, src_sents, tgt_sents):
         """ Score source and target combinations.
@@ -652,11 +912,12 @@ class Comparable():
         similarities = []
         scores = []
 
-        #print("At the point of unzipping the list of tuple....................")
-        #unzip the list ot tiples to have two lists of equal length each sent, repre
         srcSent, srcRep = zip(*src_sents)
         tgtSent, tgtRep = zip(*tgt_sents)
 
+        #print("At the point of unzipping the list of tuple....................")
+        #unzip the list ot tiples to have two lists of equal length each sent, repre
+        
         #print("Stacking the representations to cuda....................")
         #stack the representation list into a tensor and use that to compute the similarity
         if self.mps:
@@ -681,8 +942,9 @@ class Comparable():
                     #print(f"i: {i}, j: {j}")
                     if srcSent[i][0] == tgtSent[j][0]:
                         continue
-                    src2tgt[srcSent[i]][tgtSent[j]] = matx[i][j].tolist()
-                    tgt2src[tgtSent[j]][srcSent[i]] = matx[i][j].tolist()
+                    src2tgt[srcSent[i]][tgtSent[j]] = matx[i][j].tolist() # for each sent in SRC -> every TGT is assigned a score  
+                    tgt2src[tgtSent[j]][srcSent[i]] = matx[i][j].tolist() 
+                    # src2tgt = { "dis a src sent": {"dis a tg": 0.2, "dis s a TRG": 0.6, "dis": 0.12} }
                     similarities.append(matx[i][j].tolist())
             return src2tgt, tgt2src, similarities, similarities
         else:
@@ -694,14 +956,15 @@ class Comparable():
             # print(f"sim_mt: {sim_mt}")
 
             # print(f"going into double loop")
-            for i in range(len(srcSent)):
-                for j in range(len(tgtSent)):
+            for i in range(len(srcSent)): # m 
+                for j in range(len(tgtSent)): # n
                     #print(f"i: {i}, j: {j}")
                     if srcSent[i][0] == tgtSent[j][0]:
                         continue
+                    # assign margin scores
                     tgt2src[tgtSent[j]][srcSent[i]] = src2tgt[srcSent[i]][tgtSent[j]] = sim_mt[i][j].tolist() / (sumDistSource[i].tolist() + sumDistTarget[j].tolist())
                     #tgt2src[tgtSent[j]][srcSent[i]] = sim_mt[i][j].tolist() / (sumDistTarget[j].tolist() + sumDistSource[i].tolist())
-                    #similarities.append(sim_mt[i][j].tolist() )
+                    similarities.append(sim_mt[i][j].tolist())
 
             # Get list of scores for statistics
         '''for src in list(src2tgt.keys()):
@@ -857,6 +1120,7 @@ class Comparable():
                         sent_repr = torch.sum(input_emb, dim=0)
             if self.args.modeltype == "transformer":
                 # print(f"inside modeltype == transformer")
+                # print(f"k['net_input']['src_tokens'][i]: {k['net_input']['src_tokens'][i]}")
                 # print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
                 for i in range(k['net_input']['src_tokens'].shape[0]):
                     #print(f"i : {i}")
@@ -889,10 +1153,13 @@ class Comparable():
         src2tgt_embed, tgt2src_embed, _, _ = self.score_sents(src_embeds, tgt_embeds)
         # Filtering (primary filter)
         print("candidate filtering")
-        candidates_embed = self.filter_candidates(src2tgt_embed, tgt2src_embed)
+        candidates_embed = self.filter_candidates(src2tgt_embed, tgt2src_embed) 
+        # candidates_embed: [(src_sent_x, tgt_sent_y, score_xy)]
+        # Filter candidates (primary filter), such that only those which are top candidates in
+        # both src2tgt and tgt2src direction pass.
         # Create set of hashed pairs (for easy comparison in secondary filter)
         set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
-        candidate_pool = set_embed
+        candidate_pool = set_embed # unique set of hashed (src_sent_x, tgt_sent_y) pairs 
         return candidate_pool, candidates_embed
 
     def in_candidate_pool(self, candidate, candidate_pool):
@@ -922,7 +1189,8 @@ class Comparable():
 
         # For each src...
         for src in list(src2tgt.keys()):
-            # print(f"src {i}")
+            # print(f"src: {src}")
+            # sort the dict of dict based on sim scores
             toplist = sorted(src2tgt[src].items(), key=lambda x: x[1], reverse=True)
             # ... get the top scoring tgt
             max_tgt = toplist[0]
@@ -955,7 +1223,7 @@ class Comparable():
         print("Length of t2s max", len(tgt_src_max))
         # print("Intersection = ",list(src_tgt_max & tgt_src_max))
         candidates = list(src_tgt_max & tgt_src_max)
-        return candidates
+        return candidates # [(src_x, tgt_y, score_xy)]
 
     def _get_iterator(self, sent, dictn, max_position, epoch, fix_batches_to_gpus=False):
         """
@@ -1097,6 +1365,11 @@ class Comparable():
 
         #try:
         src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
+        # src2tgt = { "dis a src sent": {"dis a tg": 0.2, "dis s a TRG": 0.6, "dis": 0.12} }
+        # this score could be from margin / cosine similarity 
+        # similarities containes only sim scores (useless var)
+        # scores is a useless var
+
         '''except:
             # print('Error occurred in: {}\n'.format(article_pair), flush=True)
             print(src_sents, flush=True)
@@ -1112,9 +1385,11 @@ class Comparable():
         tgt_sents = []
 
         #try:
-        if self.representations == 'dual':
+        if self.representations == 'dual': # means fwd and bwd
             # For dual representation systems, filter C_h...
             candidates = self.filter_candidates(src2tgt, tgt2src, second=self.second)
+            # Filter candidates (primary filter), such that only those which are top candidates in 
+            # both src2tgt and tgt2src direction pass.
             # ...and C_e
             comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,
                                                                    tgt_embeds)
@@ -1248,10 +1523,31 @@ class Comparable():
                 # print("Proceeding")
                 # Score src and tgt sentences
                 print("In all we have got ", len(src_sents), "source sentences and ", len(tgt_sents), "target")
+
+                # print(f"src_sents: {src_sents[:4]}")
+                
+                # get src2gt , tgt2src 
                 try:
-                    src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
-                except:
+                    print(f"self.faiss: {self.faiss}")
+                    if self.faiss:
+                        candidates = self.faiss_sent_scoring(src_sents, tgt_sents)
+                        candidates_embed = self.faiss_sent_scoring(src_embeds, tgt_embeds)
+                        embed_comparison_pool = set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
+                        # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
+                        if self.write_dual:
+                            #print("writing the sentences to file....")
+                            self.write_embed_only(candidates, candidates_embed)
+                        # Extract parallel samples (secondary filter)
+                        self.extract_parallel_sents(candidates, embed_comparison_pool)
+                    else:
+                        src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
+                    # src2tgt = { "dis a src sent": {"dis a tg": 0.2, "dis s a TRG": 0.6, "dis": 0.12} }
+                    # this score could be from margin / cosine similarity 
+                    # similarities containes only sim scores (useless var)
+                    # scores is a useless var
+                except Exception as e:
                     print('Error occurred in: {}\n'.format(article_pair), flush=True)
+                    print(f"e: {e}")
                     print("src_sents")
                     # print(src_sents, flush=True)
                     print("tgt_sents")
@@ -1266,36 +1562,43 @@ class Comparable():
                 src_sents = []
                 tgt_sents = []
 
-
-                try:
-                    if self.representations == 'dual':
-                        # For dual representation systems, filter C_h...
-                        candidates = self.filter_candidates(src2tgt, tgt2src, second=self.second)
-                        # ...and C_e
-                        comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,
-                                                                               tgt_embeds)
+                if not self.faiss:
+                    try:
+                        if self.representations == 'dual':
+                            # For dual representation systems, filter C_h...
+                            candidates = self.filter_candidates(src2tgt, tgt2src, second=self.second)
+                            # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
+                            # candidates generated from memory representations
+                            # Filter candidates (primary filter), such that only those which are top candidates in 
+                            # both src2tgt and tgt2src direction pass.
+                            # ...and C_e
+                            comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,
+                                                                                tgt_embeds)
+                            # comparison_pool: unique set of hashed (src_sent_x, tgt_sent_y) pairs 
+                            # cand_embed: candidates generated from embedding representations 
+                            #             [(src_sent_x, tgt_sent_y, score_xy)]
+                            src_embeds = []
+                            tgt_embeds = []
+                            if self.write_dual:
+                                #print("writing the sentences to file....")
+                                self.write_embed_only(candidates, cand_embed)
+                        else:
+                                print("Using Embedings only for Filtering ......")
+                                # Filter C_e or C_h for single representation system
+                                candidates = self.filter_candidates(src2tgt, tgt2src)
+                                comparison_pool = None
+                    except:
+                        # Skip document pair in case of errors
+                        print("Error Occured!!!!")
+                        print('Error occured in: {}\n'.format(article_pair), flush=True)
                         src_embeds = []
                         tgt_embeds = []
-                        if self.write_dual:
-                            #print("writing the sentences to file....")
-                            self.write_embed_only(candidates, cand_embed)
-                    else:
-                            print("Using Embedings only for Filtering ......")
-                            # Filter C_e or C_h for single representation system
-                            candidates = self.filter_candidates(src2tgt, tgt2src)
-                            comparison_pool = None
-                except:
-                    # Skip document pair in case of errors
-                    print("Error Occured!!!!")
-                    print('Error occured in: {}\n'.format(article_pair), flush=True)
-                    src_embeds = []
-                    tgt_embeds = []
-                    continue
+                        continue
 
 
-                # Extract parallel samples (secondary filter)
-                self.extract_parallel_sents(candidates, comparison_pool)
-                # if phrase extraction is to be used
+                    # Extract parallel samples (secondary filter)
+                    self.extract_parallel_sents(candidates, comparison_pool)
+                    # if phrase extraction is to be used
 
                 if self.use_phrase and (len(self.phrases.sourcesent) >= 30 and len(self.phrases.targetsent) >= 30):
                     #print("enough phrases meeen. ", len(self.phrases.sourcesent), " and  ",
@@ -1328,7 +1631,8 @@ class Comparable():
                 print("pair bank  = ",len((self.similar_pairs.pairs)))
                 # Train on extracted sentences
                 self.train(epoch)
-                del src2tgt, tgt2src
+                if not self.faiss:
+                    del src2tgt, tgt2src
                 #gc.collect()
                 # Add to leaky code within python_script_being_profiled.py
 
