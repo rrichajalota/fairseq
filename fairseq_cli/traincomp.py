@@ -102,6 +102,7 @@ def main(args, init_distributed=False):
     if args.comparable:
         # 1. Initialize Comparable object
         comp = Comparable(model, trainer, task, args)
+        print(f"max epoch: {max_epoch}")
 
         while epoch <= max_epoch and lr > args.min_lr and trainer.get_num_updates() < max_update:
             # 2. Update threshold if dynamic

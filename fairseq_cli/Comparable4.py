@@ -12,6 +12,7 @@ import faiss
 import numpy as np
 from collections import defaultdict
 import torch
+import time
 from fairseq.data import (
     MonolingualDataset,
     LanguagePairDataset
@@ -396,13 +397,30 @@ def knn(x, y, k, use_gpu):
     '''
     return knnGPU(x, y, k) if use_gpu else knnCPU(x, y, k)
     
-def knnCPU(x, y, k):
+def knnCPU(x, y, k, index='PQ'):
+    start=time.time()
     dim = x.shape[1]
-    idx = faiss.IndexFlatIP(dim)
+    m = 8 # number of centroid IDs in final compressed vectors
+    bits = 8 # number of bits in each centroid
+    nlist = 100  # how many cells
+    if index == 'cluster':
+        quantizer = faiss.IndexFlatL2(dim)
+        idx = faiss.IndexIVFFlat(quantizer, dim, nlist)
+        idx.train(y)
+        # print(f"idx.is_trained: {idx.is_trained}")
+    elif index =='PQ':
+        quantizer = faiss.IndexFlatL2(dim)
+        idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
+        idx.train(y)
+    else:
+        idx = faiss.IndexFlatIP(dim)
+
+    # print(f"num embeddings indexed: {idx.ntotal}")
     idx.add(y)
     sim, ind = idx.search(x, k)
     # print(f"sim: {sim}")
     # print(f"ind: {ind}")
+    print(f"time taken to build the index: {time.time()-start} secs")
     return sim, ind
 
 def knnGPU(x, y, k, mem=5*1024*1024*1024):
@@ -750,6 +768,7 @@ class Comparable():
             similarities(list(float)): list of cosine similarities
             scores(list(float)): list of scores
         """
+        start = time.time()
         srcSent, srcRep = zip(*src_sents)
         tgtSent, tgtRep = zip(*tgt_sents)
 
@@ -893,6 +912,7 @@ class Comparable():
                             candidates.append((srcSent[src_ind], tgtSent[trg_ind], scores[i]))
 
         fout.close()
+        print(f"time taken by faiss sent scoring: {time.time()-start} seconds.")
         return candidates
 
     def score_sents(self, src_sents, tgt_sents):
@@ -1465,6 +1485,7 @@ class Comparable():
                 # Prepare iterator objects for current src/tgt document
                 # print(f"self.task.src_dict: {self.task.src_dict}")
                 # print(f"self.args.max_source_positions: {self.args.max_source_positions}")
+                # print(f"get iterator")
                 src_article = self._get_iterator(src_mono, dictn=self.task.src_dict,
                                                  max_position=self.args.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
                 tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict,
@@ -1531,13 +1552,17 @@ class Comparable():
                     print(f"self.faiss: {self.faiss}")
                     if self.faiss:
                         candidates = self.faiss_sent_scoring(src_sents, tgt_sents)
+                        # print(f"done with faiss scoring of src sents and tgt sents")
                         candidates_embed = self.faiss_sent_scoring(src_embeds, tgt_embeds)
+                        # print(f"done with faiss scoring of src embeds and tgt embeds")
                         embed_comparison_pool = set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
                         # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
+                        # print(f"made embed_comparison_pool")
                         if self.write_dual:
                             #print("writing the sentences to file....")
                             self.write_embed_only(candidates, candidates_embed)
                         # Extract parallel samples (secondary filter)
+                        # print(f"starting to extract parallel sents")
                         self.extract_parallel_sents(candidates, embed_comparison_pool)
                     else:
                         src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
