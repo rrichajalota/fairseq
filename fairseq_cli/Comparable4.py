@@ -404,12 +404,12 @@ def knnCPU(x, y, k, index='PQ'):
     bits = 8 # number of bits in each centroid
     nlist = 100  # how many cells
     if index == 'cluster':
-        quantizer = faiss.IndexFlatL2(dim)
+        quantizer = faiss.IndexFlatIP(dim)
         idx = faiss.IndexIVFFlat(quantizer, dim, nlist)
         idx.train(y)
         # print(f"idx.is_trained: {idx.is_trained}")
     elif index =='PQ':
-        quantizer = faiss.IndexFlatL2(dim)
+        quantizer = faiss.IndexFlatIP(dim)
         idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
         idx.train(y)
     else:
@@ -822,7 +822,7 @@ class Comparable():
             scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
             best = x2y_ind[np.arange(x.shape[0]), scores.argmax(axis=1)]
 
-            print(f"best: {best}")
+            # print(f"best: {best}")
 
             nbex = x.shape[0]
             ref = np.linspace(0, nbex-1, nbex).astype(int)  # [0, nbex)
