@@ -44,10 +44,15 @@ def load_langpair_dataset(
 
     def split_exists(split, src, tgt, lang, data_path):
         filename = os.path.join(data_path, '{}.{}-{}.{}'.format(split, src, tgt, lang))
+        print(f"filename: {filename}")
+        print(f"dataset_impl: {dataset_impl}")
         return indexed_dataset.dataset_exists(filename, impl=dataset_impl)
 
     src_datasets = []
     tgt_datasets = []
+
+    print(f"src: {src}")
+    print(f"tgt: {tgt}")
 
     for k in itertools.count():
         split_k = split + (str(k) if k > 0 else '')

@@ -78,8 +78,9 @@ class BeamSearch(Search):
             ),
             out=(self.scores_buf, self.indices_buf),
         )
-        torch.div(self.indices_buf, vocab_size, out=self.beams_buf)
-        self.indices_buf.fmod_(vocab_size)
+        print(f"self.indices_buf: {self.indices_buf.dtype}, vocab_size: {vocab_size}, self.beams_buf: {self.beams_buf.dtype}")
+        self.beams_buf = self.indices_buf // vocab_size
+        self.indices_buf = self.indices_buf.fmod(vocab_size)
         return self.scores_buf, self.indices_buf, self.beams_buf
 
 

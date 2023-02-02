@@ -388,29 +388,31 @@ class BatchCreator():
         return itrs
 
 
-def knn(x, y, k, use_gpu):
+def knn(x, y, k, use_gpu, index='flat'):
     '''
     small query batch, small index: CPU is typically faster
     small query batch, large index: GPU is typically faster
     large query batch, small index: could go either way
     large query batch, large index: GPU is typically faster
     '''
-    return knnGPU(x, y, k) if use_gpu else knnCPU(x, y, k)
+    return knnGPU(x, y, k, index) if use_gpu else knnCPU(x, y, k, index)
     
-def knnCPU(x, y, k, index='PQ'):
+def knnCPU(x, y, k, index='flat'):
     start=time.time()
     dim = x.shape[1]
     m = 8 # number of centroid IDs in final compressed vectors
     bits = 8 # number of bits in each centroid
     nlist = 100  # how many cells
-    if index == 'cluster':
-        quantizer = faiss.IndexFlatIP(dim)
-        idx = faiss.IndexIVFFlat(quantizer, dim, nlist)
+    if index == 'ivf':
+        # quantizer = faiss.IndexFlatIP(dim)
+        # idx = faiss.IndexIVFFlat(quantizer, dim, nlist)
+        idx = faiss.index_factory(dim, "IVF100,Flat", faiss.METRIC_INNER_PRODUCT)
         idx.train(y)
         # print(f"idx.is_trained: {idx.is_trained}")
-    elif index =='PQ':
-        quantizer = faiss.IndexFlatIP(dim)
-        idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
+    elif index =='pq':
+        # quantizer = faiss.IndexFlatIP(dim)
+        # idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
+        idx = faiss.index_factory(dim, "IVF100,PQ16", faiss.METRIC_INNER_PRODUCT)
         idx.train(y)
     else:
         idx = faiss.IndexFlatIP(dim)
@@ -418,12 +420,12 @@ def knnCPU(x, y, k, index='PQ'):
     # print(f"num embeddings indexed: {idx.ntotal}")
     idx.add(y)
     sim, ind = idx.search(x, k)
-    # print(f"sim: {sim}")
+    # print(f"sim[:3]: {sim[:3]}")
     # print(f"ind: {ind}")
-    print(f"time taken to build the index: {time.time()-start} secs")
+    # print(f"time taken to build the index: {time.time()-start} secs")
     return sim, ind
 
-def knnGPU(x, y, k, mem=5*1024*1024*1024):
+def knnGPU(x, y, k, index='flat', mem=5*1024*1024*1024):
     # d = srcRep.shape[1]
     # print(f"d: {d}")
 
@@ -493,6 +495,8 @@ def score_candidates(x, y, candidate_inds, fwd_mean, bwd_mean, margin, verbose=F
         for j in range(scores.shape[1]):
             k = candidate_inds[i, j]
             scores[i, j] = score(x[i], y[k], fwd_mean[i], bwd_mean[k], margin)
+            # print(f"x[i]: {x[i]}, y[k]: {y[k]} fwd_mean[i]: {fwd_mean[i]}, bwd_mean[k]: {bwd_mean[k]}")
+            # print(f"scores[i, j] : {scores[i, j]}")
     return scores
 
 
@@ -536,7 +540,7 @@ class Comparable():
         self.comp_log = args.comp_log
         self.cove_type = args.cove_type
         self.update_freq = args.update_freq
-        self.k = 4
+        self.k = 20 #args.k
         self.trainstep = 0
         self.second = args.second
         self.representations = args.representations
@@ -561,6 +565,7 @@ class Comparable():
         self.retrieval = args.retrieval
         self.faiss_use_gpu = args.faiss_use_gpu
         self.faiss_output = args.faiss_output
+        self.index=args.index
         # print(f"args.cpu: {args.cpu}")
         if args.cpu == False:
             self.use_gpu = True
@@ -789,15 +794,15 @@ class Comparable():
         if self.retrieval != 'bwd':
             if self.verbose:
                 print(' - perform {:d}-nn source against target'.format(self.k))
-            x2y_sim, x2y_ind = knn(x, y, min(y.shape[0], self.k), self.faiss_use_gpu)
+            x2y_sim, x2y_ind = knn(x, y, min(y.shape[0], self.k), self.faiss_use_gpu, self.index)
             x2y_mean = x2y_sim.mean(axis=1)
-            print(f"x2y_sim.shape: {x2y_sim.shape}")
-            print(f"x2y_ind.shape: {x2y_ind.shape}")
+            # print(f"x2y_sim.shape: {x2y_sim.shape}")
+            # print(f"x2y_ind.shape: {x2y_ind.shape}")
 
         if self.retrieval != 'fwd':
             if self.verbose:
                 print(' - perform {:d}-nn target against source'.format(self.k))
-            y2x_sim, y2x_ind = knn(y, x, min(x.shape[0], self.k), self.faiss_use_gpu)
+            y2x_sim, y2x_ind = knn(y, x, min(x.shape[0], self.k), self.faiss_use_gpu, self.index)
             y2x_mean = y2x_sim.mean(axis=1)
 
         # margin function

@@ -376,6 +376,7 @@ def add_comparable_args(parser, train=True, gen=False):
     group.add_argument('--retrieval', choices=['fwd', 'bwd', 'max', 'intersect'], default='max', help='Retrieval strategy')
     group.add_argument('--faiss-output', default='/netscratch/jalota/logs', help='faiss alignment output')
     group.add_argument('--faiss-use-gpu', default=False, action='store_true', help='whether to store the index and perform search on GPU')
+    group.add_argument('--index', default='flat', choices=['flat', 'ivf', 'pq'], help="which faiss index to use.")
     return group
 
 def add_dataset_args(parser, train=False, gen=False):
