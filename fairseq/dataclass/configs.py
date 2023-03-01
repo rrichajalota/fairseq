@@ -166,7 +166,7 @@ class CommonConfig(FairseqDataclass):
         default=2**7, metadata={"help": "default FP16 loss scale"}
     )
     fp16_scale_window: Optional[int] = field(
-        default=None,
+        default=8,
         metadata={"help": "number of updates before increasing loss scale"},
     )
     fp16_scale_tolerance: float = field(
@@ -202,7 +202,7 @@ class CommonConfig(FairseqDataclass):
         default=2**7, metadata={"help": "default AMP loss scale"}
     )
     amp_scale_window: Optional[int] = field(
-        default=None,
+        default=8,
         metadata={"help": "number of updates before increasing AMP loss scale"},
     )
     user_dir: Optional[str] = field(
@@ -473,7 +473,7 @@ class DatasetConfig(FairseqDataclass):
         default=None, metadata={"help": "maximum number of tokens in a batch"}
     )
     batch_size: Optional[int] = field(
-        default=None,
+        default=8,
         metadata={
             "help": "number of examples in a batch",
             "argparse_alias": "--max-sentences",
@@ -528,7 +528,7 @@ class DatasetConfig(FairseqDataclass):
         default=0, metadata={"help": "dont validate until reaching this many updates"}
     )
     fixed_validation_seed: Optional[int] = field(
-        default=None, metadata={"help": "specified random seed for validation"}
+        default=23, metadata={"help": "specified random seed for validation"}
     )
     disable_validation: bool = field(
         default=False, metadata={"help": "disable validation"}
@@ -548,7 +548,7 @@ class DatasetConfig(FairseqDataclass):
         },
     )
     max_valid_steps: Optional[int] = field(
-        default=None,
+        default=20000,
         metadata={"help": "How many batches to evaluate", "argparse_alias": "--nval"},
     )
     curriculum: int = field(
@@ -637,6 +637,229 @@ class OptimizationConfig(FairseqDataclass):
         },
     )
     debug_param_names: bool = False
+
+
+@dataclass
+class ComparableConfig(FairseqDataclass):
+    comparable: bool = field(
+        default=False, metadata={"help": 'Use comparable data during training.'}
+    )
+    sim_measure: str = field(
+        default="margin",
+        metadata={"help": """Similarity measure to be used for extrtacting
+                           parallel sentences. Options: [cosine|margin]"""}
+    )
+    threshold: float = field(
+        default=float('-inf'),
+        metadata={"help": "Decision threshold for keeping a similar pair."}
+    )
+    threshold_dynamics: str = field(
+        default="static",
+        metadata={"help": """Set threshold dynamics. Options: [static|grow|decay]"""}
+    )
+    comp_example_limit: int = field(
+        default=float('inf'),
+        metadata={"help": """Limit number of training samples from comparable
+                           data."""}
+    )
+    no_base: bool = field(
+        default=False,
+        metadata={"help": """No training on parallel sentences. Start with
+                           comparable training directly."""}
+    )
+    comp_log: str = field(
+        default=None,
+        metadata={
+            "help":"""Path where comparable rejected/accepted pairs will be logged."""
+        }
+    )
+    cove_type: str = field(
+        default="sum",
+        metadata={
+            "help":"""Method for merging word context vectors. Options: [sum|mean]"""
+        }
+    )
+    comp_epochs: int = field(
+        default=1,
+        metadata={
+            "help":"""Number of epochs for comparable training."""
+        }
+    )
+    comparable_data: str = field(
+        default=None,
+        metadata={
+            "help":"""Path to comparable data list."""
+        }
+    )
+    second: bool = field(
+        default=False,
+        metadata={
+            "help":"""Use second best filtering."""
+        }
+    )
+    representations: str = field(
+        default="dual",
+        metadata={
+            "help":"""Sentece representations used.
+                    Options: [dual|embed-only|hidden-only]"""
+        }
+    )
+    max_len: int = field(
+        default=100, 
+        metadata={
+            "help":"""Maximum length of sentences to when creating comparable corpus."""
+        }
+    )
+    no_valid: bool = field(
+        default=False,
+        metadata={
+            "help":"""Do not perform validation."""
+        }
+    )
+    fast: bool = field(
+        default=False,
+        metadata={
+            "help":"""Only look at first batch per document."""
+        }
+    )
+    write_dual: bool = field(
+        default=False,
+        metadata={
+            "help":"""Write sentences accepted by only one representation type."""
+        }
+    )
+    no_swaps: bool = field(
+        default=False,
+        metadata={
+            "help":"""Do not perform random swaps of src-tgt."""
+        }
+    )
+    k: int = field(
+        default=20,
+        metadata={
+            "help":"""Number of k-knearest neighbors to use when scoring."""
+        }
+    )
+    symmetric: bool = field(
+        default=False,
+        metadata={
+            "help":"""Train on both directions of an extracted pair."""
+        }
+    )
+    test_data: str = field(
+        default=None,
+        metadata={
+            "help":"""Test data that should be excluded from training."""
+        }
+    )
+    use_bt: str = field(
+        default=False,
+        metadata={
+            "help":"""Apply backtranslation to non-match sentences."""
+        }
+    )
+    trans_opts: str = field(
+        default=None,
+        metadata={
+            "help":"""Translator options comfiguration file."""
+        }
+    )
+    filter_bt: str = field(
+        default=False, 
+        metadata={
+            "help":"""Filter backtranslations using SSNMT."""
+        }
+    )
+    bt_sleep_period: int = field(
+        default=50,
+        metadata={
+            "help":"""Amount of steps to pause back-translations."""
+        }
+    )
+    mono: str = field(
+        default=None,
+        metadata={
+             "help":"""Path to list of monolingual corpora."""       
+        }
+    )
+    substitution: bool = field(
+        default=False,
+        metadata={
+            "help":"""Use word-for-word substitution."""
+        }
+    )
+    add_noise: bool = field(
+        default=False,
+        metadata={
+            "help":"""Add noise to backtranslation src."""
+        }
+    )
+    vocab_list: str = field(
+        default=None, 
+        metadata={
+            "help":"""Path to list of vocabulary files used for substitution."""
+        }
+    )
+    use_phrase: bool = field(
+        default=False,
+        metadata={
+            "help":"""Apply Phrase extraction on rejected sentences."""
+        }
+    )
+    usepos: bool = field(
+        default=False,
+        metadata={
+            "help":"""Use positional encoding for extracting possible sentence pairs"""
+        }
+    )
+    margin: str = field(
+        default="ratio", 
+        metadata={
+            "help":'which margin definition - absolute, distance, ratio'
+        }
+    )
+    verbose: bool = field(
+        default=False,
+        metadata={
+            "help":'print info statements'
+        }
+    )
+    faiss: bool = field(
+        default=False,
+        metadata={
+            "help":"use faiss indexing with margin-based scoring."
+        }
+    )
+    mode: str = field(
+        default='mine',
+        metadata={
+            "help":"FAISS Execution mode ['search', 'score', 'mine']"
+        }
+    )
+    retrieval: str = field(
+        default='max',
+        metadata={
+            "help":"Retrieval strategy ['fwd', 'bwd', 'max', 'intersect']"
+        }
+    )
+    faiss_output: str = field(
+        default="/netscratch/jalota/logs",
+        metadata={
+            "help":"faiss alignment output"
+        }
+    )
+    faiss_use_gpu: bool = field(
+        default=False,
+        metadata={
+            "help":"whether to store the index and perform search on GPU"
+        }
+    )
+    index: str = field(
+        default='flat',
+        metadata={
+            "help":"which faiss index to use."
+        }
+    )
 
 
 @dataclass
@@ -1145,3 +1368,4 @@ class FairseqConfig(FairseqDataclass):
     bpe: Any = None
     tokenizer: Any = None
     ema: EMAConfig = EMAConfig()
+    comparable: ComparableConfig = ComparableConfig()

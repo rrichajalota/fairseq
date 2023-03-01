@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def hydra_init(cfg_name="config") -> None:
 
     cs = ConfigStore.instance()
+    print(f"cfg_name: {cfg_name}")
     cs.store(name=f"{cfg_name}", node=FairseqConfig)
 
     for k in FairseqConfig.__dataclass_fields__:
