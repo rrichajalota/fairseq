@@ -21,6 +21,7 @@ from fairseq.dataclass.configs import (
     InteractiveConfig,
     OptimizationConfig,
     EMAConfig,
+    ComparableConfig
 )
 from fairseq.dataclass.utils import gen_parser_from_dataclass
 
@@ -42,6 +43,7 @@ def get_training_parser(default_task="translation"):
     add_optimization_args(parser)
     add_checkpoint_args(parser)
     add_comparable_args(parser)
+    print("parser")
     add_ema_args(parser)
     return parser
 
@@ -310,9 +312,12 @@ def add_preprocess_args(parser):
     return parser
 
 
-def add_comparable_args(parser, train=True, gen=False):
-    group = parser.add_argument_group('comparable_data')
+def add_comparable_args(parser):
+    print(f"add comp args")
+    group = parser.add_argument_group('comparable')
     gen_parser_from_dataclass(group, ComparableConfig())
+    print(group)
+    return group
     # group.add_argument('--comparable', action="store_true", default=False,
     #                    help='Use comparable data during training.')
     # group.add_argument('--sim_measure', '-sim_measure', default="margin",
@@ -402,7 +407,7 @@ def add_comparable_args(parser, train=True, gen=False):
     # group.add_argument('--faiss-output', default='/netscratch/jalota/logs', help='faiss alignment output')
     # group.add_argument('--faiss-use-gpu', default=False, action='store_true', help='whether to store the index and perform search on GPU')
     # group.add_argument('--index', default='flat', choices=['flat', 'ivf', 'pq'], help="which faiss index to use.")
-    return group
+    # return group
 
 
 def add_dataset_args(parser, train=False, gen=False):

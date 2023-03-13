@@ -644,6 +644,9 @@ class ComparableConfig(FairseqDataclass):
     comparable: bool = field(
         default=False, metadata={"help": 'Use comparable data during training.'}
     )
+    max_sentences: int = field(
+        default=80, metadata={"help": 'Number of sentences in a batch'}
+    )
     sim_measure: str = field(
         default="margin",
         metadata={"help": """Similarity measure to be used for extrtacting
@@ -658,7 +661,7 @@ class ComparableConfig(FairseqDataclass):
         metadata={"help": """Set threshold dynamics. Options: [static|grow|decay]"""}
     )
     comp_example_limit: int = field(
-        default=float('inf'),
+        default=500000000,
         metadata={"help": """Limit number of training samples from comparable
                            data."""}
     )
@@ -668,7 +671,7 @@ class ComparableConfig(FairseqDataclass):
                            comparable training directly."""}
     )
     comp_log: str = field(
-        default=None,
+        default='',
         metadata={
             "help":"""Path where comparable rejected/accepted pairs will be logged."""
         }
@@ -686,7 +689,7 @@ class ComparableConfig(FairseqDataclass):
         }
     )
     comparable_data: str = field(
-        default=None,
+        default='',
         metadata={
             "help":"""Path to comparable data list."""
         }
@@ -747,24 +750,24 @@ class ComparableConfig(FairseqDataclass):
         }
     )
     test_data: str = field(
-        default=None,
+        default='',
         metadata={
             "help":"""Test data that should be excluded from training."""
         }
     )
-    use_bt: str = field(
+    use_bt: bool = field(
         default=False,
         metadata={
             "help":"""Apply backtranslation to non-match sentences."""
         }
     )
     trans_opts: str = field(
-        default=None,
+        default='',
         metadata={
             "help":"""Translator options comfiguration file."""
         }
     )
-    filter_bt: str = field(
+    filter_bt: bool = field(
         default=False, 
         metadata={
             "help":"""Filter backtranslations using SSNMT."""
@@ -777,7 +780,7 @@ class ComparableConfig(FairseqDataclass):
         }
     )
     mono: str = field(
-        default=None,
+        default='',
         metadata={
              "help":"""Path to list of monolingual corpora."""       
         }
@@ -795,7 +798,7 @@ class ComparableConfig(FairseqDataclass):
         }
     )
     vocab_list: str = field(
-        default=None, 
+        default='', 
         metadata={
             "help":"""Path to list of vocabulary files used for substitution."""
         }
@@ -1359,6 +1362,7 @@ class FairseqConfig(FairseqDataclass):
     generation: GenerationConfig = GenerationConfig()
     eval_lm: EvalLMConfig = EvalLMConfig()
     interactive: InteractiveConfig = InteractiveConfig()
+    comparable: ComparableConfig = ComparableConfig()
     model: Any = MISSING
     task: Any = None
     criterion: Any = None
@@ -1368,4 +1372,3 @@ class FairseqConfig(FairseqDataclass):
     bpe: Any = None
     tokenizer: Any = None
     ema: EMAConfig = EMAConfig()
-    comparable: ComparableConfig = ComparableConfig()

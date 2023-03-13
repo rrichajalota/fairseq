@@ -13,6 +13,11 @@ import math
 import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from fairseq.file_io import PathManager
+from fairseq.dataclass.configs import CheckpointConfig
+import logging
+import ast
+import collections
 
 # We need to setup root logger before importing any fairseq libraries.
 logging.basicConfig(
@@ -21,7 +26,7 @@ logging.basicConfig(
     level=os.environ.get("LOGLEVEL", "INFO").upper(),
     stream=sys.stdout,
 )
-logger = logging.getLogger("fairseq_cli.train")
+logger = logging.getLogger("fairseq_cli.traincomp")
 
 import numpy as np
 import torch
@@ -44,10 +49,13 @@ from fairseq_cli.Comparable4 import Comparable
 
 def main(cfg: FairseqConfig) -> None:
     if isinstance(cfg, argparse.Namespace):
+        print(f"convert namespace")
         cfg = convert_namespace_to_omegaconf(cfg)
 
     utils.import_user_module(cfg.common)
+    print(f"added user module")
     add_defaults(cfg)
+    print(f"added defaults")
 
     if (
         distributed_utils.is_master(cfg.distributed_training)
@@ -86,6 +94,8 @@ def main(cfg: FairseqConfig) -> None:
 
     # Setup task, e.g., translation, language modeling, etc.
     task = tasks.setup_task(cfg.task)
+    # cfg.task.src_dict.add_symbol("<mask>")
+    # cfg.task.tgt_dict.add_symbol("<mask>")
 
     assert cfg.criterion, "Please specify criterion to train a model"
 
@@ -146,9 +156,12 @@ def main(cfg: FairseqConfig) -> None:
 
     # Build trainer
     if cfg.common.model_parallel_size == 1:
+        logger.info("trainer")
         trainer = Trainer(cfg, task, model, criterion, quantizer)
     else:
+        logger.info("MegatronTrainer")
         trainer = MegatronTrainer(cfg, task, model, criterion)
+    
     logger.info(
         "training on {} devices (GPUs/TPUs)".format(
             cfg.distributed_training.distributed_world_size
@@ -163,18 +176,21 @@ def main(cfg: FairseqConfig) -> None:
 
     # Load the latest checkpoint if one is available and restore the
     # corresponding train iterator
-    extra_state, epoch_itr = checkpoint_utils.load_checkpoint(
-        cfg.checkpoint,
-        trainer,
-        # don't cache epoch iterators for sharded datasets
-        disable_iterator_cache=task.has_sharded_data("train"),
-    )
+    # extra_state, epoch_itr = checkpoint_utils.load_checkpoint(
+    #     cfg.checkpoint,
+    #     trainer,
+    #     # don't cache epoch iterators for sharded datasets
+    #     disable_iterator_cache=task.has_sharded_data("train"),
+    # )
+    extra_state, epoch = load_checkpoint(cfg, trainer)
     if cfg.common.tpu:
         import torch_xla.core.xla_model as xm
 
         xm.rendezvous("load_checkpoint")  # wait for all workers
 
+    # Train until the learning rate gets too small
     max_epoch = cfg.optimization.max_epoch or math.inf
+    # max_update = cfg.optimization.max_update or math.inf
     lr = trainer.get_lr()
 
     # TODO: a dry run on validation set to pin the memory
@@ -194,11 +210,10 @@ def main(cfg: FairseqConfig) -> None:
     train_meter = meters.StopwatchMeter()
     train_meter.start()
     
-
     if cfg.comparable.comparable:
         comp = Comparable(model, trainer, task, cfg)
 
-        while epoch_itr.next_epoch_idx <= max_epoch:
+        while epoch <= max_epoch: # _itr.next_epoch_idx
             if lr <= cfg.optimization.stop_min_lr:
                 logger.info(
                     f"stopping training because current learning rate ({lr}) is smaller "
@@ -208,13 +223,16 @@ def main(cfg: FairseqConfig) -> None:
                 break
 
             # train for one epoch
-            comp.task.begin_epoch(epoch_itr.next_epoch_idx, comp.trainer.get_model())
+            print(f"begin epoch")
+            comp.task.begin_epoch(epoch, comp.trainer.get_model()) 
+            #  _itr.next_epoch_idx
             # valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
             # if should_stop:
             #     break
-            print(f"epoch_itr.next_epoch_id: {epoch_itr.next_epoch_id}")
-            print(f"epoch_itr.epoch: {epoch_itr.epoch}")
-            num_updates, end_of_epoch = comp.extract_and_train(cfg.comparable.comparable_data, epoch_itr.next_epoch_idx)
+            # print(f"epoch_itr.next_epoch_id: {epoch_itr.next_epoch_id}")
+            # print(f"epoch_itr.epoch: {epoch_itr.epoch}")
+            # Extract parallel data and train
+            num_updates, end_of_epoch = comp.extract_and_train(cfg.comparable.comparable_data, epoch) #_itr.next_epoch_idx
             max_update = cfg.optimization.max_update or math.inf
             should_stop = False
 
@@ -238,7 +256,7 @@ def main(cfg: FairseqConfig) -> None:
                 )
 
             do_save = (
-                (end_of_epoch and epoch_itr.epoch % cfg.checkpoint.save_interval == 0)
+                (end_of_epoch and epoch % cfg.checkpoint.save_interval == 0) 
                 or should_stop
                 or (
                     cfg.checkpoint.save_interval_updates > 0
@@ -250,7 +268,7 @@ def main(cfg: FairseqConfig) -> None:
             do_validate = (
                 (
                     (not end_of_epoch and do_save)  # validate during mid-epoch saves
-                    or (end_of_epoch and epoch_itr.epoch % cfg.dataset.validate_interval == 0)
+                    or (end_of_epoch and epoch % cfg.dataset.validate_interval == 0)
                     or should_stop
                     or (
                         cfg.dataset.validate_interval_updates > 0
@@ -261,10 +279,12 @@ def main(cfg: FairseqConfig) -> None:
                 and not cfg.dataset.disable_validation
                 and num_updates >= cfg.dataset.validate_after_updates
             )
+            # epoch_itr.
             # Validate
             valid_losses = [None] 
             if do_validate:
-                valid_losses = comp.validate(epoch_itr.next_epoch_idx, valid_subsets)
+                valid_losses = comp.validate(epoch, valid_subsets)
+            # _itr.next_epoch_idx
             # if (not cfg.dataset.disable_validation
             #     and cfg.checkpoint.save_interval_updates > 0
             #     and num_updates % cfg.checkpoint.save_interval_updates == 0
@@ -278,8 +298,8 @@ def main(cfg: FairseqConfig) -> None:
 
             # Save checkpoint
             if do_save or should_stop:
-                cp_path = checkpoint_utils.save_checkpoint(
-                    cfg.checkpoint, trainer, epoch_itr, valid_losses[0]
+                cp_path = save_checkpoint(
+                    cfg.checkpoint, trainer, epoch, valid_losses[0]
                 )
                 if cp_path is not None and hasattr(task, "post_save"):
                     task.post_save(cp_path, num_updates)
@@ -288,15 +308,16 @@ def main(cfg: FairseqConfig) -> None:
                 break
 
             # only use first validation loss to update the learning rate
-            lr = trainer.lr_step(epoch_itr.epoch, valid_losses[0])
+            lr = trainer.lr_step(epoch, valid_losses[0])
+            epoch += 1
 
-            epoch_itr = trainer.get_train_iterator(
-                epoch_itr.next_epoch_idx,
-                # sharded data: get train iterator for next epoch
-                load_dataset=task.has_sharded_data("train"),
-                # don't cache epoch iterators for sharded datasets
-                disable_iterator_cache=task.has_sharded_data("train"),
-            )
+            # epoch_itr = trainer.get_train_iterator(
+            #     epoch,
+            #     # sharded data: get train iterator for next epoch
+            #     load_dataset=task.has_sharded_data("train"),
+            #     # don't cache epoch iterators for sharded datasets
+            #     disable_iterator_cache=task.has_sharded_data("train"),
+            # )
         train_meter.stop()
         logger.info("done training in {:.1f} seconds".format(train_meter.sum))
 
@@ -308,6 +329,272 @@ def main(cfg: FairseqConfig) -> None:
             )
             PathManager.async_close()
             logger.info("ioPath PathManager finished waiting.")
+
+def load_checkpoint(cfg, trainer, **passthrough_args):
+    """
+    Load a checkpoint and restore the training iterator.
+
+    *passthrough_args* will be passed through to
+    ``trainer.get_train_iterator``.
+    """
+    # only one worker should attempt to create the required dir
+    reset_optimizer = cfg.checkpoint.reset_optimizer
+    reset_lr_scheduler = cfg.checkpoint.reset_lr_scheduler
+    # print(f"cfg.optimizer_overrides: {cfg.optimizer_overrides}")
+    optimizer_overrides = ast.literal_eval(cfg.checkpoint.optimizer_overrides)
+    reset_meters = cfg.checkpoint.reset_meters
+    reset_dataloader = cfg.checkpoint.reset_dataloader
+
+    if cfg.distributed_training.distributed_rank == 0:
+        print(f"cfg.checkpoint.save_dir: {cfg.checkpoint.save_dir}")
+        os.makedirs(cfg.checkpoint.save_dir, exist_ok=True)
+
+    if cfg.checkpoint.finetune_from_model is not None and (
+        reset_optimizer or reset_lr_scheduler or reset_meters or reset_dataloader
+    ):
+        raise ValueError(
+            "--finetune-from-model can not be set together with either --reset-optimizer"
+            " or reset_lr_scheduler or reset_meters or reset_dataloader"
+        )
+    suffix = trainer.checkpoint_suffix
+
+    if cfg.checkpoint.restore_file == "checkpoint_last.pt":
+        checkpoint_path = os.path.join(cfg.checkpoint.save_dir, "checkpoint_last{}.pt".format(suffix))
+        first_launch = not PathManager.exists(checkpoint_path)
+        if first_launch and getattr(cfg.checkpoint, "continue_once", None) is not None:
+            checkpoint_path = cfg.checkpoint.continue_once
+        elif cfg.checkpoint.finetune_from_model is not None and first_launch:
+            # if there is no last checkpoint to restore, start the finetune from pretrained model
+            # else just use usual logic to load checkpoint, e.g. restart from last checkpoint and etc.
+            if PathManager.exists(cfg.checkpoint.finetune_from_model):
+                checkpoint_path = cfg.checkpoint.finetune_from_model
+                reset_optimizer = True
+                reset_lr_scheduler = True
+                reset_meters = True
+                reset_dataloader = True
+                logger.info(
+                    f"loading pretrained model from {checkpoint_path}: "
+                    "optimizer, lr scheduler, meters, dataloader will be reset"
+                )
+            else:
+                raise ValueError(
+                    f"--finetune-from-model {cfg.finetune_from_model} does not exist"
+                )
+    elif suffix is not None:
+        checkpoint_path = cfg.checkpoint.restore_file.replace(".pt", suffix + ".pt")
+    else:
+        checkpoint_path = os.path.join(cfg.checkpoint.save_dir, cfg.checkpoint.restore_file)
+
+    if cfg.checkpoint.restore_file != "checkpoint_last.pt" and cfg.checkpoint.finetune_from_model:
+        raise ValueError(
+            "--finetune-from-model and --restore-file (non-default value) "
+            "can not be specified together: " + str(cfg)
+        )
+
+    extra_state = trainer.load_checkpoint(
+        checkpoint_path,
+        reset_optimizer,
+        reset_lr_scheduler,
+        optimizer_overrides,
+        reset_meters=reset_meters,
+    )
+
+    # if (
+    #     extra_state is not None
+    #     and "best" in extra_state
+    #     and not args.reset_optimizer
+    #     and not args.reset_meters
+    # ):
+    #     save_checkpoint.best = extra_state["best"]
+
+    if (
+        extra_state is not None
+        and "best" in extra_state
+        and not reset_optimizer
+        and not reset_meters
+    ):
+        save_checkpoint.best = extra_state["best"]
+
+    if extra_state is not None and not reset_dataloader:
+        # restore iterator from checkpoint
+        itr_state = extra_state["train_iterator"]
+        # epoch_itr = trainer.get_train_iterator(
+        #     epoch=itr_state["epoch"], load_dataset=False, **passthrough_args
+        # )
+        epoch = extra_state["train_iterator"]["epoch"] + 1
+        # epoch_itr.load_state_dict(itr_state)
+    else:
+        epoch = 1
+        # epoch_itr = trainer.get_train_iterator(
+        #     epoch=1, load_dataset=False, **passthrough_args
+        # )
+
+    trainer.lr_step(epoch)
+    # trainer.lr_step(epoch_itr.epoch)
+
+    return extra_state, epoch
+    # return extra_state, epoch_itr
+
+
+def save_checkpoint(cfg: CheckpointConfig, trainer, epoch, val_loss):
+    from fairseq import meters
+
+    # only one worker should attempt to create the required dir
+    if trainer.data_parallel_rank == 0:
+        os.makedirs(cfg.save_dir, exist_ok=True)
+
+    prev_best = getattr(save_checkpoint, "best", val_loss)
+    if val_loss is not None:
+        best_function = max if cfg.maximize_best_checkpoint_metric else min
+        save_checkpoint.best = best_function(val_loss, prev_best)
+
+    if cfg.no_save:
+        return None
+
+    trainer.consolidate_optimizer()  # TODO(SS): do we need this if no_save_optimizer_state
+
+    if not trainer.should_save_checkpoint_on_current_rank:
+        if trainer.always_call_state_dict_during_save_checkpoint:
+            trainer.state_dict()
+        return None
+
+    write_timer = meters.StopwatchMeter()
+    write_timer.start()
+
+    # epoch = epoch_itr.epoch
+    # end_of_epoch = epoch_itr.end_of_epoch()
+    updates = trainer.get_num_updates()
+
+    logger.info(f"Preparing to save checkpoint for epoch {epoch} @ {updates} updates")
+
+    def is_better(a, b):
+        return a >= b if cfg.maximize_best_checkpoint_metric else a <= b
+
+    suffix = trainer.checkpoint_suffix
+    checkpoint_conds = collections.OrderedDict()
+    checkpoint_conds["checkpoint{}{}.pt".format(epoch, suffix)] = (
+        # end_of_epoch and 
+        not cfg.no_epoch_checkpoints and epoch % cfg.save_interval == 0
+    )
+    checkpoint_conds["checkpoint_{}_{}{}.pt".format(epoch, updates, suffix)] = (
+        # not end_of_epoch and 
+        cfg.save_interval_updates > 0
+        and updates % cfg.save_interval_updates == 0
+    )
+    checkpoint_conds["checkpoint_best{}.pt".format(suffix)] = val_loss is not None and (
+        not hasattr(save_checkpoint, "best")
+        or is_better(val_loss, save_checkpoint.best)
+    )
+    if val_loss is not None and cfg.keep_best_checkpoints > 0:
+        worst_best = getattr(save_checkpoint, "best", None)
+        chkpts = checkpoint_utils.checkpoint_paths(
+            cfg.save_dir,
+            pattern=r"checkpoint\.best_{}_(\d+\.?\d*){}\.pt".format(
+                cfg.best_checkpoint_metric, suffix
+            ),
+        )
+        if len(chkpts) > 0:
+            p = chkpts[-1] if cfg.maximize_best_checkpoint_metric else chkpts[0]
+            worst_best = float(p.rsplit("_")[-1].replace("{}.pt".format(suffix), ""))
+        # add random digits to resolve ties
+        with data_utils.numpy_seed(epoch, updates, val_loss):
+            rand_sfx = np.random.randint(0, cfg.keep_best_checkpoints)
+
+        checkpoint_conds[
+            "checkpoint.best_{}_{:.3f}{}{}.pt".format(
+                cfg.best_checkpoint_metric, val_loss, rand_sfx, suffix
+            )
+        ] = worst_best is None or is_better(val_loss, worst_best)
+    checkpoint_conds[
+        "checkpoint_last{}.pt".format(suffix)
+    ] = not cfg.no_last_checkpoints
+
+    extra_state = {"train_iterator": {"epoch": epoch}, "val_loss": val_loss}
+    if hasattr(save_checkpoint, "best"):
+        extra_state.update({"best": save_checkpoint.best})
+
+    checkpoints = [
+        os.path.join(cfg.save_dir, fn) for fn, cond in checkpoint_conds.items() if cond
+    ]
+    saved_cp = None
+    if len(checkpoints) > 0 and trainer.should_save_checkpoint_on_current_rank:
+        saved_cp = trainer.save_checkpoint(checkpoints[0], extra_state)
+        for cp in checkpoints[1:]:
+            if cfg.write_checkpoints_asynchronously:
+                # TODO[ioPath]: Need to implement a delayed asynchronous
+                # file copying/moving feature.
+                logger.warning(
+                    f"ioPath is not copying {checkpoints[0]} to {cp} "
+                    "since async write mode is on."
+                )
+            else:
+                assert PathManager.copy(
+                    checkpoints[0], cp, overwrite=True
+                ), f"Failed to copy {checkpoints[0]} to {cp}"
+
+        write_timer.stop()
+        logger.info(
+            "Saved checkpoint {} (epoch {} @ {} updates, score {}) (writing took {} seconds)".format(
+                checkpoints[0], epoch, updates, val_loss, write_timer.sum
+            )
+        )
+
+    # if (
+    #     # not end_of_epoch and 
+    #     cfg.keep_interval_updates > 0
+    #     and trainer.should_save_checkpoint_on_current_rank
+    # ):
+    #     # remove old checkpoints; checkpoints are sorted in descending order
+    #     if cfg.keep_interval_updates_pattern == -1:
+    #         checkpoints = checkpoint_paths(
+    #             cfg.save_dir, pattern=r"checkpoint_\d+_(\d+){}\.pt".format(suffix)
+    #         )
+    #     else:
+    #         checkpoints = checkpoint_paths(
+    #             cfg.save_dir,
+    #             pattern=r"checkpoint_\d+_(\d+){}\.pt".format(suffix),
+    #             keep_match=True,
+    #         )
+    #         checkpoints = [
+    #             x[0]
+    #             for x in checkpoints
+    #             if x[1] % cfg.keep_interval_updates_pattern != 0
+    #         ]
+
+    #     for old_chk in checkpoints[cfg.keep_interval_updates :]:
+    #         if os.path.lexists(old_chk):
+    #             os.remove(old_chk)
+    #         elif PathManager.exists(old_chk):
+    #             PathManager.rm(old_chk)
+
+    if cfg.keep_last_epochs > 0 and trainer.should_save_checkpoint_on_current_rank:
+        # remove old epoch checkpoints; checkpoints are sorted in descending order
+        checkpoints = checkpoint_utils.checkpoint_paths(
+            cfg.save_dir, pattern=r"checkpoint(\d+){}\.pt".format(suffix)
+        )
+        for old_chk in checkpoints[cfg.keep_last_epochs :]:
+            if os.path.lexists(old_chk):
+                os.remove(old_chk)
+            elif PathManager.exists(old_chk):
+                PathManager.rm(old_chk)
+
+    if cfg.keep_best_checkpoints > 0 and trainer.should_save_checkpoint_on_current_rank:
+        # only keep the best N checkpoints according to validation metric
+        checkpoints = checkpoint_utils.checkpoint_paths(
+            cfg.save_dir,
+            pattern=r"checkpoint\.best_{}_(\d+\.?\d*){}\.pt".format(
+                cfg.best_checkpoint_metric, suffix
+            ),
+        )
+        if not cfg.maximize_best_checkpoint_metric:
+            checkpoints = checkpoints[::-1]
+        for old_chk in checkpoints[cfg.keep_best_checkpoints :]:
+            if os.path.lexists(old_chk):
+                os.remove(old_chk)
+            elif PathManager.exists(old_chk):
+                PathManager.rm(old_chk)
+
+    return saved_cp
 
 
 def should_stop_early(cfg: DictConfig, valid_loss: float) -> bool:
@@ -636,8 +923,11 @@ def get_valid_stats(
 def cli_main(
     modify_parser: Optional[Callable[[argparse.ArgumentParser], None]] = None
 ) -> None:
+    print(f"get parser")
     parser = options.get_training_parser()
+    print(f"parser: {parser}")
     args = options.parse_args_and_arch(parser, modify_parser=modify_parser)
+    print(f"args: {args}")
 
     cfg = convert_namespace_to_omegaconf(args)
 
@@ -647,7 +937,7 @@ def cli_main(
             f"Started plasma server pid {server.server.pid} {cfg.common.plasma_path}"
         )
 
-    if args.profile:
+    if cfg.common.profile:
         with torch.cuda.profiler.profile():
             with torch.autograd.profiler.emit_nvtx():
                 distributed_utils.call_main(cfg, main)

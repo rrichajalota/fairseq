@@ -143,6 +143,9 @@ def load_langpair_dataset(
                 tgt_dataset, tgt_dict.index("[{}]".format(tgt))
             )
         eos = tgt_dict.index("[{}]".format(tgt))
+        print(f"tgt_dict: {tgt_dict}")
+        # src_dict.add_symbol("<mask>")
+        # tgt_dict.add_symbol("<mask>")
 
     align_dataset = None
     if load_alignments:

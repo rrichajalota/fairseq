@@ -156,6 +156,8 @@ def gen_parser_from_dataclass(
     for k in dataclass_instance._get_all_attributes():
         field_name = argparse_name(dataclass_instance._get_name(k))
         field_type = dataclass_instance._get_type(k)
+        # print(f"field_name: {field_name}")
+        # print(f"field_type: {field_type}")
         if field_name is None:
             continue
         elif inspect.isclass(field_type) and issubclass(field_type, FairseqDataclass):

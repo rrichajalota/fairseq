@@ -53,8 +53,8 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
         super().__init__(args, src_dict, tgt_dict)
         self.langs = args.langs.split(",")
         for d in [src_dict, tgt_dict]:
-            for l in self.langs:
-                d.add_symbol("[{}]".format(l))
+            # for l in self.langs:
+            #     d.add_symbol("[{}]".format(l))
             d.add_symbol("<mask>")
 
     def load_dataset(self, split, epoch=1, combine=False, **kwargs):
@@ -63,12 +63,12 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
         Args:
             split (str): name of the split (e.g., train, valid, test)
         """
-        paths = utils.split_paths(self.args.data)
+        paths = utils.split_paths(self.cfg.data)
         assert len(paths) > 0
         data_path = paths[(epoch - 1) % len(paths)]
 
         # infer langcode
-        src, tgt = self.args.source_lang, self.args.target_lang
+        src, tgt = self.cfg.source_lang, self.cfg.target_lang
 
         self.datasets[split] = load_langpair_dataset(
             data_path,
@@ -78,24 +78,24 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
             tgt,
             self.tgt_dict,
             combine=combine,
-            dataset_impl=self.args.dataset_impl,
-            upsample_primary=self.args.upsample_primary,
-            left_pad_source=self.args.left_pad_source,
-            left_pad_target=self.args.left_pad_target,
-            max_source_positions=getattr(self.args, "max_source_positions", 1024),
-            max_target_positions=getattr(self.args, "max_target_positions", 1024),
-            load_alignments=self.args.load_alignments,
-            prepend_bos=getattr(self.args, "prepend_bos", False),
+            dataset_impl=self.cfg.dataset_impl,
+            upsample_primary=self.cfg.upsample_primary,
+            left_pad_source=self.cfg.left_pad_source,
+            left_pad_target=self.cfg.left_pad_target,
+            max_source_positions=getattr(self.cfg, "max_source_positions", 1024),
+            max_target_positions=getattr(self.cfg, "max_target_positions", 1024),
+            load_alignments=self.cfg.load_alignments,
+            prepend_bos=getattr(self.cfg, "prepend_bos", False),
             append_source_id=True,
         )
 
     def build_generator(self, models, args, **unused):
-        if getattr(args, "score_reference", False):
+        if getattr(cfg, "score_reference", False):
             from fairseq.sequence_scorer import SequenceScorer
 
             return SequenceScorer(
                 self.target_dictionary,
-                eos=self.tgt_dict.index("[{}]".format(self.args.target_lang)),
+                eos=self.tgt_dict.index("[{}]".format(self.cfg.target_lang)),
             )
         else:
             from fairseq.sequence_generator import SequenceGenerator

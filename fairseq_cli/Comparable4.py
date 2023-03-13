@@ -1,7 +1,7 @@
 """
 Classes and methods used for training and extraction of parallel pairs
 from a comparable dataset.
-Author: Alabi Jesujoba
+Authors: Alabi Jesujoba, Rricha Jalota
 """
 import tracemalloc
 #import gc
@@ -25,8 +25,20 @@ from fairseq import (
 from fairseq.logging import meters, metrics, progress_bar
 from omegaconf import DictConfig, OmegaConf
 import argparse
-import os
+import os, sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
+import logging
+from fairseq.trainer import Trainer
+from fairseq.distributed import utils as distributed_utils
+
+# We need to setup root logger before importing any fairseq libraries.
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=os.environ.get("LOGLEVEL", "INFO").upper(),
+    stream=sys.stdout,
+)
+logger = logging.getLogger("fairseq_cli.comparable")
 
 def get_src_len(src, use_gpu, device=""):
     if use_gpu:
@@ -208,15 +220,15 @@ class PairBank():
         opt(argparse.Namespace): option object
     """
 
-    def __init__(self, batcher, args):
+    def __init__(self, batcher, cfg):
         self.pairs = []
         self.index_memory = set()
-        self.batch_size = args.max_sentences
+        self.batch_size = cfg.dataset.batch_size #max_sentences
         self.batcher = batcher
         self.use_gpu = False
         self.mps = False
         self.cuda = False
-        if args.cpu == False:
+        if cfg.common.cpu == False:
             self.use_gpu = True
             if torch.backends.mps.is_available():
                 self.mps = True
@@ -225,7 +237,7 @@ class PairBank():
                 self.cuda = True
         else:
             self.use_gpu = False
-        self.update_freq = args.update_freq
+        self.update_freq = cfg.optimization.update_freq
         self.explen = self.batch_size * self.update_freq[-1]
 
 
@@ -354,9 +366,9 @@ class CompExample():
 
 
 class BatchCreator():
-    def __init__(self, task, args):
+    def __init__(self, task, cfg):
         self.task = task
-        self.args = args
+        self.cfg = cfg
 
     def create_batch(self, src_examples, tgt_examples, src_lengths, tgt_lengths, no_target=False):
         """ Creates a batch object from previously extracted parallel data.
@@ -376,19 +388,19 @@ class BatchCreator():
         pairData = LanguagePairDataset(
             src_examples, src_lengths, self.task.src_dict,
             tgt_examples, tgt_lengths, self.task.tgt_dict,
-            left_pad_source=self.args.left_pad_source,
-            left_pad_target=self.args.left_pad_target,
-            max_source_positions=self.args.max_source_positions,
-            max_target_positions=self.args.max_target_positions,
+            left_pad_source=self.cfg.task.left_pad_source,
+            left_pad_target=self.cfg.task.left_pad_target
         )
+        # max_source_positions=self.cfg.task.max_source_positions,
+        # max_target_positions=self.cfg.task.max_target_positions,
 
-        with numpy_seed(self.args.seed):
+        with numpy_seed(self.cfg.common.seed):
             indices = pairData.ordered_indices()
 
-        batch_sampler = batch_by_size(indices, pairData.num_tokens, max_sentences=self.args.max_sentences,
-                                                 required_batch_size_multiple=self.args.required_batch_size_multiple, )
-        itrs = EpochBatchIterator(dataset=pairData, collate_fn=pairData.collater, batch_sampler=batch_sampler,
-                                            seed=self.args.seed, epoch=0, num_workers=self.args.num_workers)
+        batch_sampler = batch_by_size(indices, pairData.num_tokens, 
+        max_sentences=self.cfg.comparable.max_sentences, required_batch_size_multiple=self.cfg.dataset.required_batch_size_multiple, )
+        itrs = EpochBatchIterator(dataset=pairData, collate_fn=pairData.collater,
+         batch_sampler=batch_sampler, seed=self.cfg.common.seed, epoch=0, num_workers=self.cfg.dataset.num_workers)
         indices = None
         return itrs
 
@@ -680,7 +692,6 @@ class Comparable():
                     self.similar_pairs.add_example(tgt, src)
                     # self.write_sentence(tgt, src, 'accepted', score)
 
-
                 # if self.use_phrase and phrasese is False:
                 #     print("checking phrases to remove.......")
                 #     src_rm = removePadding(src)
@@ -729,7 +740,11 @@ class Comparable():
         """
         start = time.time()
         srcSent, srcRep = zip(*src_sents)
+        # print(f"srcSent: {srcSent}")
         tgtSent, tgtRep = zip(*tgt_sents)
+        # print(f"tgtSent: {tgtSent}")
+
+        print("faiss sent scoring")
 
         # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
         # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
@@ -737,9 +752,12 @@ class Comparable():
         x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
         y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
         
-        # print(f"x : {x}")
+        print(f"normalising x.dtype : {x.dtype}")
+
         faiss.normalize_L2(x)
         faiss.normalize_L2(y)
+        print("done faiss normalizing")
+        print(f"self.verbose: {self.verbose}")
         candidates = []
 
         # torch.from_numpy(a)
@@ -781,7 +799,7 @@ class Comparable():
             scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
             best = x2y_ind[np.arange(x.shape[0]), scores.argmax(axis=1)]
 
-            # print(f"best: {best}")
+            print(f"best: {best}")
 
             nbex = x.shape[0]
             ref = np.linspace(0, nbex-1, nbex).astype(int)  # [0, nbex)
@@ -1008,13 +1026,14 @@ class Comparable():
         # print(f"len(article): {len(article)}")
         for k in article:
             # print("inside article!")
+            # print(f"self.cfg.task.arch: {self.cfg.task.arch}")
             # print(f"article id: {id}")
             # if id == 3013:
             #     print("skipping 3013")
             #     continue
                 # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
             sent_repr = None
-            if self.args.modeltype == "lstm":  # if the model architecture is LSTM
+            if self.cfg.task.arch == "lstm":  # if the model architecture is LSTM
                 lengths = k['net_input']['src_lengths']
                 texts = k['net_input']['src_tokens']
                 ordered_len, ordered_idx = lengths.sort(0, descending=True)
@@ -1040,7 +1059,7 @@ class Comparable():
                         sent_repr = torch.mean(hidden_embed, dim=0)
                     else:
                         sent_repr = torch.sum(hidden_embed, dim=0)
-            elif self.args.modeltype == "transformer":
+            elif self.cfg.task.arch == "transformer":
                 # print("In the transformer representation")
                 if representation == 'memory':
                     with torch.no_grad():
@@ -1054,12 +1073,16 @@ class Comparable():
                                                             k['net_input']['src_lengths'].to(self.mps_device))
                         elif self.use_gpu and self.cuda:
                             # print("going into encoder forward")
-                            encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(),
-                                                            k['net_input']['src_lengths'].cuda())
+                            encoderOut = self.encoder.forward(k['net_input']['src_tokens'].cuda(), k['net_input']['src_lengths'].cuda())
+                            # print("got encoderOut")
                         else:
                             encoderOut = self.encoder.forward(k['net_input']['src_tokens'],
                                                           k['net_input']['src_lengths'])
-                    hidden_embed = getattr(encoderOut, 'encoder_out')  # T x B x C
+                    # print(f"encoderOut: {encoderOut}")
+                    # print(f"len(encoderOut['encoder_out']): {len(encoderOut['encoder_out'])}")
+                    hidden_embed = encoderOut['encoder_out'][0]
+                    # hidden_embed = getattr(encoderOut, 'encoder_out')  # T x B x C
+                    # print(f"hidden_embed: {hidden_embed}")
                     if mean:
                         sent_repr = torch.mean(hidden_embed, dim=0)
                     else:
@@ -1069,6 +1092,7 @@ class Comparable():
                         # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
                         # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
                         # print("going into encoder forward emb")
+                        # print(f"self.usepos: {self.usepos}")
                         if self.usepos:
                             if self.use_gpu and self.mps:
                                 input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens'].to(self.mps_device)) 
@@ -1084,6 +1108,7 @@ class Comparable():
                             else:
                                  _, input_emb = self.encoder.forward_embedding(k['net_input']['src_tokens']) 
                         # print(f"type(input_emb): {type(input_emb)}")
+                        # print(f"self.cuda: {self.cuda}")
                         
                         if self.mps:
                             input_emb = input_emb.to(self.mps_device)
@@ -1091,26 +1116,29 @@ class Comparable():
                             input_emb = input_emb.cuda()
 
                     #input_emb = getattr(encoderOut, 'encoder_embedding')  # B x T x C
-                    # print(f"type(input_emb): {type(input_emb)}")
+                    # print(f"input_emb.size(): {input_emb.size()}")
                     input_emb = input_emb.transpose(0, 1)
                     if mean:
                         sent_repr = torch.mean(input_emb, dim=0)
                     else:
                         sent_repr = torch.sum(input_emb, dim=0)
-            if self.args.modeltype == "transformer":
+            if self.cfg.task.arch == "transformer":
                 # print(f"inside modeltype == transformer")
-                # print(f"k['net_input']['src_tokens'][i]: {k['net_input']['src_tokens'][i]}")
-                # print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
+                
                 for i in range(k['net_input']['src_tokens'].shape[0]):
-                    #print(f"i : {i}")
+                    # print(f"i : {i}")
+                    # print(f"k['net_input']['src_tokens'][i]: {k['net_input']['src_tokens'][i]}")
+                    # print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
                     sents.append((k['net_input']['src_tokens'][i], sent_repr[i]))
-                    if side == 'src' and use_phrase is True:
-                        st = removePadding(k['net_input']['src_tokens'][i])
-                        self.phrases.sourcesent.add((hash(str(st)), st))
-                    elif side == 'tgt' and use_phrase is True:
-                        st = removePadding(k['net_input']['src_tokens'][i])
-                        self.phrases.targetsent.add((hash(str(st)), st))
-            elif self.args.modeltype == "lstm":
+                    
+                    # if side == 'src' and use_phrase is True:
+                    #     st = removePadding(k['net_input']['src_tokens'][i])
+                    #     self.phrases.sourcesent.add((hash(str(st)), st))
+                    # elif side == 'tgt' and use_phrase is True:
+                    #     st = removePadding(k['net_input']['src_tokens'][i])
+                    #     self.phrases.targetsent.add((hash(str(st)), st))
+
+            elif self.cfg.task.arch == "lstm":
                 for i in range(texts.shape[0]):
                     sents.append((texts[i], sent_repr[i]))
             # print(f"finishing {id}")
@@ -1213,18 +1241,20 @@ class Comparable():
             data_iter(.EpochIterator): iterator object
         """
         # get indices ordered by example size
-        with numpy_seed(self.args.seed):
+        with numpy_seed(self.cfg.common.seed):
             indices = sent.ordered_indices()
         # filter out examples that are too large
         max_positions = (max_position)
         if max_positions is not None:
             indices = filter_by_size(indices, sent, max_positions, raise_exception=(not True), )
         # create mini-batches with given size constraints
-        max_sentences = self.args.max_sentences  # 30
-        batch_sampler = batch_by_size(indices, sent.num_tokens, max_sentences=max_sentences,
-                                                 required_batch_size_multiple=self.args.required_batch_size_multiple, )
+        print(f"self.cfg.comparable.max_sentences: {self.cfg.comparable.max_sentences}")
+        max_sentences = self.cfg.comparable.max_sentences  # 30
+        print(f"max_sentences: {max_sentences}")
+        print(f"self.cfg.dataset.num_workers: {self.cfg.dataset.num_workers}")
+        batch_sampler = batch_by_size(indices, sent.num_tokens, max_sentences=max_sentences, required_batch_size_multiple=self.cfg.dataset.required_batch_size_multiple, )
         # print(f"tuple(batch_sampler): {tuple(batch_sampler)}")
-        itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.args.seed,num_workers=self.args.num_workers, epoch=epoch)
+        itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.cfg.common.seed,num_workers=self.cfg.dataset.num_workers, epoch=epoch)
         #data_iter = itrs.next_epoch_itr(shuffle=False, fix_batches_to_gpus=fix_batches_to_gpus)
         # print(f"itrs.state_dict: {itrs.state_dict()}")
         # print(f"itrs.n(): {itrs.n()}")
@@ -1255,10 +1285,10 @@ class Comparable():
 
     def getdata(self, articles):
         trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
-                                                         dataset_impl=self.args.dataset_impl, combine=False,
+                                                         dataset_impl=self.cfg.dataset.dataset_impl, combine=False,
                                                          default='cached')
         trainingSetTgt = load_indexed_dataset(articles[1], self.task.tgt_dict,
-                                                         dataset_impl=self.args.dataset_impl, combine=False,
+                                                         dataset_impl=self.cfg.dataset.dataset_impl, combine=False,
                                                          default='cached')
         # print("read the text file ")self.args.data +
         # convert the read files to Monolingual dataset to make padding easy
@@ -1274,128 +1304,6 @@ class Comparable():
         # print(f"src_mono.num_tokens(1): {src_mono.num_tokens(1)}")
         # print(f"tgt_mono.num_tokens(1): {tgt_mono.num_tokens(1)}")
         return src_mono, tgt_mono
-
-    # def extract_phrase_train(self, srcPhrase, tgtPhrase, epoch):
-    #     src_sents = []
-    #     tgt_sents = []
-    #     src_embeds = []
-    #     tgt_embeds = []
-    #     # load the dataset from the files for both source and target
-    #     src_indexed, src_sizes = indexPhraseData(srcPhrase, dictionary = self.task.src_dict, append_eos = True, reverse_order = False)
-    #     tgt_indexed, tgt_sizes = indexPhraseData(tgtPhrase, dictionary = self.task.tgt_dict, append_eos=True, reverse_order=False)
-    #     #print(src_indexed)
-
-    #     src_mono = MonolingualDataset(dataset=src_indexed, sizes=src_sizes,
-    #                                   src_vocab=self.task.src_dict,
-    #                                   tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-    #     tgt_mono = MonolingualDataset(dataset=tgt_indexed, sizes=tgt_sizes,
-    #                                   src_vocab=self.task.tgt_dict,
-    #                                   tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-
-    #     # Prepare iterator objects for current src/tgt document
-    #     src_article = self._get_iterator(src_mono, dictn=self.task.src_dict,
-    #                                      max_position=self.args.max_source_positions, epoch=epoch,
-    #                                      fix_batches_to_gpus=False)
-    #     tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict,
-    #                                      max_position=self.args.max_target_positions, epoch=epoch,
-    #                                      fix_batches_to_gpus=False)
-    #     # Get sentence representations
-    #     #try:
-    #     if self.representations == 'embed-only':
-    #         # print("Using Embeddings only for representation")
-    #         # C_e
-    #         itr_src = src_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
-    #         itr_tgt = tgt_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
-    #         src_sents += self.get_article_coves(itr_src, representation='embed', mean=False, side='src')
-    #         tgt_sents += self.get_article_coves(itr_tgt, representation='embed', mean=False, side='tgt')
-    #     else:
-    #         # C_e and C_h
-
-    #         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-    #         src_embeds += self.get_article_coves(it1, representation='embed', mean=False, side='src',
-    #                                              use_phrase=self.use_phrase)
-    #         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-    #         src_sents += self.get_article_coves(it1, representation='memory', mean=False, side='src')
-
-    #         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-    #         tgt_embeds += self.get_article_coves(it3, representation='embed', mean=False, side='tgt',
-    #                                              use_phrase=self.use_phrase)
-    #         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-    #         tgt_sents += self.get_article_coves(it3, representation='memory', mean=False, side='tgt')
-
-    #             # return
-    #     '''except:
-    #         # Skip document pair in case of errors
-    #         print("error")
-    #         src_sents = []
-    #         tgt_sents = []
-    #         src_embeds = []
-    #         tgt_embeds = []'''
-    #     # free resources for Gabbage, not necessary tho
-    #     #src_mono.dataset.tokens_list = None
-    #     #src_mono.dataset.sizes = None
-    #     #src_mono.sizes = None
-    #     #tgt_mono.sizes = None
-    #     del tgt_mono
-    #     del src_mono
-    #     #print('source = ',src_sents[0][0])
-    #     #print('target = ', tgt_sents[0][0])
-    #     # Score src and tgt sentences
-
-    #     #try:
-    #     src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
-    #     # src2tgt = { "dis a src sent": {"dis a tg": 0.2, "dis s a TRG": 0.6, "dis": 0.12} }
-    #     # this score could be from margin / cosine similarity 
-    #     # similarities containes only sim scores (useless var)
-    #     # scores is a useless var
-
-    #     '''except:
-    #         # print('Error occurred in: {}\n'.format(article_pair), flush=True)
-    #         print(src_sents, flush=True)
-    #         print(tgt_sents, flush=True)
-    #         src_sents = []
-    #         tgt_sents = []
-    #         return'''
-    #     # print("source 2 target ", src2tgt)
-    #     # Keep statistics
-    #     # epoch_similarities += similarities
-    #     # epoch_scores += scores
-    #     src_sents = []
-    #     tgt_sents = []
-
-    #     #try:
-    #     if self.representations == 'dual': # means fwd and bwd
-    #         # For dual representation systems, filter C_h...
-    #         candidates = self.filter_candidates(src2tgt, tgt2src, second=self.second)
-    #         # Filter candidates (primary filter), such that only those which are top candidates in 
-    #         # both src2tgt and tgt2src direction pass.
-    #         # ...and C_e
-    #         comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,
-    #                                                                tgt_embeds)
-    #         print("The number of candidates from Phrases = ", len(candidates))
-    #         src_embeds = []
-    #         tgt_embeds = []
-    #         if self.write_dual:
-    #             # print("writing the sentences to file....")
-    #             self.write_embed_only(candidates, cand_embed)
-    #     else:
-    #         print("Using Embedings only for Filtering ......")
-    #         # Filter C_e or C_h for single representation system
-    #         candidates = self.filter_candidates(src2tgt, tgt2src)
-    #         comparison_pool = None
-    #     '''except:
-    #         # Skip document pair in case of errors
-    #         print("Error Occured!!!!")
-    #         # print('Error occured in: {}\n'.format(article_pair), flush=True)
-    #         src_embeds = []
-    #         tgt_embeds = []
-    #         return'''
-
-
-    #     # Extract parallel samples (secondary filter)
-    #     phrasese = True
-    #     self.extract_parallel_sents(candidates, comparison_pool, phrasese)
-    #     return None
 
     def extract_and_train(self, comparable_data_list, epoch):
 
@@ -1442,22 +1350,20 @@ class Comparable():
                 #load the dataset from the files for both source and target
                 src_mono, tgt_mono = self.getdata(articles)
                 # Prepare iterator objects for current src/tgt document
-                # print(f"self.task.src_dict: {self.task.src_dict}")
-                # print(f"self.args.max_source_positions: {self.args.max_source_positions}")
-                # print(f"get iterator")
-                src_article = self._get_iterator(src_mono, dictn=self.task.src_dict,
-                                                 max_position=self.args.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
-                tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict,
-                                                 max_position=self.args.max_target_positions, epoch=epoch, fix_batches_to_gpus=False)
+                print(f"self.task.src_dict: {self.task.src_dict}")
+                print(f"self.cfg.max_source_positions: {self.cfg.task.max_source_positions}")
+                print(f"get iterator")
+                src_article = self._get_iterator(src_mono, dictn=self.task.src_dict, max_position=self.cfg.task.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
+                tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict, max_position=self.cfg.task.max_target_positions, epoch=epoch, fix_batches_to_gpus=False)
 
                 # Get sentence representations
                 try:
                     if self.representations == 'embed-only':
-                        # print("Using Embeddings only for representation")
+                        print("Using Embeddings only for representation")
                         # C_e
                         itr_src = src_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
                         itr_tgt = tgt_article._get_iterator_for_epoch(epoch=epoch, shuffle=True)
-                        # print(f"src article, rep=embed")
+                        print(f"src article, rep=embed")
                         src_sents += self.get_article_coves(itr_src, representation='embed', mean=False)
                         # print(f"tgt article, rep=embed")
                         tgt_sents += self.get_article_coves(itr_tgt, representation='embed', mean=False)
@@ -1465,19 +1371,19 @@ class Comparable():
                         # C_e and C_h
                         '''it1, it2 = itertools.tee(src_article)
                         it3, it4 = itertools.tee(tgt_article)'''
-                        # print(f"src article, rep=embed")
+                        print(f"src article, rep=embed")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_embeds += self.get_article_coves(it1, representation='embed', mean=False, side='src',
                                                          use_phrase=self.use_phrase)
-                        # print(f"src article, rep=memory")
+                        print(f"src article, rep=memory")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_sents += self.get_article_coves(it1, representation='memory', mean=False, side='src')
                         
-                        # print(f"tgt article, rep=embed")
+                        print(f"tgt article, rep=embed")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_embeds += self.get_article_coves(it3, representation='embed', mean=False, side='tgt',
                                                          use_phrase=self.use_phrase)
-                        # print(f"tgt article, rep=memory")
+                        print(f"tgt article, rep=memory")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_sents += self.get_article_coves(it3, representation='memory', mean=False, side='tgt')
 
@@ -1500,7 +1406,7 @@ class Comparable():
                 if len(src_sents) < 15 or len(tgt_sents) < 15:
                     #print("Length LEss tahn 15")
                     continue
-                # print("Proceeding")
+                print("Proceeding")
                 # Score src and tgt sentences
                 print("In all we have got ", len(src_sents), "source sentences and ", len(tgt_sents), "target")
 
@@ -1511,17 +1417,17 @@ class Comparable():
                     print(f"self.faiss: {self.faiss}")
                     if self.faiss:
                         candidates = self.faiss_sent_scoring(src_sents, tgt_sents)
-                        # print(f"done with faiss scoring of src sents and tgt sents")
+                        print(f"done with faiss scoring of src sents and tgt sents")
                         candidates_embed = self.faiss_sent_scoring(src_embeds, tgt_embeds)
-                        # print(f"done with faiss scoring of src embeds and tgt embeds")
+                        print(f"done with faiss scoring of src embeds and tgt embeds")
                         embed_comparison_pool = set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
                         # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
-                        # print(f"made embed_comparison_pool")
+                        print(f"made embed_comparison_pool")
                         if self.write_dual:
                             #print("writing the sentences to file....")
                             self.write_embed_only(candidates, candidates_embed)
                         # Extract parallel samples (secondary filter)
-                        # print(f"starting to extract parallel sents")
+                        print(f"starting to extract parallel sents")
                         self.extract_parallel_sents(candidates, embed_comparison_pool)
                     else:
                         src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
@@ -1646,14 +1552,10 @@ class Comparable():
                 # print("IT has batch.....")
                 # try:
                 itrs = self.similar_pairs.yield_batch()
-                itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=cfg.distributed_training.fix_batches_to_gpus)
-                itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=cfg.optimization.skip_remainder_batch)
-                if cfg.common.tpu:
+                itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
+                itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
+                if self.cfg.common.tpu:
                     itr = utils.tpu_data_loader(itr)
-
-                # self.progress = progress_bar.build_progress_bar(
-                #     self.cfg, itr, epoch, no_progress_bar='simple',
-                # ) epoch=epoch_itr.epoch,
                 self.progress = progress_bar.progress_bar(
                     itr,
                     log_format=self.cfg.common.log_format,
@@ -1691,9 +1593,9 @@ class Comparable():
                         else False
                     ),
                 )
-                self.progress.update_config(_flatten_config(self.cfg)
-                logger.info("Start iterating over samples")
-                for i, samples in enumerate(progress):
+                self.progress.update_config(_flatten_config(self.cfg))
+                logger.info(f"Start iterating over samples")
+                for i, samples in enumerate(self.progress):
                     with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
                         "train_step-%d" % i
                     ):
@@ -1720,9 +1622,9 @@ class Comparable():
         else:
             # numberofex = self.similar_pairs.get_num_examples()
             itrs = self.similar_pairs.yield_batch()
-            itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=cfg.distributed_training.fix_batches_to_gpus)
-            itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=cfg.optimization.skip_remainder_batch)
-            if cfg.common.tpu:
+            itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
+            itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
+            if self.cfg.common.tpu:
                 itr = utils.tpu_data_loader(itr)
             self.progress = progress_bar.progress_bar(
                 itr,
@@ -1761,9 +1663,9 @@ class Comparable():
                     else False
                 ),
             )
-            self.progress.update_config(_flatten_config(self.cfg)
+            self.progress.update_config(_flatten_config(self.cfg))
             logger.info("Start iterating over samples")
-            for i, samples in enumerate(progress):
+            for i, samples in enumerate(self.progress):
                 with metrics.aggregate('train_inner'):
                     log_output = self.trainer.train_step(samples)
                     num_updates = self.trainer.get_num_updates()
@@ -1794,8 +1696,9 @@ class Comparable():
             itr = self.trainer.get_valid_iterator(subset).next_epoch_itr(
                 shuffle=False, set_dataset_epoch=False  # use a fixed valid set
             )
-            if cfg.common.tpu:
+            if self.cfg.common.tpu:
                 itr = utils.tpu_data_loader(itr)
+            print(f"self.cfg.distributed_training: {self.cfg.distributed_training}")
             progress = progress_bar.progress_bar(
                 itr,
                 log_format=self.cfg.common.log_format,
@@ -1845,8 +1748,8 @@ class Comparable():
             tracking_best = subset_idx == 0
             stats = get_valid_stats(self.cfg, self.trainer, agg.get_smoothed_values(), tracking_best)
 
-            if hasattr(task, "post_validate"):
-                task.post_validate(self.trainer.get_model(), stats, agg)
+            if hasattr(self.task, "post_validate"):
+                self.task.post_validate(self.trainer.get_model(), stats, agg)
 
             progress.print(stats, tag=subset, step=self.trainer.get_num_updates())
 

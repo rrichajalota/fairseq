@@ -61,6 +61,7 @@ class TransformerEncoderBase(FairseqEncoder):
         self.max_source_positions = cfg.max_source_positions
 
         self.embed_tokens = embed_tokens
+        print(f"embed_tokens: {embed_tokens}")
 
         self.embed_scale = 1.0 if cfg.no_scale_embedding else math.sqrt(embed_dim)
 
@@ -120,11 +121,19 @@ class TransformerEncoderBase(FairseqEncoder):
         self, src_tokens, token_embedding: Optional[torch.Tensor] = None
     ):
         # embed tokens and positions
+        # print("inside forward embedding")
         if token_embedding is None:
+            # print(f"src_tokens: {src_tokens}")
+            # print(f"src_tokens.size(): {src_tokens.size()}")
+            # print(f"self.embed_tokens(src_tokens): {self.embed_tokens(src_tokens)}")
             token_embedding = self.embed_tokens(src_tokens)
         x = embed = self.embed_scale * token_embedding
+        # print(f"type(x): {type(x)}")
+        # print(f"self.embed_positions: {self.embed_positions}")
+
         if self.embed_positions is not None:
             x = embed + self.embed_positions(src_tokens)
+            # print("added embed_positions")
         if self.layernorm_embedding is not None:
             x = self.layernorm_embedding(x)
         x = self.dropout_module(x)
