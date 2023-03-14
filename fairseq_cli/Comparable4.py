@@ -739,6 +739,7 @@ class Comparable():
             scores(list(float)): list of scores
         """
         start = time.time()
+        
         srcSent, srcRep = zip(*src_sents)
         # print(f"srcSent: {srcSent}")
         tgtSent, tgtRep = zip(*tgt_sents)
@@ -746,18 +747,27 @@ class Comparable():
 
         print("faiss sent scoring")
 
-        # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
-        # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
+        if not self.faiss_use_gpu:
+            # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
+            # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
 
-        x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
-        y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
-        
-        print(f"normalising x.dtype : {x.dtype}")
+            x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
+            y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
+            
+            print(f"normalising x.dtype : {x.dtype}")
+            faiss.normalize_L2(x)
+            faiss.normalize_L2(y)
+            
+        else:
+            # https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU
+            ngpus = faiss.get_num_gpus()
+            print("number of GPUs:", ngpus)
 
-        faiss.normalize_L2(x)
-        faiss.normalize_L2(y)
+            faiss.normalize_L2(srcRep)
+            faiss.normalize_L2(tgtRep)
+
         print("done faiss normalizing")
-        print(f"self.verbose: {self.verbose}")
+
         candidates = []
 
         # torch.from_numpy(a)
@@ -1611,7 +1621,7 @@ class Comparable():
                                 # reset mid-epoch stats after each log interval
                                 # the end-of-epoch stats will still be preserved
                                 metrics.reset_meters('train_inner')
-                        # end_of_epoch = not itr.has_next()
+                end_of_epoch = not itr.has_next()
                         # if log_output is None:
                         #     continue
                     # log mid-epoch stats
@@ -1676,7 +1686,7 @@ class Comparable():
                 self.progress.print(stats, tag='train_inner', step=num_updates)
                 self.progress.log(stats, tag='train_inner', step=num_updates)
                 metrics.reset_meters('train_inner')
-        end_of_epoch = not itr.has_next()
+            end_of_epoch = not itr.has_next()
         return end_of_epoch
     
     
