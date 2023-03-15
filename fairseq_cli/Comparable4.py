@@ -457,15 +457,17 @@ def knnGPU(x, y, k, index='flat', mem=5*1024*1024*1024):
     # for each sub-vector set. 
     # 3. In the vector of sub-vecs, replace each sub-vec with the ID of its nearest set-specific centroid
     # '''
-    # m = 8 # number of centroid IDs in final compressed vectors
-    # bits = 8 # number of bits in each centroid
-    # nlist = 100  # how many cells
+    # https://github.com/facebookresearch/LASER/blob/main/source/mine_bitexts.py
     dim = x.shape[1]
+    m = 8 # number of centroid IDs in final compressed vectors
+    bits = 8 # number of bits in each centroid
+    nlist = 100  # how many cells
     batch_size = mem // (dim*4)
     print(f"batch_size: {batch_size}")
     if batch_size > x.shape[0]:
         batch_size = x.shape[0] // 5
         print(f"batch_size: {batch_size}")
+    
     sim = np.zeros((x.shape[0], k), dtype=np.float32)
     ind = np.zeros((x.shape[0], k), dtype=np.int64)
     for xfrom in range(0, x.shape[0], batch_size):
@@ -474,7 +476,16 @@ def knnGPU(x, y, k, index='flat', mem=5*1024*1024*1024):
         for yfrom in range(0, y.shape[0], batch_size):
             yto = min(yfrom + batch_size, y.shape[0]) # to_trg_ind
             # print('{}-{}  ->  {}-{}'.format(xfrom, xto, yfrom, yto))
-            idx = faiss.IndexFlatIP(dim)
+            if index == 'ivf':
+                idx = faiss.index_factory(dim, "IVF100,Flat", faiss.METRIC_INNER_PRODUCT)
+                idx.train(y)
+            elif index =='pq':
+                # quantizer = faiss.IndexFlatIP(dim)
+                # idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
+                idx = faiss.index_factory(dim, "IVF100,PQ16", faiss.METRIC_INNER_PRODUCT)
+                idx.train(y)
+            else:
+                idx = faiss.IndexFlatIP(dim)
             # quantizer = faiss.IndexFlatL2(d)
             # idx = faiss.IndexIVFFlat(quantizer, d, nlist)
             # #idx = faiss.IndexIVFPQ(quantizer, d, nlist, m, bits)
@@ -747,26 +758,22 @@ class Comparable():
 
         print("faiss sent scoring")
 
-        if not self.faiss_use_gpu:
-            # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
-            # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
-
-            x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
-            y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
-            
-            print(f"normalising x.dtype : {x.dtype}")
-            faiss.normalize_L2(x)
-            faiss.normalize_L2(y)
-            
-        else:
+        if self.faiss_use_gpu:
             # https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU
             ngpus = faiss.get_num_gpus()
-            print("number of GPUs:", ngpus)
+            logger.info(f"number of GPUs: {ngpus}")
 
-            faiss.normalize_L2(srcRep)
-            faiss.normalize_L2(tgtRep)
+        # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
+        # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
 
-        print("done faiss normalizing")
+        x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
+        y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
+        
+        print(f"normalising x.dtype : {x.dtype}")
+        faiss.normalize_L2(x)
+        faiss.normalize_L2(y)
+
+        logger.info("done faiss normalizing")
 
         candidates = []
 

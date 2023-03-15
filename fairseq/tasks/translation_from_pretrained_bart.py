@@ -7,9 +7,12 @@ import torch
 from fairseq import utils
 from fairseq.data import LanguagePairDataset
 
+import logging
+
 from . import register_task
 from .translation import TranslationTask, load_langpair_dataset
 
+logger = logging.getLogger(__name__)
 
 @register_task("translation_from_pretrained_bart")
 class TranslationFromPretrainedBARTTask(TranslationTask):
@@ -52,10 +55,14 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
     def __init__(self, args, src_dict, tgt_dict):
         super().__init__(args, src_dict, tgt_dict)
         self.langs = args.langs.split(",")
+        logger.info(f"len(src_dict): {len(src_dict)}")
+        logger.info(f"len(tgt_dict): {len(tgt_dict)}")
         for d in [src_dict, tgt_dict]:
             # for l in self.langs:
             #     d.add_symbol("[{}]".format(l))
             d.add_symbol("<mask>")
+        logger.info(f"len(src_dict): {len(src_dict)}")
+        logger.info(f"len(tgt_dict): {len(tgt_dict)}")
 
     def load_dataset(self, split, epoch=1, combine=False, **kwargs):
         """Load a given dataset split.
@@ -69,6 +76,9 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
 
         # infer langcode
         src, tgt = self.cfg.source_lang, self.cfg.target_lang
+
+        logger.info(f"len(self.src_dict): {len(self.src_dict)}")
+        logger.info(f"len(self.tgt_dict): {len(self.tgt_dict)}")
 
         self.datasets[split] = load_langpair_dataset(
             data_path,
@@ -119,6 +129,8 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
     def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
         src_lang_id = self.source_dictionary.index("[{}]".format(self.args.source_lang))
         source_tokens = []
+        logger.info(f"self.source_dictionary: {len(self.source_dictionary)}")
+
         for s_t in src_tokens:
             s_t = torch.cat([s_t, s_t.new(1).fill_(src_lang_id)])
             source_tokens.append(s_t)
