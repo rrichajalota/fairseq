@@ -49,19 +49,6 @@ def get_src_len(src, use_gpu, device=""):
     else:
         return torch.tensor([src.size(0)])
 
-# def indexPhraseData(phrases, dictionary, append_eos, reverse_order):
-#     tokens_list = []
-#     sizes = []
-#     for line in phrases:
-#         # self.lines.append(line.strip('\n'))
-#         tokens = dictionary.encode_line(
-#             line, add_if_not_exist=False,
-#             append_eos=append_eos, reverse_order=reverse_order,
-#         ).long()
-#         tokens_list.append(tokens)
-#         sizes.append(len(tokens))
-#     return tokens_list, sizes
-
 #this method is to remove spaces added within strings when dict.string is used.
 #it removed remove spaces between characters and consecutive spaces
 def removeSpaces(s):
@@ -103,61 +90,6 @@ def read_vocabulary(vocab_file, threshold=20):
     return vocabulary
 
 
-# class PhraseBank():
-#     """
-#     Class that saves the sentence pairs from which we want to extract phrases
-#     Args:
-#         candidate(tuple(src,tgt,score))
-#         args(argparse.Namespace): option object
-
-#     """
-
-#     def __init__(self, tasks, phrase_length):
-#         self.tasks = tasks
-#         self.sourcesent = set()
-#         self.targetsent = set()
-#         self.phrase_length = phrase_length
-#         self.lsrc = []
-#         self.ltgt = []
-#         self.nlp_src = None
-#         self.nlp_tgt = None
-#         '''self.use_gpu = False
-#         if args.cpu == False:
-#             self.use_gpu = True
-#         else:
-#             self.use_gpu = False
-#         '''
-
-#     def add_example(self, src, tgt):
-#         """ Add an example from a batch to the PairBank (self.pairs).
-#         Args:
-#             src(torch.Tensor): src sequence (size(seq))
-#             tgt(torch.Tensor): tgt sequence(size(tgt))
-#             fields(list(str)): list of keys of fields
-#         """
-#         # Get example from src/tgt and remove original padding
-#         self.sourcesent.add(str(src))
-#         self.targetsent.add(str(tgt))
-
-#     def getexamples(self):
-#         return self.sourcesent, self.targetsent
-
-#     def getexampleslen(self):
-#         return len(self.sourcesent), len(self.targetsent)
-
-#     def remove_from_phrase_candidates(self, seq, side):
-#         hash_key = hash(str(seq))
-#         # print(len(self.bt_candidates))
-#         if side == 'src':
-#             self.lsrc.extend([x for x in self.sourcesent if x[0] == hash_key])
-#             self.sourcesent = set([x for x in self.sourcesent if x[0] != hash_key])
-#         elif side == 'tgt':
-#             self.ltgt.extend([x for x in self.targetsent if x[0] == hash_key])
-#             self.targetsent = set([x for x in self.targetsent if x[0] != hash_key])
-#         # print(len(self.bt_candidates))
-#         # print('........')
-#         return None
-
     def convert2string(self, side):
         lstString = []
         if side == 'src':
@@ -188,23 +120,6 @@ def read_vocabulary(vocab_file, threshold=20):
     def setLang(self, s, t):
         self.s = s
         self.t = t
-
-    # def extractPhrasesSNL(self, sentences, side='src'):
-    #     if side == 'src':
-    #         #phrases = [list(set(extract_phrase(self.nlp_src.parse(x), 'NP'))) for x in sentences]
-    #         #phrases = [noun_phrases(self.client_src,x,_annotators="tokenize,ssplit,pos,lemma,parse") for x in sentences]
-    #         phrases = [noun_phrases(self.client_src,x) for x in sentences] #,_annotators="tokenize,ssplit,pos,lemma,parse"
-    #     elif side == 'tgt':
-    #         #phrases = [list(set(extract_phrase(self.nlp_tgt.parse(x), 'NP'))) for x in sentences]
-    #         phrases = [noun_phrases(self.client_tgt,x) for x in sentences] #,_annotators="tokenize,ssplit,pos,lemma,parse"
-
-
-    #     phrases = list(itertools.chain(*phrases))
-    #     if side == 'src':
-    #         return ["<"+self.t+"> "+self.srcbpe.process_line(item) for item in phrases if len(item.split()) >= self.phrase_length]
-    #     elif side == 'tgt':
-    #         #print("From target", ["<"+self.s+"> "+self.tgtbpe.process_line(item) for item in phrases if len(item.split()) >= self.phrase_length] )
-    #         return ["<"+self.s+"> "+self.tgtbpe.process_line(item) for item in phrases if len(item.split()) >= self.phrase_length]
 
     def resetData(self):
         self.sourcesent = set()
@@ -423,13 +338,13 @@ def knnCPU(x, y, k, index='flat'):
     if index == 'ivf':
         # quantizer = faiss.IndexFlatIP(dim)
         # idx = faiss.IndexIVFFlat(quantizer, dim, nlist)
-        idx = faiss.index_factory(dim, "IVF100,Flat", faiss.METRIC_INNER_PRODUCT)
+        idx = faiss.index_factory(dim, "IVF200,Flat", faiss.METRIC_INNER_PRODUCT)
         idx.train(y)
         # print(f"idx.is_trained: {idx.is_trained}")
     elif index =='pq':
         # quantizer = faiss.IndexFlatIP(dim)
         # idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
-        idx = faiss.index_factory(dim, "IVF100,PQ16", faiss.METRIC_INNER_PRODUCT)
+        idx = faiss.index_factory(dim, "IVF200,PQ16", faiss.METRIC_INNER_PRODUCT)
         idx.train(y)
     else:
         idx = faiss.IndexFlatIP(dim)
@@ -477,12 +392,12 @@ def knnGPU(x, y, k, index='flat', mem=5*1024*1024*1024):
             yto = min(yfrom + batch_size, y.shape[0]) # to_trg_ind
             # print('{}-{}  ->  {}-{}'.format(xfrom, xto, yfrom, yto))
             if index == 'ivf':
-                idx = faiss.index_factory(dim, "IVF100,Flat", faiss.METRIC_INNER_PRODUCT)
+                idx = faiss.index_factory(dim, "IVF1200,Flat", faiss.METRIC_INNER_PRODUCT)
                 idx.train(y)
             elif index =='pq':
                 # quantizer = faiss.IndexFlatIP(dim)
                 # idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
-                idx = faiss.index_factory(dim, "IVF100,PQ16", faiss.METRIC_INNER_PRODUCT)
+                idx = faiss.index_factory(dim, "IVF1200,PQ16", faiss.METRIC_INNER_PRODUCT)
                 idx.train(y)
             else:
                 idx = faiss.IndexFlatIP(dim)
@@ -559,6 +474,7 @@ class Comparable():
     def __init__(self, model, trainer, task, cfg):
         self.sim_measure = cfg.comparable.sim_measure
         self.threshold = cfg.comparable.threshold
+        self.use_threshold = cfg.comparable.use_threshold
         self.model_name = cfg.comparable.model_name
         self.save_dir = cfg.comparable.save_dir
         self.use_phrase = cfg.comparable.use_phrase
@@ -651,7 +567,7 @@ class Comparable():
                 f.write(out)
         return None
 
-    def extract_parallel_sents(self, candidates, candidate_pool, phrasese=False):
+    def extract_parallel_sents(self, candidates, candidate_pool, phrasese=False, use_threshold=False):
         """
         Extracts parallel sentences from candidates and adds them to the
         PairBank (secondary filter).
@@ -674,49 +590,45 @@ class Comparable():
                         self.write_sentence(candidate[0], candidate[1],
                                             'hidden_only', candidate[2])
                     continue
-            '''if self.no_swaps:
-                swap = False
-            # Swap src-tgt direction randomly
-            else:
-                swap = np.random.randint(2)
-            if swap:
-                src = candidate[1]
-                tgt = candidate[0]
-            else:
-                src = candidate[0]
-                tgt = candidate[1]'''
+                
+                elif self.in_candidate_pool(candidate, candidate_pool) and not use_threshold:
+                    src = candidate[0]
+                    tgt = candidate[1]
+                    score = candidate[2]
 
-            src = candidate[0]
-            tgt = candidate[1]
-            score = candidate[2]
+                    self.similar_pairs.add_example(src, tgt)
+                    self.write_sentence(removePadding(src), removePadding(tgt), 'accepted', score)
+                    self.accepted += 1
+                    if self.symmetric:
+                        self.similar_pairs.add_example(tgt, src)
+                        self.write_sentence(tgt, src, 'accepted', score)
+                    self.total += 1
+                
+                elif use_threshold or self.in_candidate_pool(candidate, candidate_pool):
+                # Apply threshold (single-representation systems only)
 
-            # Apply threshold (single-representation systems only)
-            if score >= self.threshold:
-                # print("Score is greater than threshold")
-                # Check if no maximum of allowed unique accepted pairs reached
-                # if self.similar_pairs.no_limit_reached(src, tgt):
-                # Add to PairBank
-                self.similar_pairs.add_example(src, tgt)
-                self.write_sentence(removePadding(src), removePadding(tgt), 'accepted', score)
-                self.accepted += 1
-                if self.symmetric:
-                    self.similar_pairs.add_example(tgt, src)
-                    # self.write_sentence(tgt, src, 'accepted', score)
+                    src = candidate[0]
+                    tgt = candidate[1]
+                    score = candidate[2]
 
-                # if self.use_phrase and phrasese is False:
-                #     print("checking phrases to remove.......")
-                #     src_rm = removePadding(src)
-                #     self.phrases.remove_from_phrase_candidates(src_rm, 'src')
-                #     tgt_rm = removePadding(tgt)
-                #     self.phrases.remove_from_phrase_candidates(tgt_rm, 'tgt')
-                #     # write the accepted phrases to file
-                # if self.use_phrase and phrasese is True and self.args.write_phrase:
-                #     self.write_sentence(removePadding(src), removePadding(tgt), 'phrase', score)
-            else:
-                # print("threshold not met!!!")
-                self.declined += 1
-            self.total += 1
-
+                    if score >= self.threshold:
+                        # print("Score is greater than threshold")
+                        # Check if no maximum of allowed unique accepted pairs reached
+                        # if self.similar_pairs.no_limit_reached(src, tgt):
+                        # Add to PairBank
+                        self.similar_pairs.add_example(src, tgt)
+                        self.write_sentence(removePadding(src), removePadding(tgt), 'accepted', score)
+                        self.accepted += 1
+                        if self.symmetric:
+                            self.similar_pairs.add_example(tgt, src)
+                            self.write_sentence(tgt, src, 'accepted', score)
+                    else:
+                        # print("threshold not met!!!")
+                        self.declined += 1
+                    self.total += 1
+                else: # doesnt match thresold or not in candidate-pool
+                    continue
+        
         return None
 
     def write_embed_only(self, candidates, cand_embed):
@@ -860,6 +772,7 @@ class Comparable():
                                                                                 removeSpaces(' '.join(tgt_words)), s)
                     print(out, file=fout)
                     # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                    candidates.append((srcSent[i], tgtSent[j], s))
             if self.retrieval == 'bwd':
                 for j, i in enumerate(bwd_best):
                     s = bwd_scores[j].max()
@@ -871,6 +784,7 @@ class Comparable():
                                                                                 removeSpaces(' '.join(tgt_words)), s)
                     print(out, file=fout)
                     # print(bwd_scores[j].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                    candidates.append((srcSent[i], tgtSent[j], s))
             if self.retrieval == 'intersect':
                 for i, j in enumerate(fwd_best):
                     if bwd_best[j] == i:
@@ -883,6 +797,7 @@ class Comparable():
                                                                                     removeSpaces(' '.join(tgt_words)), s)
                         print(out, file=fout)
                         # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                        candidates.append((srcSent[i], tgtSent[j], s))
             if self.retrieval == 'max':
                 indices = np.stack((np.concatenate((np.arange(x.shape[0]), bwd_best)),
                                     np.concatenate((fwd_best, np.arange(y.shape[0])))), axis=1)
@@ -907,6 +822,7 @@ class Comparable():
 
         fout.close()
         print(f"time taken by faiss sent scoring: {time.time()-start} seconds.")
+        logger.info(f"num candidates: {len(candidates)}")
         return candidates
 
     def score_sents(self, src_sents, tgt_sents):
@@ -1147,13 +1063,6 @@ class Comparable():
                     # print(f"k['net_input']['src_tokens'][i]: {k['net_input']['src_tokens'][i]}")
                     # print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
                     sents.append((k['net_input']['src_tokens'][i], sent_repr[i]))
-                    
-                    # if side == 'src' and use_phrase is True:
-                    #     st = removePadding(k['net_input']['src_tokens'][i])
-                    #     self.phrases.sourcesent.add((hash(str(st)), st))
-                    # elif side == 'tgt' and use_phrase is True:
-                    #     st = removePadding(k['net_input']['src_tokens'][i])
-                    #     self.phrases.targetsent.add((hash(str(st)), st))
 
             elif self.cfg.task.arch == "lstm":
                 for i in range(texts.shape[0]):
@@ -1301,12 +1210,14 @@ class Comparable():
         return cove
 
     def getdata(self, articles):
+        logger.info(f"self.cfg.dataset.dataset_impl: raw")
         trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
-                                                         dataset_impl=self.cfg.dataset.dataset_impl, combine=False,
+                                                         dataset_impl='raw', combine=False,
                                                          default='cached')
         trainingSetTgt = load_indexed_dataset(articles[1], self.task.tgt_dict,
-                                                         dataset_impl=self.cfg.dataset.dataset_impl, combine=False,
+                                                         dataset_impl='raw', combine=False,
                                                          default='cached')
+        logger.info(f"trainingSetSrc: {trainingSetSrc}")
         # print("read the text file ")self.args.data +
         # convert the read files to Monolingual dataset to make padding easy
         src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
@@ -1431,21 +1342,23 @@ class Comparable():
                 
                 # get src2gt , tgt2src 
                 try:
-                    print(f"self.faiss: {self.faiss}")
+                    logger.info(f"self.faiss: {self.faiss}")
                     if self.faiss:
                         candidates = self.faiss_sent_scoring(src_sents, tgt_sents)
-                        print(f"done with faiss scoring of src sents and tgt sents")
+                        logger.info(f"done with faiss scoring of src sents and tgt sents")
                         candidates_embed = self.faiss_sent_scoring(src_embeds, tgt_embeds)
-                        print(f"done with faiss scoring of src embeds and tgt embeds")
+                        logger.info(f"num candidates  = {len(candidates)}")
+                        logger.info(f"num candidates_embed  = {len(candidates_embed)}")
+                        logger.info(f"done with faiss scoring of src embeds and tgt embeds")
                         embed_comparison_pool = set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
                         # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
-                        print(f"made embed_comparison_pool")
+                        logger.info(f"made embed_comparison_pool")
                         if self.write_dual:
                             #print("writing the sentences to file....")
                             self.write_embed_only(candidates, candidates_embed)
                         # Extract parallel samples (secondary filter)
-                        print(f"starting to extract parallel sents")
-                        self.extract_parallel_sents(candidates, embed_comparison_pool)
+                        logger.info(f"starting to extract parallel sents")
+                        self.extract_parallel_sents(candidates, embed_comparison_pool, use_threshold=self.use_threshold)
                     else:
                         src2tgt, tgt2src, similarities, scores = self.score_sents(src_sents, tgt_sents)
                     # src2tgt = { "dis a src sent": {"dis a tg": 0.2, "dis s a TRG": 0.6, "dis": 0.12} }
@@ -1503,12 +1416,12 @@ class Comparable():
                         continue
 
                     # Extract parallel samples (secondary filter)
-                    self.extract_parallel_sents(candidates, comparison_pool)
+                    self.extract_parallel_sents(candidates, comparison_pool, use_threshold=self.use_threshold)
                     # if phrase extraction is to be used
 
-                print("pair bank  = ",len((self.similar_pairs.pairs)))
+                logger.info(f"pair bank  = {len(self.similar_pairs.pairs)}")
                 # Train on extracted sentences
-                end_of_epoch = self.train(epoch)
+                self.train(epoch)
                 if not self.faiss:
                     del src2tgt, tgt2src
                 #gc.collect()
@@ -1517,17 +1430,13 @@ class Comparable():
                 snapshot = tracemalloc.take_snapshot()
                 top_stats = snapshot.statistics('lineno')
                 
-            if len((self.similar_pairs.pairs)) > 0:
+            if len(self.similar_pairs.pairs) > 0:
                 print("batching and training")
-                end_of_epoch = self.train(epoch, last=True)
+                self.train(epoch, last=True)
 
         self.accepted_file.close()
         if self.use_phrase == True:
             self.accepted_phrase.close()
-
-        # log end-of-epoch stats
-        #stats = get_training_stats(metrics.get_smoothed_values('train'))
-        #self.progress.print(stats, tag='train', step=num_updates)
 
         # log end-of-epoch stats
         logger.info("end of epoch {} (average epoch stats below)".format(epoch))
@@ -1537,6 +1446,7 @@ class Comparable():
         
         # reset epoch-level meters
         metrics.reset_meters('train')
+        end_of_epoch = True
         return num_updates, end_of_epoch
     '''
     @metrics.aggregate('train')
@@ -1564,6 +1474,7 @@ class Comparable():
     @metrics.aggregate('train')
     def train(self, epoch, last=False):
         # Check if enough parallel sentences were collected
+        # is_epoch_end = False
         if last is False:
             while self.similar_pairs.contains_batch():
                 # print("IT has batch.....")
@@ -1628,14 +1539,8 @@ class Comparable():
                                 # reset mid-epoch stats after each log interval
                                 # the end-of-epoch stats will still be preserved
                                 metrics.reset_meters('train_inner')
-                end_of_epoch = not itr.has_next()
-                        # if log_output is None:
-                        #     continue
-                    # log mid-epoch stats
-                    # stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
-                    # self.progress.print(stats, tag='train_inner', step=num_updates)
-                    # self.progress.log(stats, tag='train_inner', step=num_updates)
-                    # metrics.reset_meters('train_inner')
+                # end_of_epoch = not itr.has_next()
+                # is_epoch_end = end_of_epoch
         else:
             # numberofex = self.similar_pairs.get_num_examples()
             itrs = self.similar_pairs.yield_batch()
@@ -1693,8 +1598,9 @@ class Comparable():
                 self.progress.print(stats, tag='train_inner', step=num_updates)
                 self.progress.log(stats, tag='train_inner', step=num_updates)
                 metrics.reset_meters('train_inner')
-            end_of_epoch = not itr.has_next()
-        return end_of_epoch
+            # end_of_epoch = not itr.has_next()
+            # is_epoch_end = end_of_epoch
+        # return is_epoch_end #end_of_epoch
     
     
     def validate(self, epoch, subsets):
@@ -1773,71 +1679,10 @@ class Comparable():
             valid_losses.append(stats[self.cfg.checkpoint.best_checkpoint_metric])
         return valid_losses
 
-        # if self.args.fixed_validation_seed is not None:
-        #     # set fixed seed for every validation
-        #     utils.set_torch_seed(self.args.fixed_validation_seed)
-
-        # valid_losses = []
-        # for subset in subsets:
-        #     # print(f"subset: {subset}")
-        #     # Initialize data iterator
-        #     itr = self.task.get_batch_iterator(
-        #         dataset=self.task.dataset(subset),
-        #         max_tokens=self.args.max_tokens_valid,
-        #         max_sentences=self.args.max_sentences_valid,
-        #         max_positions=utils.resolve_max_positions(
-        #             self.task.max_positions(),
-        #             self.trainer.get_model().max_positions(),
-        #         ),
-        #         ignore_invalid_inputs=self.args.skip_invalid_size_inputs_valid_test,
-        #         required_batch_size_multiple=self.args.required_batch_size_multiple,
-        #         seed=self.args.seed,
-        #         num_shards=self.args.distributed_world_size,
-        #         shard_id=self.args.distributed_rank,
-        #         num_workers=self.args.num_workers,
-        #     ).next_epoch_itr(shuffle=False)
-        #     progress = progress_bar.build_progress_bar(
-        #         self.args, itr, epoch,
-        #         prefix='valid on \'{}\' subset'.format(subset),
-        #         no_progress_bar='simple'
-        #     )
-
-        #     # create a new root metrics aggregator so validation metrics
-        #     # don't pollute other aggregators (e.g., train meters)
-        #     with metrics.aggregate(new_root=True) as agg:
-        #         for sample in progress:
-        #             # print(f"sample: {sample}")
-        #             self.trainer.valid_step(sample)
-
-        #     # log validation stats
-        #     stats = get_valid_stats(self.args, self.trainer, agg.get_smoothed_values())
-        #     progress.print(stats, tag=subset, step=self.trainer.get_num_updates())
-
-        #     # print(f"self.args.best_checkpoint_metric: {self.args.best_checkpoint_metric}")
-
-        #     valid_losses.append(stats[self.args.best_checkpoint_metric])
-        # return valid_losses
-
     def save_comp_chkp(self, epoch):
         dirs = self.save_dir + '/' + self.model_name + '_' + str(epoch) + self.src + "-" + self.tgt + ".pt"
         self.trainer.save_checkpoint(dirs, {"train_iterator": {"epoch": epoch}})
 
-# def get_valid_stats(cfg, trainer, stats):
-#     if 'nll_loss' in stats and 'ppl' not in stats:
-#         stats['ppl'] = utils.get_perplexity(stats['nll_loss'])
-#     stats['num_updates'] = trainer.get_num_updates()
-#     # print(f"stats['num_updates']: {stats['num_updates']}")
-#     # print(f"hasattr(checkpoint_utils.save_checkpoint, 'best'): {hasattr(checkpoint_utils.save_checkpoint, 'best')}")
-#     if hasattr(checkpoint_utils.save_checkpoint, 'best'):
-#         key = 'best_{0}'.format(args.best_checkpoint_metric)
-#         # print(f"key: {key}")
-#         # print(f"args.best_checkpoint_metric: {args.best_checkpoint_metric}")
-#         best_function = max if args.maximize_best_checkpoint_metric else min
-#         stats[key] = best_function(
-#             checkpoint_utils.save_checkpoint.best,
-#             stats[args.best_checkpoint_metric],
-#         )
-#     return stats
 
 def get_valid_stats(
     cfg: DictConfig,
