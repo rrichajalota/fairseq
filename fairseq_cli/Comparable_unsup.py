@@ -212,23 +212,6 @@ class PairBank():
         # Get example from src/tgt and remove original padding
         src = PairBank.removePadding(src)
         tgt = PairBank.removePadding(tgt)
-        # if self.mps:
-        #     src_length = get_src_len(src, self.use_gpu, device="mps")
-        #     tgt_length = get_src_len(tgt, self.use_gpu, device="mps")
-        # else:
-        #     src_length = get_src_len(src, self.use_gpu)
-        #     tgt_length = get_src_len(tgt, self.use_gpu)
-        # index = None
-        # # Create CompExample object holding all information needed for later
-        # # batch creation.
-        # # print((src,tgt))
-        # example = CompExample(index, src, tgt, src_length, tgt_length, index)
-        # # dataset, src, tgt, src_length, tgt_length, index
-        # # Add to pairs
-        # self.pairs.append(example.to_dict)
-        # self.sizes.append((example.src_length.cpu(), example.tgt_length.cpu()))
-        # # Remember unique src-tgt combination
-        # self.index_memory.add(hash((str(src), str(tgt))))
         self.srcs.append(src)
         self.tgts.append(tgt)
         self.src_lens.append(src.size(0))
@@ -1962,23 +1945,10 @@ class Comparable():
                 left_pad_source=self.cfg.task.left_pad_source,
                 left_pad_target=self.cfg.task.left_pad_target)
 
-                # unsupData = LanguagePairDataset(src_mono, src_mono.sizes, self.task.src_dict, src_mono, src_mono.sizes, self.task.src_dict, left_pad_source=self.cfg.task.left_pad_source,
-                # left_pad_target=self.cfg.task.left_pad_target)
-
-                # Train on extracted sentences
-                # logger.info(f"src_mono len: {len(unsup_data)}")
-                # logger.info(f"src_mono.sizes: {unsup_data.sizes}")
-                # logger.info(f"pairData.sizes: {pairData.sizes}")
                 self.concat_data = RoundRobinZipDatasets(
                     OrderedDict([('sup', pairData)] + [('unsup', unsup_data)]),
                     eval_key=None
                     )
-                # ConcatDataset([pairData, unsupData])
-                # RoundRobinZipDatasets(
-                    # OrderedDict([('sup', pairData)] + [('unsup', unsupData)]),
-                    # eval_key=None
-                    # )
-                #ConcatDataset([pairData, unsup_data])
                 self.concat_data.ordered_indices()
                 self.train(epoch)
                 if not self.faiss:
@@ -1989,10 +1959,10 @@ class Comparable():
                 snapshot = tracemalloc.take_snapshot()
                 top_stats = snapshot.statistics('lineno')
                 
-            if len(self.similar_pairs.pairs) > 0:
-                # print("batching and training")
-                logger.info("batching and training")
-                self.train(epoch, last=True)
+            # if len(self.similar_pairs.pairs) > 0:
+            #     # print("batching and training")
+            #     logger.info("batching and training")
+            #     self.train(epoch, last=True)
 
         self.accepted_file.close()
         if self.use_phrase == True:
@@ -2036,11 +2006,7 @@ class Comparable():
         # Check if enough parallel sentences were collected
         # is_epoch_end = False
         if last is False:
-            # while self.similar_pairs.contains_batch():
-                # print("IT has batch.....")
-                # try:
             itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0)
-            # itrs = self.similar_pairs.yield_batch()
             itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
             itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
             if self.cfg.common.tpu:
@@ -2088,11 +2054,6 @@ class Comparable():
                 with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
                     "train_step-%d" % i
                 ):
-                    # logger.info("Size of the samples = ",len(samples))
-                    # logger.info("Size of unsup samples = ",len(unsup_samples))
-
-                    # logger.info(f"unsup sample[i]: {unsup_samples[0]}")
-
                     log_output = self.trainer.train_step(samples)
                     if log_output is not None: # not OOM, overflow, ...
                             # log mid-epoch stats
@@ -2106,66 +2067,66 @@ class Comparable():
                             metrics.reset_meters('train_inner')
                 # end_of_epoch = not itr.has_next()
                 # is_epoch_end = end_of_epoch
-        else:
-            # numberofex = self.similar_pairs.get_num_examples()
-            itrs = self.similar_pairs.yield_batch()
-            itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
-            itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
-            if self.cfg.common.tpu:
-                itr = utils.tpu_data_loader(itr)
-            self.progress = progress_bar.progress_bar(
-                itr,
-                log_format=self.cfg.common.log_format,
-                log_file=self.cfg.common.log_file,
-                log_interval=self.log_interval,
-                epoch=epoch,
-                aim_repo=(
-                    self.cfg.common.aim_repo
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                aim_run_hash=(
-                    self.cfg.common.aim_run_hash
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
-                tensorboard_logdir=(
-                    self.cfg.common.tensorboard_logdir
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
-                wandb_project=(
-                    self.cfg.common.wandb_project
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                wandb_run_name=os.environ.get(
-                    "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
-                ),
-                azureml_logging=(
-                    self.cfg.common.azureml_logging
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else False
-                ),
-            )
-            self.progress.update_config(_flatten_config(self.cfg))
-            logger.info("Start iterating over samples")
-            for i, samples in enumerate(self.progress):
-                with metrics.aggregate('train_inner'):
-                    log_output = self.trainer.train_step(samples)
-                    num_updates = self.trainer.get_num_updates()
-                    if log_output is None:
-                        continue
-                # log mid-epoch stats
-                stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
-                self.progress.print(stats, tag='train_inner', step=num_updates)
-                self.progress.log(stats, tag='train_inner', step=num_updates)
-                metrics.reset_meters('train_inner')
-            # end_of_epoch = not itr.has_next()
-            # is_epoch_end = end_of_epoch
-        # return is_epoch_end #end_of_epoch
+        # else:
+        #     # numberofex = self.similar_pairs.get_num_examples()
+        #     itrs = self.similar_pairs.yield_batch()
+        #     itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
+        #     itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
+        #     if self.cfg.common.tpu:
+        #         itr = utils.tpu_data_loader(itr)
+        #     self.progress = progress_bar.progress_bar(
+        #         itr,
+        #         log_format=self.cfg.common.log_format,
+        #         log_file=self.cfg.common.log_file,
+        #         log_interval=self.log_interval,
+        #         epoch=epoch,
+        #         aim_repo=(
+        #             self.cfg.common.aim_repo
+        #             if distributed_utils.is_master(self.cfg.distributed_training)
+        #             else None
+        #         ),
+        #         aim_run_hash=(
+        #             self.cfg.common.aim_run_hash
+        #             if distributed_utils.is_master(self.cfg.distributed_training)
+        #             else None
+        #         ),
+        #         aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
+        #         tensorboard_logdir=(
+        #             self.cfg.common.tensorboard_logdir
+        #             if distributed_utils.is_master(self.cfg.distributed_training)
+        #             else None
+        #         ),
+        #         default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
+        #         wandb_project=(
+        #             self.cfg.common.wandb_project
+        #             if distributed_utils.is_master(self.cfg.distributed_training)
+        #             else None
+        #         ),
+        #         wandb_run_name=os.environ.get(
+        #             "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
+        #         ),
+        #         azureml_logging=(
+        #             self.cfg.common.azureml_logging
+        #             if distributed_utils.is_master(self.cfg.distributed_training)
+        #             else False
+        #         ),
+        #     )
+        #     self.progress.update_config(_flatten_config(self.cfg))
+        #     logger.info("Start iterating over samples")
+        #     for i, samples in enumerate(self.progress):
+        #         with metrics.aggregate('train_inner'):
+        #             log_output = self.trainer.train_step(samples)
+        #             num_updates = self.trainer.get_num_updates()
+        #             if log_output is None:
+        #                 continue
+        #         # log mid-epoch stats
+        #         stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
+        #         self.progress.print(stats, tag='train_inner', step=num_updates)
+        #         self.progress.log(stats, tag='train_inner', step=num_updates)
+        #         metrics.reset_meters('train_inner')
+        #     # end_of_epoch = not itr.has_next()
+        #     # is_epoch_end = end_of_epoch
+        # # return is_epoch_end #end_of_epoch
     
     
     def validate(self, epoch, itr):
