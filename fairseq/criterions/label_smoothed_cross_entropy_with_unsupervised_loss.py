@@ -94,8 +94,8 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
             loss = loss_sum / sample_size / math.log(2)
             nll_loss = nll_loss_sum / sample['sup']["ntokens"] / math.log(2)
             # NOTE:
-            # # we don't need to use sample_size as denominator for the gradient
-            # # here sample_size is just used for logging
+            # # we don't need to use sample_size/ntokens as denominator for the gradient
+            # # here sample_size & ntokens are just used for logging
             sample_size = 1
             sample_size_set =  True
             if unsup:
@@ -104,10 +104,12 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
             logging_output = {
                 "loss" : loss.data,
                 "nll_loss": nll_loss.data,
-                "ntokens": sample['sup']["ntokens"],
+                "ntokens": 1,
                 "nsentences": sample['sup']["target"].size(0),
                 "sample_size": sample_size,
             }
+            # sample['sup']["ntokens"]
+            
 
         if unsup:
             if train:
