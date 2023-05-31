@@ -10,16 +10,21 @@ import itertools
 import random
 import faiss
 import faiss.contrib.torch_utils
-import numpy as np
-from collections import defaultdict
-import torch
-import time
 from pathlib import Path
+import numpy as np
+from collections import OrderedDict, defaultdict
+import torch
+import pandas as pd
+import time
+from tqdm import tqdm
+from torch.utils.data import Dataset
 from fairseq.data import (
     MonolingualDataset,
-    LanguagePairDataset
+    LanguagePairDataset, 
+    BacktranslationDataset,
+    ConcatDataset,
+    RoundRobinZipDatasets
 )
-from tqdm import tqdm
 from fairseq.data.data_utils import load_indexed_dataset,numpy_seed,batch_by_size,filter_by_size
 from fairseq.data.iterators import EpochBatchIterator, GroupedIterator
 from fairseq import (
@@ -32,12 +37,10 @@ import os, sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import logging
 from fairseq.trainer import Trainer
+from fairseq.sequence_generator import SequenceGenerator
 from fairseq.distributed import utils as distributed_utils
+from itertools import cycle
 torch.manual_seed(10)
-import torch.multiprocessing
-torch.multiprocessing.set_sharing_strategy('file_system')
-# debug_mode = "error"
-# torch.cuda.set_sync_debug_mode(debug_mode)
 
 # We need to setup root logger before importing any fairseq libraries.
 logging.basicConfig(
@@ -134,15 +137,15 @@ def read_vocabulary(vocab_file, threshold=20):
         self.targetsent = set()
 
 
-# class RejectedBank():
-#     """
-#     Class that saves and prepares rejected monostylistic SRC sentences and their resulting
-#     batches.
-#     Args:
-#         batch_size(int): number of examples in a batch
-#         opt(argparse.Namespace): option object
-#     """
-#     pass
+class torchDataset(Dataset):
+    def __init__(self, data_list):
+        self.data_list = data_list
+
+    def __getitem__(self, index):
+        return self.data_list[index]
+
+    def __len__(self):
+        return len(self.data_list)
 
 
 class PairBank():
@@ -157,7 +160,13 @@ class PairBank():
     def __init__(self, batcher, cfg):
         self.pairs = []
         self.index_memory = set()
-        self.batch_size = cfg.dataset.batch_size #max_sentences
+        self.batch_size = cfg.dataset.batch_size 
+        self.sizes = []
+        self.srcs = []
+        self.tgts = []
+        self.src_lens = []
+        self.tgt_lens = []
+        #max_sentences
         self.batcher = batcher
         self.use_gpu = False
         self.mps = False
@@ -203,22 +212,27 @@ class PairBank():
         # Get example from src/tgt and remove original padding
         src = PairBank.removePadding(src)
         tgt = PairBank.removePadding(tgt)
-        if self.mps:
-            src_length = get_src_len(src, self.use_gpu, device="mps")
-            tgt_length = get_src_len(tgt, self.use_gpu, device="mps")
-        else:
-            src_length = get_src_len(src, self.use_gpu)
-            tgt_length = get_src_len(tgt, self.use_gpu)
-        index = None
-        # Create CompExample object holding all information needed for later
-        # batch creation.
-        # print((src,tgt))
-        example = CompExample(index, src, tgt, src_length, tgt_length, index)
-        # dataset, src, tgt, src_length, tgt_length, index
-        # Add to pairs
-        self.pairs.append(example)
-        # Remember unique src-tgt combination
-        self.index_memory.add(hash((str(src), str(tgt))))
+        # if self.mps:
+        #     src_length = get_src_len(src, self.use_gpu, device="mps")
+        #     tgt_length = get_src_len(tgt, self.use_gpu, device="mps")
+        # else:
+        #     src_length = get_src_len(src, self.use_gpu)
+        #     tgt_length = get_src_len(tgt, self.use_gpu)
+        # index = None
+        # # Create CompExample object holding all information needed for later
+        # # batch creation.
+        # # print((src,tgt))
+        # example = CompExample(index, src, tgt, src_length, tgt_length, index)
+        # # dataset, src, tgt, src_length, tgt_length, index
+        # # Add to pairs
+        # self.pairs.append(example.to_dict)
+        # self.sizes.append((example.src_length.cpu(), example.tgt_length.cpu()))
+        # # Remember unique src-tgt combination
+        # self.index_memory.add(hash((str(src), str(tgt))))
+        self.srcs.append(src)
+        self.tgts.append(tgt)
+        self.src_lens.append(src.size(0))
+        self.tgt_lens.append(tgt.size(0))
         return None
 
     def contains_batch(self):
@@ -300,14 +314,22 @@ class CompExample():
         if CompExample._dataset == None:
             CompExample._dataset = dataset
 
+    def to_dict(self):
+        return {
+            'index': self.index,
+            'src': self.src,
+            'tgt': self.tgt,
+            'src_length': self.src_length,
+            'tgt_length': self.tgt_length
+        }
+
 
 class BatchCreator():
-    def __init__(self, task, cfg, trainer):
+    def __init__(self, task, cfg):
         self.task = task
         self.cfg = cfg
-        self.trainer = trainer
 
-    def create_batch(self, src_examples, tgt_examples, src_lengths, tgt_lengths, no_target=False, shard_batch_itr=False):
+    def create_batch(self, src_examples, tgt_examples, src_lengths, tgt_lengths, no_target=False):
         """ Creates a batch object from previously extracted parallel data.
                 Args:
                     src_examples(list): list of src sequence tensors
@@ -337,19 +359,10 @@ class BatchCreator():
         batch_sampler = batch_by_size(indices, pairData.num_tokens, 
         max_sentences=self.cfg.comparable.max_sentences, required_batch_size_multiple=self.cfg.dataset.required_batch_size_multiple, )
         itrs = EpochBatchIterator(dataset=pairData, collate_fn=pairData.collater,
-         batch_sampler=batch_sampler, seed=self.cfg.common.seed, epoch=0, num_workers=self.cfg.dataset.num_workers,num_shards=self.trainer.data_parallel_world_size if shard_batch_itr else 1, shard_id=self.trainer.data_parallel_rank if shard_batch_itr else 0,)
+         batch_sampler=batch_sampler, seed=self.cfg.common.seed, epoch=0, num_workers=self.cfg.dataset.num_workers)
         indices = None
         return itrs
 
-
-def knn(x, y, k, use_gpu, index='flat'):
-    '''
-    small query batch, small index: CPU is typically faster
-    small query batch, large index: GPU is typically faster
-    large query batch, small index: could go either way
-    large query batch, large index: GPU is typically faster
-    '''
-    return knnGPU(x, y, k, index) if use_gpu else knnCPU(x, y, k, index)
 
 def knn_v2(x, y, k, use_gpu, index='flat'):
     '''
@@ -360,6 +373,7 @@ def knn_v2(x, y, k, use_gpu, index='flat'):
     string_factory = "L2norm,OPQ16_64,IVF30000_HNSW32,PQ16" # Flat
     '''
     return knnGPU_v2(x, y, k, index) if use_gpu else knnCPU(x, y, k, index)
+
 
 def knnGPU_v2(x, y, k, index='flat', faiss_verbose=True, batch_size=100000, train_size=1170000, use_float16=True):
     ngpus = faiss.get_num_gpus()
@@ -463,6 +477,15 @@ def knnGPU_v2(x, y, k, index='flat', faiss_verbose=True, batch_size=100000, trai
 
     return rsim, rind, x, y
 
+
+def knn(x, y, k, use_gpu, index='flat'):
+    '''
+    small query batch, small index: CPU is typically faster
+    small query batch, large index: GPU is typically faster
+    large query batch, small index: could go either way
+    large query batch, large index: GPU is typically faster
+    '''
+    return knnGPU(x, y, k, index) if use_gpu else knnCPU(x, y, k, index)
     
 def knnCPU(x, y, k, index='flat'):
     start=time.time()
@@ -477,7 +500,7 @@ def knnCPU(x, y, k, index='flat'):
         idx.train(y)
         # print(f"idx.is_trained: {idx.is_trained}") 40000
     elif index == 'hnsw': 
-        idx = faiss.index_factory(dim, "PCA64,IVF30000_HNSW32,Flat", faiss.METRIC_INNER_PRODUCT)
+        idx = faiss.index_factory(dim, "IVF40000_HNSW32,Flat", faiss.METRIC_INNER_PRODUCT)
         idx.train(y)
     elif index =='pq':
         # quantizer = faiss.IndexFlatIP(dim)
@@ -495,8 +518,7 @@ def knnCPU(x, y, k, index='flat'):
     # print(f"time taken to build the index: {time.time()-start} secs")
     return sim, ind, x, y
 
-def knnGPU(x, y, k, index='flat', mem=48*1024*1024*
-           1024):
+def knnGPU(x, y, k, index='flat', mem=8*1024*1024*1024):
     # d = srcRep.shape[1]
     # print(f"d: {d}")
 
@@ -512,19 +534,17 @@ def knnGPU(x, y, k, index='flat', mem=48*1024*1024*
     # 3. In the vector of sub-vecs, replace each sub-vec with the ID of its nearest set-specific centroid
     # '''
     # https://github.com/facebookresearch/LASER/blob/main/source/mine_bitexts.py
-    print(f"faiss.get_num_gpus(): {faiss.get_num_gpus()}")
-    ngpus = faiss.get_num_gpus()
+    print(faiss.get_num_gpus())
     dim = x.shape[1]
     m = 8 # number of centroid IDs in final compressed vectors
     bits = 8 # number of bits in each centroid
     nlist = 100  # how many cells
     res = faiss.StandardGpuResources()
-    res.setDefaultNullStreamAllDevices()
     co = faiss.GpuClonerOptions()
     batch_size = mem // (dim*4)
     print(f"batch_size: {batch_size}")
     if batch_size > x.shape[0]:
-        batch_size = 64 #x.shape[0] // 10000
+        batch_size = x.shape[0] // 5
         print(f"batch_size: {batch_size}")
     
     sim = np.zeros((x.shape[0], k), dtype=np.float32)
@@ -534,31 +554,26 @@ def knnGPU(x, y, k, index='flat', mem=48*1024*1024*
         bsims, binds = [], []
         for yfrom in range(0, y.shape[0], batch_size):
             yto = min(yfrom + batch_size, y.shape[0]) # to_trg_ind
-            logger.info('{}-{}  ->  {}-{}'.format(xfrom, xto, yfrom, yto))
+            # print('{}-{}  ->  {}-{}'.format(xfrom, xto, yfrom, yto))
             if index == 'ivf': # below 1M vectors
                 idx = faiss.index_factory(dim, "IVF1200,Flat", faiss.METRIC_INNER_PRODUCT)
-                idx = faiss.index_cpu_to_gpu(res, 0, index=idx)
+                idx = faiss.index_cpu_to_gpu(res, 0, idx, co)
                 idx.train(y)
             elif index =='pq':
                 # quantizer = faiss.IndexFlatIP(dim)
                 # idx = faiss.IndexIVFPQ(quantizer, dim, nlist, m, bits)
                 idx = faiss.index_factory(dim, "IVF1200,PQ16", faiss.METRIC_INNER_PRODUCT)
-                idx = faiss.index_cpu_to_all_gpus(index=idx, co=co)
+                idx = faiss.index_cpu_to_gpu(res, 0, idx, co)
                 idx.train(y)
             elif index == 'hnsw': # for 1M-10M vectors 
-                idx = faiss.index_factory(dim, "PCA64,IVF30000_HNSW32,Flat", faiss.METRIC_INNER_PRODUCT)
+                idx = faiss.index_factory(dim, "IVF40000_HNSW32,Flat", faiss.METRIC_INNER_PRODUCT)
                 idx_ivf = faiss.extract_index_ivf(idx)
-                res = [faiss.StandardGpuResources() for _ in range(ngpus)]
-                #clustering_index = faiss.index_cpu_to_all_gpus(faiss.IndexFlatIP(idx_ivf.d), co, ngpu=1)
-                # clustering_index = faiss.index_cpu_to_gpu(res, 0, faiss.IndexFlatIP(idx_ivf.d))
-                # index_cpu_to_gpu_multiple_py(resources, index, co=None, gpus=None)
-                #clustering_index = faiss.index_cpu_to_all_gpus(res=res, index=faiss.IndexFlatIP(idx_ivf.d),  co=co)
-                clustering_index = faiss.index_cpu_to_gpu_multiple_py(resources=res, index=faiss.IndexFlatIP(idx_ivf.d), co=co)
+                clustering_index = faiss.index_cpu_to_all_gpus(res, 0, faiss.IndexFlatIP(idx_ivf.d), co)
                 idx_ivf.clustering_index = clustering_index
                 idx.train(y)
             else:
                 idx = faiss.IndexFlatIP(dim)
-                idx = faiss.index_cpu_to_all_gpus(index=idx, co=co)
+                idx = faiss.index_cpu_to_all_gpus(idx)
             # quantizer = faiss.IndexFlatL2(d)
             # idx = faiss.IndexIVFFlat(quantizer, d, nlist)
             # #idx = faiss.IndexIVFPQ(quantizer, d, nlist, m, bits)
@@ -589,12 +604,14 @@ def score(x, y, fwd_mean, bwd_mean, margin):
 
 def score_candidates(x, y, candidate_inds, fwd_mean, bwd_mean, margin, verbose=False):
     if verbose:
-        print(' - scoring {:d} candidates'.format(x.shape[0]))
+        logger.info(' - scoring {:d} candidates'.format(x.shape[0]))
     scores = np.zeros(candidate_inds.shape)
     for i in range(scores.shape[0]):
         for j in range(scores.shape[1]):
             k = candidate_inds[i, j]
             scores[i, j] = score(x[i], y[k], fwd_mean[i], bwd_mean[k], margin)
+            # print(f"x[i]: {x[i]}, y[k]: {y[k]} fwd_mean[i]: {fwd_mean[i]}, bwd_mean[k]: {bwd_mean[k]}")
+            # print(f"scores[i, j] : {scores[i, j]}")
     return scores
 
 
@@ -633,10 +650,9 @@ class Comparable():
         self.model_name = cfg.comparable.model_name
         self.save_dir = cfg.comparable.save_dir
         self.use_phrase = cfg.comparable.use_phrase
-        self.model = model #trainer.get_model().encoder
+        #self.model = trainer.get_model().encoder
+        self.model = model
         self.usepos =  cfg.comparable.usepos
-        self.temp = cfg.comparable.temp
-        Path(f"/netscratch/jalota/pickle/{self.temp}/").mkdir(parents=True, exist_ok=True)
         # print("Use positional encoding = ", self.usepos)
         self.trainer = trainer
         # print(f"self.trainer: {self.trainer}")
@@ -644,15 +660,15 @@ class Comparable():
         self.encoder = self.trainer.get_model().encoder
         # print(f"self.encoder: {self.encoder}")
         self.batch_size = cfg.comparable.max_sentences
-        self.batcher = BatchCreator(task, cfg, trainer)
+        self.batcher = BatchCreator(task, cfg)
         self.similar_pairs = PairBank(self.batcher, cfg)
+        self.unsup_itr = None
         self.accepted = 0
         self.accepted_limit = 0
         self.declined = 0
         self.total = 0
         self.cfg = cfg
         self.comp_log = cfg.comparable.comp_log
-        Path(self.comp_log).mkdir(parents=True, exist_ok=True)
         self.cove_type = cfg.comparable.cove_type
         self.update_freq = cfg.optimization.update_freq
         self.k = cfg.comparable.k #20 #cfg.comparable.k
@@ -681,6 +697,7 @@ class Comparable():
         self.faiss_use_gpu = cfg.comparable.faiss_use_gpu
         self.faiss_output = cfg.comparable.faiss_output
         self.index=cfg.comparable.index
+        Path(self.comp_log).mkdir(parents=True, exist_ok=True)
         # print(f"args.cpu: {args.cpu}")
         if cfg.common.cpu == False:
             self.use_gpu = True
@@ -720,11 +737,9 @@ class Comparable():
         elif status == 'embed_only':
             with open(self.embed_file, 'a', encoding='utf8') as f:
                 f.write(out)
-            # return out
         elif status == 'hidden_only':
             with open(self.hidden_file, 'a', encoding='utf8') as f:
                 f.write(out)
-            # return out
         return None
 
     def extract_parallel_sents(self, candidates, candidate_pool, phrasese=False, use_threshold=False):
@@ -808,7 +823,8 @@ class Comparable():
                 score = candidate[2]
                 self.write_sentence(src, tgt, 'embed_only', score)
 
-    def faiss_sent_scoring_v2(self, src_sents, tgt_sents):
+    
+    def faiss_sent_scoring(self, src_sents, tgt_sents):
         """ Score source and target combinations.
         Args:
             src_sents(list(tuple(torch.Tensor...))):
@@ -827,7 +843,7 @@ class Comparable():
         tgtSent, tgtRep = zip(*tgt_sents)
         # print(f"tgtSent: {tgtSent}")
 
-        # print("faiss sent scoring")
+        print("faiss sent scoring")
 
         if self.faiss_use_gpu:
             # https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU
@@ -837,31 +853,14 @@ class Comparable():
         # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
         # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
 
-        # logger.info(f"len srcRep: {len(srcRep)}")
-        # logger.info(f"srcRep: {srcRep}")
-
+        x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
+        y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
         
+        print(f"normalising x.dtype : {x.dtype}")
+        faiss.normalize_L2(x)
+        faiss.normalize_L2(y)
 
-        # x = torch.stack(list(srcRep), dim=0) #torch.cat(srcRep, dim=1) # concat along the rows
-        # y = torch.stack(list(tgtRep), dim=0)
-        if self.faiss_use_gpu:
-            x, y = srcRep, tgtRep
-
-            # logger.info(f"len x: {x.size()}")
-            # logger.info(f"x: {x}")
-        else:
-            x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
-            y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
-            
-            # print(f"normalising x.dtype : {x.dtype}")
-            faiss.normalize_L2(x)
-            faiss.normalize_L2(y)
-            # logger.info("done torch normalizing")
-            # logger.info(f"x.size(): {x.size()}")
-        # https://discuss.pytorch.org/t/how-to-normalize-embedding-vectors/1209/9
-        # x = torch.nn.functional.normalize(x, p=2, dim=1)
-        # y = torch.nn.functional.normalize(y, p=2, dim=1)
-        #F.normalize(x, p=2, dim=1)
+        logger.info("done faiss normalizing")
 
         candidates = []
 
@@ -871,26 +870,16 @@ class Comparable():
         if self.retrieval != 'bwd':
             if self.verbose:
                 print(' - perform {:d}-nn source against target'.format(self.k))
-            x2y_sim, x2y_ind, x, y = knn_v2(x, y, self.k, self.faiss_use_gpu, self.index)
-            if self.faiss_use_gpu:
-                x2y_sim = x2y_sim.numpy() #.detach().cpu().numpy()
-                x2y_ind = x2y_ind.numpy() # .detach().cpu()
+            x2y_sim, x2y_ind = knn(x, y, min(y.shape[0], self.k), self.faiss_use_gpu, self.index)
             x2y_mean = x2y_sim.mean(axis=1)
-            #x2y_mean = torch.mean(x2y_sim, 1)
-
             # print(f"x2y_sim.shape: {x2y_sim.shape}")
             # print(f"x2y_ind.shape: {x2y_ind.shape}")
 
         if self.retrieval != 'fwd':
             if self.verbose:
                 print(' - perform {:d}-nn target against source'.format(self.k))
-            y2x_sim, y2x_ind, _, _ = knn_v2(y, x, self.k, self.faiss_use_gpu, self.index)
-            # logger.info(f"type(y2x_sim): {type(y2x_sim)}, type(y2x_ind): {type(y2x_ind)}")
-            if self.faiss_use_gpu:
-                y2x_sim = y2x_sim.numpy() # .detach().cpu()
-                y2x_ind = y2x_ind.numpy() # .detach().cpu().numpy()
+            y2x_sim, y2x_ind = knn(y, x, min(x.shape[0], self.k), self.faiss_use_gpu, self.index)
             y2x_mean = y2x_sim.mean(axis=1)
-            # y2x_mean = torch.mean(y2x_sim, 1)
 
         # margin function
         if self.margin == 'absolute':
@@ -1008,185 +997,7 @@ class Comparable():
 
         fout.close()
         logger.info(f"time taken by faiss sent scoring: {time.time()-start} seconds.")
-        # logger.info(f"num candidates: {len(candidates)}")
-        return candidates
-
-    
-    def faiss_sent_scoring(self, src_sents, tgt_sents):
-        """ Score source and target combinations.
-        Args:
-            src_sents(list(tuple(torch.Tensor...))):
-                list of src sentences in their sequential and semantic representation
-            tgt_sents(list(tuple(torch.Tensor...))): list of tgt sentences
-        Returns:
-            src2tgt(dict(dict(float))): dictionary mapping a src to a tgt and their score
-            tgt2src(dict(dict(float))): dictionary mapping a tgt to a src and their score
-            similarities(list(float)): list of cosine similarities
-            scores(list(float)): list of scores
-        """
-        start = time.time()
-        
-        srcSent, srcRep = zip(*src_sents)
-        # print(f"srcSent: {srcSent}")
-        tgtSent, tgtRep = zip(*tgt_sents)
-        # print(f"tgtSent: {tgtSent}")
-
-        print("faiss sent scoring")
-
-        if self.faiss_use_gpu:
-            # https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU
-            ngpus = faiss.get_num_gpus()
-            logger.info(f"number of GPUs: {ngpus}")
-
-        # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
-        # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
-
-        x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
-        y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
-        
-        print(f"normalising x.dtype : {x.dtype}")
-        faiss.normalize_L2(x)
-        faiss.normalize_L2(y)
-
-        logger.info("done faiss normalizing")
-
-        candidates = []
-
-        # torch.from_numpy(a)
-        
-        # calculate knn in both directions
-        if self.retrieval != 'bwd':
-            if self.verbose:
-                print(' - perform {:d}-nn source against target'.format(self.k))
-            x2y_sim, x2y_ind = knn(x, y, min(y.shape[0], self.k), self.faiss_use_gpu, self.index)
-            x2y_mean = x2y_sim.mean(axis=1)
-            # logger.info(f"x2y_sim.shape: {x2y_sim.shape}")
-            logger.info(f"x2y_ind.shape: {x2y_ind.shape}")
-
-        if self.retrieval != 'fwd':
-            if self.verbose:
-                print(' - perform {:d}-nn target against source'.format(self.k))
-            y2x_sim, y2x_ind = knn(y, x, min(x.shape[0], self.k), self.faiss_use_gpu, self.index)
-            y2x_mean = y2x_sim.mean(axis=1)
-            logger.info(f"y2x_ind.shape: {y2x_ind.shape}")
-
-        # margin function
-        if self.margin == 'absolute':
-            margin = lambda a, b: a
-        elif self.margin == 'distance':
-            margin = lambda a, b: a - b
-        else:  # args.margin == 'ratio':
-            margin = lambda a, b: a / b
-
-        # print(f"margin: {margin}")
-
-        fout = open(self.faiss_output, mode='w', encoding='utf8', errors='surrogateescape')
-
-        src_inds=list(range(len(srcSent)))
-        trg_inds=list(range(len(tgtSent)))
-
-        if self.mode == 'search':
-            if self.verbose:
-                print(' - Searching for closest sentences in target')
-                print(' - writing alignments to {:s}'.format(self.faiss_output))
-            scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
-            best = x2y_ind[np.arange(x.shape[0]), scores.argmax(axis=1)]
-
-            print(f"best: {best}")
-
-            nbex = x.shape[0]
-            ref = np.linspace(0, nbex-1, nbex).astype(int)  # [0, nbex)
-            err = nbex - np.equal(best.reshape(nbex), ref).astype(int).sum()
-            print(' - errors: {:d}={:.2f}%'.format(err, 100*err/nbex))
-            for i in src_inds:
-                print(tgtSent[best[i]], file=fout)
-
-        elif self.mode == 'score':
-            for i, j in zip(src_inds, trg_inds):
-                s = score(x[i], y[j], x2y_mean[i], y2x_mean[j], margin)
-                src = srcSent[i]
-                tgt = tgtSent[j]
-                src_words = self.task.src_dict.string(src)
-                tgt_words = self.task.tgt_dict.string(tgt)
-                out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
-                                                                            removeSpaces(' '.join(tgt_words)), s)
-                print(out, file=fout)
-
-        elif self.mode == 'mine':
-            if self.verbose:
-                print(' - mining for parallel data')
-            fwd_scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
-            bwd_scores = score_candidates(y, x, y2x_ind, y2x_mean, x2y_mean, margin, self.verbose)
-            fwd_best = x2y_ind[np.arange(x.shape[0]), fwd_scores.argmax(axis=1)]
-            # print(f"fwd_best: {fwd_best}")
-            bwd_best = y2x_ind[np.arange(y.shape[0]), bwd_scores.argmax(axis=1)]
-            # print(f"bwd_best: {bwd_best}")
-            if self.verbose:
-                print(' - writing alignments to {:s}'.format(self.faiss_output))
-                if self.threshold > 0:
-                    print(' - with threshold of {:f}'.format(self.threshold))
-            if self.retrieval == 'fwd':
-                for i, j in enumerate(fwd_best):
-                    s = fwd_scores[i].max()
-                    src = srcSent[i]
-                    tgt = tgtSent[j]
-                    src_words = self.task.src_dict.string(src)
-                    tgt_words = self.task.tgt_dict.string(tgt)
-                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
-                                                                                removeSpaces(' '.join(tgt_words)), s)
-                    print(out, file=fout)
-                    # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
-                    candidates.append((srcSent[i], tgtSent[j], s))
-            if self.retrieval == 'bwd':
-                for j, i in enumerate(bwd_best):
-                    s = bwd_scores[j].max()
-                    src = srcSent[i]
-                    tgt = tgtSent[j]
-                    src_words = self.task.src_dict.string(src)
-                    tgt_words = self.task.tgt_dict.string(tgt)
-                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
-                                                                                removeSpaces(' '.join(tgt_words)), s)
-                    print(out, file=fout)
-                    # print(bwd_scores[j].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
-                    candidates.append((srcSent[i], tgtSent[j], s))
-            if self.retrieval == 'intersect':
-                for i, j in enumerate(fwd_best):
-                    if bwd_best[j] == i:
-                        s = fwd_scores[i].max()
-                        src = srcSent[i]
-                        tgt = tgtSent[j]
-                        src_words = self.task.src_dict.string(src)
-                        tgt_words = self.task.tgt_dict.string(tgt)
-                        out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
-                                                                                    removeSpaces(' '.join(tgt_words)), s)
-                        print(out, file=fout)
-                        # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
-                        candidates.append((srcSent[i], tgtSent[j], s))
-            if self.retrieval == 'max':
-                indices = np.stack((np.concatenate((np.arange(x.shape[0]), bwd_best)),
-                                    np.concatenate((fwd_best, np.arange(y.shape[0])))), axis=1)
-                scores = np.concatenate((fwd_scores.max(axis=1), bwd_scores.max(axis=1)))
-                seen_src, seen_trg = set(), set()
-                for i in np.argsort(-scores):
-                    src_ind, trg_ind = indices[i]
-                    if not src_ind in seen_src and not trg_ind in seen_trg:
-                        seen_src.add(src_ind)
-                        seen_trg.add(trg_ind)
-                        if scores[i] > self.threshold:
-                            s = scores[i]
-                            src = srcSent[src_ind]
-                            tgt = tgtSent[trg_ind]
-                            src_words = self.task.src_dict.string(src)
-                            tgt_words = self.task.tgt_dict.string(tgt)
-                            out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
-                                                                                        removeSpaces(' '.join(tgt_words)), s)
-                            print(out, file=fout)
-                            # print(scores[i], srcSent[src_ind], tgtSent[trg_ind], sep='\t', file=fout)
-                            candidates.append((srcSent[src_ind], tgtSent[trg_ind], scores[i]))
-
-        fout.close()
-        logger.info(f"time taken by faiss sent scoring: {time.time()-start} seconds.")
-        # logger.info(f"num candidates: {len(candidates)}")
+        logger.info(f"num candidates: {len(candidates)}")
         return candidates
 
     def score_sents(self, src_sents, tgt_sents):
@@ -1315,26 +1126,23 @@ class Comparable():
                 list of sentences in their sequential (seq) and semantic representation (cove)
         """
         sents = []
-        print("inside get_article_coves")
-        # print(f"self.cfg.task.arch: ")
-        # print(f"{self.cfg.task.arch}")
+        # print("inside get_article_coves")
         #for k in article:#tqdm(article):
-        # print("next(article)")
+        # p:rint("next(article)")
         id = 0
         # print(f"next(article): {next(article)}")
         # print(f"len(article): {len(article)}")
+        # logger.info(f"torch.cuda.current_device(): {torch.cuda.current_device()}")
         for k in article:
             # print("inside article!")
-            # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
-            # print(f"self.cfg.model.arch: {self.cfg.model.arch}")
+            # print(f"self.cfg.task.arch: {self.cfg.task.arch}")
             # print(f"article id: {id}")
             # if id == 3013:
             #     print("skipping 3013")
             #     continue
-            # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
+                # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
             sent_repr = None
-            if self.cfg.model.arch == "lstm":  # if the model architecture is LSTM 
-                # replaced self.cfg.task.arch
+            if self.cfg.task.arch == "lstm":  # if the model architecture is LSTM
                 lengths = k['net_input']['src_lengths']
                 texts = k['net_input']['src_tokens']
                 ordered_len, ordered_idx = lengths.sort(0, descending=True)
@@ -1360,7 +1168,7 @@ class Comparable():
                         sent_repr = torch.mean(hidden_embed, dim=0)
                     else:
                         sent_repr = torch.sum(hidden_embed, dim=0)
-            elif self.cfg.model.arch == "transformer":
+            elif self.cfg.task.arch == "transformer":
                 # print("In the transformer representation")
                 if representation == 'memory':
                     with torch.no_grad():
@@ -1389,11 +1197,11 @@ class Comparable():
                     else:
                         sent_repr = torch.sum(hidden_embed, dim=0)
                 elif representation == 'embed':
-                    # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
-                    # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
-                    # print("going into encoder forward emb")
-                    # print(f"self.usepos: {self.usepos}")
                     with torch.no_grad():
+                        # print(f"k['net_input']['src_tokens']: {k['net_input']['src_tokens']}")
+                        # print(f"k['net_input']['src_lengths']: {k['net_input']['src_lengths']}")
+                        # print("going into encoder forward emb")
+                        # print(f"self.usepos: {self.usepos}")
                         if self.usepos:
                             if self.use_gpu and self.mps:
                                 input_emb,_ = self.encoder.forward_embedding(k['net_input']['src_tokens'].to(self.mps_device)) 
@@ -1423,7 +1231,7 @@ class Comparable():
                         sent_repr = torch.mean(input_emb, dim=0)
                     else:
                         sent_repr = torch.sum(input_emb, dim=0)
-            if self.cfg.model.arch == "transformer":
+            if self.cfg.task.arch == "transformer":
                 # print(f"inside modeltype == transformer")
                 
                 for i in range(k['net_input']['src_tokens'].shape[0]):
@@ -1432,7 +1240,7 @@ class Comparable():
                     # print(f"rang(i): {range(k['net_input']['src_tokens'].shape[0])}")
                     sents.append((k['net_input']['src_tokens'][i], sent_repr[i]))
 
-            elif self.cfg.model.arch == "lstm":
+            elif self.cfg.task.arch == "lstm":
                 for i in range(texts.shape[0]):
                     sents.append((texts[i], sent_repr[i]))
             # print(f"finishing {id}")
@@ -1526,7 +1334,7 @@ class Comparable():
         candidates = list(src_tgt_max & tgt_src_max)
         return candidates # [(src_x, tgt_y, score_xy)]
 
-    def _get_iterator(self, sent, dictn, max_position, epoch, fix_batches_to_gpus=False, shard_batch_itr=False,disable_iterator_cache=False):
+    def _get_iterator(self, sent, dictn, max_position, epoch, fix_batches_to_gpus=False, shard_batch_itr=False):
         """
         Creates an iterator object from a text file.
         Args:
@@ -1553,7 +1361,6 @@ class Comparable():
         itrs = EpochBatchIterator(dataset=sent, collate_fn=sent.collater, batch_sampler=batch_sampler, seed=self.cfg.common.seed,num_workers=self.cfg.dataset.num_workers, epoch=epoch, num_shards=self.trainer.data_parallel_world_size if shard_batch_itr else 1, shard_id=self.trainer.data_parallel_rank if shard_batch_itr else 0,)
         #data_iter = itrs.next_epoch_itr(shuffle=False, fix_batches_to_gpus=fix_batches_to_gpus)
         # print(f"itrs.state_dict: {itrs.state_dict()}")
-        # print(f"itrs: {itrs}")
         # print(f"itrs.n(): {itrs.n()}")
         # print(f"itrs.first_batch(): {itrs.first_batch()}")
         # print(f"next(itrs)")
@@ -1580,24 +1387,378 @@ class Comparable():
             cove = torch.sum(seq_ex, dim=0)
         return cove
 
+    def get_source_monolingual_data(self, articles):
+        trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
+                                                         dataset_impl='raw', combine=False,
+                                                         default='cached')
+        src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+                                      src_vocab=self.task.src_dict,
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+        src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+                                      src_vocab=self.task.src_dict,
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+        return src_mono
+
     def getdata(self, articles):
-        logger.info(f"self.cfg.dataset.dataset_impl: raw")
+        # logger.info(f"self.cfg.dataset.dataset_impl: raw")
         trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
                                                          dataset_impl='raw', combine=False,
                                                          default='cached')
         trainingSetTgt = load_indexed_dataset(articles[1], self.task.tgt_dict,
                                                          dataset_impl='raw', combine=False,
                                                          default='cached')
-        logger.info(f"trainingSetSrc: {trainingSetSrc}")
+        # logger.info(f"trainingSetSrc.sizes: {trainingSetSrc.sizes}")
         # print("read the text file ")self.args.data +
         # convert the read files to Monolingual dataset to make padding easy
-        src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes, src_vocab=self.   task.src_dict, tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-        tgt_mono = MonolingualDataset(dataset=trainingSetTgt, sizes=trainingSetTgt.sizes, src_vocab=self.task.tgt_dict, tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+        src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+                                      src_vocab=self.task.src_dict,
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+        tgt_mono = MonolingualDataset(dataset=trainingSetTgt, sizes=trainingSetTgt.sizes,
+                                      src_vocab=self.task.tgt_dict,
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+
         del trainingSetSrc, trainingSetTgt
         # print("Monolingual data")
         # print(f"src_mono.num_tokens(1): {src_mono.num_tokens(1)}")
         # print(f"tgt_mono.num_tokens(1): {tgt_mono.num_tokens(1)}")
+        # logger.info(f"src_mono.sizes: {src_mono.sizes}")
         return src_mono, tgt_mono
+    
+    def generate_output(self,
+        sample,
+        ):
+        def decode(toks, escape_unk=False):
+            s = self.task.tgt_dict.string(
+                toks.int().cpu(),
+                unk_string=("UNKNOWNTOKENINREF" if escape_unk else "UNKNOWNTOKENINHYP"),
+            )
+            return s
+        # bos_token=self.task.tgt_dict.eos()
+        gen_out = self.task.inference_step(self.task.sequence_generator, [self.model], sample, prefix_tokens=None)
+        hyps = []
+        for i in range(len(gen_out)):
+                hyps.append(decode(gen_out[i][0]["tokens"]))
+        logger.info("example hypothesis: " + hyps[0])
+        # self.task.src_dict.string(src)
+        logger.info(f"input reference: {self.task.src_dict.string(removePadding(sample['net_input']['src_tokens']))}")
+        # sequence_generator = SequenceGenerator(
+        #             [self.model],
+        #             tgt_dict=self.task.tgt_dict,
+        #             beam_size=1,
+        #             max_len_a=512,
+        #             max_len_b=512,
+        #         )
+
+        # return sequence_generator.generate(
+        #     [self.model],
+        #     sample,
+        #     bos_token=bos_token,
+        # )
+        return gen_out
+
+    
+    def unsupervised_training(self, comparable_data_list, epoch):
+        # tracemalloc.start()
+        """
+        Trains with Mono-(lingual/stylistic) SRC data using model from the previous time-step 
+        """
+        translate_fn = self.generate_output
+        # Go through comparable data
+        with open(comparable_data_list, encoding='utf8') as c:
+            comp_list = c.read().split('\n')
+            cur_article = 0
+            for ap, article_pair in enumerate(comp_list):
+                print(f"on article {ap}")
+                cur_article += 1
+                articles = article_pair.split(' ')
+
+                # Discard malaligned documents
+                if len(articles) != 2:
+                    continue
+
+                trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict, dataset_impl='raw', combine=False, default='cached')
+
+                logger.info(f"trainingSetSrc type: {type(trainingSetSrc)}")
+
+                src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes, src_vocab=self.task.src_dict, tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+                logger.info(f"src mono type: {type(src_mono)}")
+                # in monolingualDataset, sample['target] is None. 
+
+                #src_dict (~fairseq.data.Dictionary): the dictionary of backtranslated
+                #sentences. i.e. in TR-OG case, = self.task.tgt_dict = OG dict
+                # tgt_dict (~fairseq.data.Dictionary, optional): the dictionary of
+                # sentences to be backtranslated. = self.task.src_dict = TR dict
+                
+                src_gen_data = BacktranslationDataset(tgt_dataset=src_mono, sizes=trainingSetSrc.sizes, src_dict=self.task.tgt_dict, tgt_dict=self.task.src_dict, backtranslation_fn=translate_fn, cuda=True)
+
+                #1.  get iterator from SRC-GEN data
+                logger.info("get iterator from SRC-GEN data")
+                data_itr = self._get_iterator(src_gen_data, dictn=self.task.src_dict, max_position=self.cfg.task.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
+                
+                #2. get ENC representations for both the instances in the criterion!! 
+                logger.info("get ENC representations for both the instances")
+                
+                it1 = data_itr.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
+                unsup_itr = GroupedIterator(it1, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
+
+                unsup_progress = progress_bar.progress_bar(
+                    unsup_itr,
+                    log_format=self.cfg.common.log_format,
+                    log_file=self.cfg.common.log_file,
+                    log_interval=self.log_interval,
+                    epoch=epoch,
+                    aim_repo=(
+                        self.cfg.common.aim_repo
+                        if distributed_utils.is_master(self.cfg.distributed_training)
+                        else None
+                    ),
+                    aim_run_hash=(
+                        self.cfg.common.aim_run_hash
+                        if distributed_utils.is_master(self.cfg.distributed_training)
+                        else None
+                    ),
+                    aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
+                    tensorboard_logdir=(
+                        self.cfg.common.tensorboard_logdir
+                        if distributed_utils.is_master(self.cfg.distributed_training)
+                        else None
+                    ),
+                    default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
+                    wandb_project=(
+                        self.cfg.common.wandb_project
+                        if distributed_utils.is_master(self.cfg.distributed_training)
+                        else None
+                    ),
+                    wandb_run_name=os.environ.get(
+                        "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
+                    ),
+                    azureml_logging=(
+                        self.cfg.common.azureml_logging
+                        if distributed_utils.is_master(self.cfg.distributed_training)
+                        else False
+                    ),
+                )
+                unsup_progress.update_config(_flatten_config(self.cfg))
+                logger.info(f"Start iterating over SRC-TGT' samples")
+                
+
+                # for k in it1:
+                #     print(f"k: {k}")
+                #     break
+
+                # 3. combine Supervised and Backtranslation data using concat datasets/Round-robin dataset - how will I make a distinction? -- think!!
+                # 4. have one criteria that computes supervised and unsupervised loss! 
+                # 5. unsupervised loss can either be computed using model at the previous timestep. or it can be computed real-time like in semi-fst. just check if the generation happens per sample or over a batch of samples!! 
+                # 6. valid_step already changed in translate_mod.py -- make this change to translate.py to compute unsupervised loss during validation and we are all set!  
+                
+                # 3. compute cosine similarity loss 
+                # 4. compute entopy-loss for generations
+                # 5. update gradients  
+                # 6. In train_unsup_comp.py, change validation function and make it similar to unsup training. 
+
+    def faiss_sent_scoring_v2(self, src_sents, tgt_sents):
+        """ Score source and target combinations.
+        Args:
+            src_sents(list(tuple(torch.Tensor...))):
+                list of src sentences in their sequential and semantic representation
+            tgt_sents(list(tuple(torch.Tensor...))): list of tgt sentences
+        Returns:
+            src2tgt(dict(dict(float))): dictionary mapping a src to a tgt and their score
+            tgt2src(dict(dict(float))): dictionary mapping a tgt to a src and their score
+            similarities(list(float)): list of cosine similarities
+            scores(list(float)): list of scores
+        """
+        start = time.time()
+        
+        srcSent, srcRep = zip(*src_sents)
+        # print(f"srcSent: {srcSent}")
+        tgtSent, tgtRep = zip(*tgt_sents)
+        # print(f"tgtSent: {tgtSent}")
+
+        # print("faiss sent scoring")
+
+        if self.faiss_use_gpu:
+            # https://github.com/facebookresearch/faiss/wiki/Faiss-on-the-GPU
+            ngpus = faiss.get_num_gpus()
+            logger.info(f"number of GPUs: {ngpus}")
+
+        # srcSent2ind = {sent:i for i, sent in enumerate(srcSent)}
+        # tgtSent2ind = {sent:i for i, sent in enumerate(tgtSent)}
+
+        # logger.info(f"len srcRep: {len(srcRep)}")
+        # logger.info(f"srcRep: {srcRep}")
+
+        
+
+        # x = torch.stack(list(srcRep), dim=0) #torch.cat(srcRep, dim=1) # concat along the rows
+        # y = torch.stack(list(tgtRep), dim=0)
+        if self.faiss_use_gpu:
+            x, y = srcRep, tgtRep
+
+            # logger.info(f"len x: {x.size()}")
+            # logger.info(f"x: {x}")
+        else:
+            x= np.asarray([rep.detach().cpu().numpy() for rep in srcRep])
+            y= np.asarray([rep.detach().cpu().numpy() for rep in tgtRep])
+            
+            # print(f"normalising x.dtype : {x.dtype}")
+            faiss.normalize_L2(x)
+            faiss.normalize_L2(y)
+            # logger.info("done torch normalizing")
+            # logger.info(f"x.size(): {x.size()}")
+        # https://discuss.pytorch.org/t/how-to-normalize-embedding-vectors/1209/9
+        # x = torch.nn.functional.normalize(x, p=2, dim=1)
+        # y = torch.nn.functional.normalize(y, p=2, dim=1)
+        #F.normalize(x, p=2, dim=1)
+
+        candidates = []
+
+        # torch.from_numpy(a)
+        
+        # calculate knn in both directions
+        if self.retrieval != 'bwd':
+            if self.verbose:
+                logger.info(' - perform {:d}-nn source against target'.format(self.k))
+            x2y_sim, x2y_ind, x, y = knn_v2(x, y, self.k, self.faiss_use_gpu, self.index)
+            if self.faiss_use_gpu:
+                x2y_sim = x2y_sim.numpy() #.detach().cpu().numpy()
+                x2y_ind = x2y_ind.numpy() # .detach().cpu()
+            x2y_mean = x2y_sim.mean(axis=1)
+            #x2y_mean = torch.mean(x2y_sim, 1)
+
+            # print(f"x2y_sim.shape: {x2y_sim.shape}")
+            # print(f"x2y_ind.shape: {x2y_ind.shape}")
+
+        if self.retrieval != 'fwd':
+            if self.verbose:
+                logger.info(' - perform {:d}-nn target against source'.format(self.k))
+            y2x_sim, y2x_ind, _, _ = knn_v2(y, x, self.k, self.faiss_use_gpu, self.index)
+            # logger.info(f"type(y2x_sim): {type(y2x_sim)}, type(y2x_ind): {type(y2x_ind)}")
+            if self.faiss_use_gpu:
+                y2x_sim = y2x_sim.numpy() # .detach().cpu()
+                y2x_ind = y2x_ind.numpy() # .detach().cpu().numpy()
+            y2x_mean = y2x_sim.mean(axis=1)
+            # y2x_mean = torch.mean(y2x_sim, 1)
+
+        # margin function
+        if self.margin == 'absolute':
+            margin = lambda a, b: a
+        elif self.margin == 'distance':
+            margin = lambda a, b: a - b
+        else:  # args.margin == 'ratio':
+            margin = lambda a, b: a / b
+
+        # print(f"margin: {margin}")
+
+        fout = open(self.faiss_output, mode='w', encoding='utf8', errors='surrogateescape')
+
+        src_inds=list(range(len(srcSent)))
+        trg_inds=list(range(len(tgtSent)))
+
+        if self.mode == 'search':
+            if self.verbose:
+                print(' - Searching for closest sentences in target')
+                print(' - writing alignments to {:s}'.format(self.faiss_output))
+            scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
+            best = x2y_ind[np.arange(x.shape[0]), scores.argmax(axis=1)]
+
+            print(f"best: {best}")
+
+            nbex = x.shape[0]
+            ref = np.linspace(0, nbex-1, nbex).astype(int)  # [0, nbex)
+            err = nbex - np.equal(best.reshape(nbex), ref).astype(int).sum()
+            print(' - errors: {:d}={:.2f}%'.format(err, 100*err/nbex))
+            for i in src_inds:
+                print(tgtSent[best[i]], file=fout)
+
+        elif self.mode == 'score':
+            for i, j in zip(src_inds, trg_inds):
+                s = score(x[i], y[j], x2y_mean[i], y2x_mean[j], margin)
+                src = srcSent[i]
+                tgt = tgtSent[j]
+                src_words = self.task.src_dict.string(src)
+                tgt_words = self.task.tgt_dict.string(tgt)
+                out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                            removeSpaces(' '.join(tgt_words)), s)
+                print(out, file=fout)
+
+        elif self.mode == 'mine':
+            if self.verbose:
+                logger.info(' - mining for parallel data')
+            fwd_scores = score_candidates(x, y, x2y_ind, x2y_mean, y2x_mean, margin, self.verbose)
+            bwd_scores = score_candidates(y, x, y2x_ind, y2x_mean, x2y_mean, margin, self.verbose)
+            fwd_best = x2y_ind[np.arange(x.shape[0]), fwd_scores.argmax(axis=1)]
+            # print(f"fwd_best: {fwd_best}")
+            bwd_best = y2x_ind[np.arange(y.shape[0]), bwd_scores.argmax(axis=1)]
+            # print(f"bwd_best: {bwd_best}")
+            if self.verbose:
+                logger.info(' - writing alignments to {:s}'.format(self.faiss_output))
+                if self.threshold > 0:
+                    logger.info(' - with threshold of {:f}'.format(self.threshold))
+            if self.retrieval == 'fwd':
+                for i, j in enumerate(fwd_best):
+                    s = fwd_scores[i].max()
+                    src = srcSent[i]
+                    tgt = tgtSent[j]
+                    src_words = self.task.src_dict.string(src)
+                    tgt_words = self.task.tgt_dict.string(tgt)
+                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                removeSpaces(' '.join(tgt_words)), s)
+                    print(out, file=fout)
+                    # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                    candidates.append((srcSent[i], tgtSent[j], s))
+            if self.retrieval == 'bwd':
+                for j, i in enumerate(bwd_best):
+                    s = bwd_scores[j].max()
+                    src = srcSent[i]
+                    tgt = tgtSent[j]
+                    src_words = self.task.src_dict.string(src)
+                    tgt_words = self.task.tgt_dict.string(tgt)
+                    out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                removeSpaces(' '.join(tgt_words)), s)
+                    print(out, file=fout)
+                    # print(bwd_scores[j].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                    candidates.append((srcSent[i], tgtSent[j], s))
+            if self.retrieval == 'intersect':
+                for i, j in enumerate(fwd_best):
+                    if bwd_best[j] == i:
+                        s = fwd_scores[i].max()
+                        src = srcSent[i]
+                        tgt = tgtSent[j]
+                        src_words = self.task.src_dict.string(src)
+                        tgt_words = self.task.tgt_dict.string(tgt)
+                        out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                    removeSpaces(' '.join(tgt_words)), s)
+                        print(out, file=fout)
+                        # print(fwd_scores[i].max(), srcSent[i], tgtSent[j], sep='\t', file=fout)
+                        candidates.append((srcSent[i], tgtSent[j], s))
+            if self.retrieval == 'max':
+                indices = np.stack((np.concatenate((np.arange(x.shape[0]), bwd_best)),
+                                    np.concatenate((fwd_best, np.arange(y.shape[0])))), axis=1)
+                scores = np.concatenate((fwd_scores.max(axis=1), bwd_scores.max(axis=1)))
+                seen_src, seen_trg = set(), set()
+                for i in np.argsort(-scores):
+                    src_ind, trg_ind = indices[i]
+                    if not src_ind in seen_src and not trg_ind in seen_trg:
+                        seen_src.add(src_ind)
+                        seen_trg.add(trg_ind)
+                        if scores[i] > self.threshold:
+                            s = scores[i]
+                            src = srcSent[src_ind]
+                            tgt = tgtSent[trg_ind]
+                            src_words = self.task.src_dict.string(src)
+                            tgt_words = self.task.tgt_dict.string(tgt)
+                            out = 'src: {}\ttgt: {}\tsimilarity: {}\n'.format(removeSpaces(' '.join(src_words)),
+                                                                                        removeSpaces(' '.join(tgt_words)), s)
+                            print(out, file=fout)
+                            # print(scores[i], srcSent[src_ind], tgtSent[trg_ind], sep='\t', file=fout)
+                            candidates.append((srcSent[src_ind], tgtSent[trg_ind], scores[i]))
+
+        fout.close()
+        logger.info(f"time taken by faiss sent scoring: {time.time()-start} seconds.")
+        # logger.info(f"num candidates: {len(candidates)}")
+        return candidates
+
 
     def extract_and_train(self, comparable_data_list, epoch):
 
@@ -1631,16 +1792,12 @@ class Comparable():
         with open(comparable_data_list, encoding='utf8') as c:
             comp_list = c.read().split('\n')
             #num_articles = len(comp_list)
+            unsup_data = None
             cur_article = 0
             for ap, article_pair in enumerate(comp_list):
                 print(f"on article {ap}")
                 cur_article += 1
                 articles = article_pair.split(' ')
-                # if ap >= 1:
-                #     src_sents = torch.load(f"/netscratch/jalota/pickle/{self.temp}/src_sents.pt")
-                #     src_embeds = torch.load(f"/netscratch/jalota/pickle/{self.temp}/src_embeds.pt")
-                #     tgt_sents = torch.load(f"/netscratch/jalota/pickle/{self.temp}/tgt_sents.pt")
-                #     tgt_embeds = torch.load(f"/netscratch/jalota/pickle/{self.temp}/tgt_embeds.pt")
                 # print(f"articles: {articles}")
                 # print(f"len(articles): {len(articles)}")
                 # Discard malaligned documents
@@ -1648,12 +1805,17 @@ class Comparable():
                     continue
                 #load the dataset from the files for both source and target
                 src_mono, tgt_mono = self.getdata(articles)
+                unsup_data = src_mono
                 # Prepare iterator objects for current src/tgt document
                 print(f"self.task.src_dict: {self.task.src_dict}")
                 print(f"self.cfg.max_source_positions: {self.cfg.task.max_source_positions}")
                 print(f"get iterator")
+                
                 src_article = self._get_iterator(src_mono, dictn=self.task.src_dict, max_position=self.cfg.task.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
                 tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict, max_position=self.cfg.task.max_target_positions, epoch=epoch, fix_batches_to_gpus=False)
+
+                # re-use src_article for monolingual unsupervised training
+                # self.unsup_itr = src_article
 
                 # Get sentence representations
                 try:
@@ -1665,35 +1827,27 @@ class Comparable():
                         print(f"src article, rep=embed")
                         src_sents += self.get_article_coves(itr_src, representation='embed', mean=False)
                         # print(f"tgt article, rep=embed")
-                        # torch.save(src_sents, "/netscratch/jalota/pickle/exp2/src_sents.pt")
                         tgt_sents += self.get_article_coves(itr_tgt, representation='embed', mean=False)
-                        # torch.save(tgt_sents, "/netscratch/jalota/pickle/exp2/tgt_sents.pt")
                     else:
                         # C_e and C_h
                         '''it1, it2 = itertools.tee(src_article)
                         it3, it4 = itertools.tee(tgt_article)'''
                         print(f"src article, rep=embed")
-                        it = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-                        src_embeds += self.get_article_coves(it, representation='embed', mean=False, side='src', use_phrase=self.use_phrase)
-                        # torch.save(src_embeds, f"/netscratch/jalota/pickle/{self.temp}/src_embeds.pt")
+                        it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
+                        src_embeds += self.get_article_coves(it1, representation='embed', mean=False, side='src',
+                                                         use_phrase=self.use_phrase)
                         print(f"src article, rep=memory")
-                        # del src_embeds
-                        it = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-                        src_sents += self.get_article_coves(it, representation='memory', mean=False, side='src')
-                        # torch.save(src_sents, f"/netscratch/jalota/pickle/{self.temp}/src_sents.pt")
-                        # del src_sents
+                        it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
+                        src_sents += self.get_article_coves(it1, representation='memory', mean=False, side='src')
+                        
                         print(f"tgt article, rep=embed")
-                        it = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-                        tgt_embeds += self.get_article_coves(it, representation='embed', mean=False, side='tgt', use_phrase=self.use_phrase)
-                        # torch.save(tgt_embeds, f"/netscratch/jalota/pickle/{self.temp}/tgt_embeds.pt")
-                        # del tgt_embeds
+                        it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
+                        tgt_embeds += self.get_article_coves(it3, representation='embed', mean=False, side='tgt',
+                                                         use_phrase=self.use_phrase)
                         print(f"tgt article, rep=memory")
-                        it = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
-                        print(f"got it4")
-                        tgt_sents += self.get_article_coves(it, representation='memory', mean=False, side='tgt')
-                        # torch.save(tgt_sents, f"/netscratch/jalota/pickle/{self.temp}/tgt_sents.pt")
-                        # del tgt_sents
-                        print(f"done with tgt article, rep=memory")
+                        it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
+                        tgt_sents += self.get_article_coves(it3, representation='memory', mean=False, side='tgt')
+
                         #return
                 except:
                     #Skip document pair in case of errors
@@ -1703,15 +1857,12 @@ class Comparable():
                     src_embeds = []
                     tgt_embeds = []
                     continue
-                src_mono.dataset.tokens_list = None
-                src_mono.dataset.sizes = None
-                src_mono.sizes = None
+                # src_mono.dataset.tokens_list = None
+                # src_mono.dataset.sizes = None
+                # src_mono.sizes = None
                 tgt_mono.sizes = None
                 del tgt_mono
-                del src_mono
-
-                # src_sents = torch.load(f"/netscratch/jalota/pickle/{self.temp}/src_sents.pt")
-                # tgt_sents = torch.load(f"/netscratch/jalota/pickle/{self.temp}/tgt_sents.pt")
+                # del src_mono
 
                 if len(src_sents) < 15 or len(tgt_sents) < 15:
                     #print("Length LEss tahn 15")
@@ -1728,19 +1879,13 @@ class Comparable():
                     if self.faiss:
                         candidates = self.faiss_sent_scoring_v2(src_sents, tgt_sents)
                         logger.info(f"done with faiss scoring of src sents and tgt sents")
-                        del src_sents
-                        del tgt_sents
-                    
-                        # src_embeds = torch.load(f"/netscratch/jalota/pickle/{self.temp}/src_embeds.pt")
-                        # tgt_embeds = torch.load(f"/netscratch/jalota/pickle/{self.temp}/tgt_embeds.pt")
-
                         candidates_embed = self.faiss_sent_scoring_v2(src_embeds, tgt_embeds)
                         logger.info(f"num candidates  = {len(candidates)}")
                         logger.info(f"num candidates_embed  = {len(candidates_embed)}")
                         logger.info(f"done with faiss scoring of src embeds and tgt embeds")
                         embed_comparison_pool = set_embed = set([hash((str(c[0]), str(c[1]))) for c in candidates_embed])
                         # candidates : [(src_sent_x, tgt_sent_y, score_xy)]
-                        # logger.info(f"made embed_comparison_pool")
+                        logger.info(f"made embed_comparison_pool")
                         if self.write_dual:
                             #print("writing the sentences to file....")
                             self.write_embed_only(candidates, candidates_embed)
@@ -1807,8 +1952,34 @@ class Comparable():
                     self.extract_parallel_sents(candidates, comparison_pool, use_threshold=self.use_threshold)
                     # if phrase extraction is to be used
 
-                logger.info(f"pair bank  = {len(self.similar_pairs.pairs)}")
+                logger.info(f"pair bank  = {len(self.similar_pairs.srcs)}")
+
+                src_data = torchDataset(data_list=self.similar_pairs.srcs)
+                tgt_data = torchDataset(data_list=self.similar_pairs.tgts)
+                pairData = LanguagePairDataset(
+                src_data, self.similar_pairs.src_lens, self.task.src_dict,
+                tgt_data, self.similar_pairs.tgt_lens, self.task.tgt_dict,
+                left_pad_source=self.cfg.task.left_pad_source,
+                left_pad_target=self.cfg.task.left_pad_target)
+
+                # unsupData = LanguagePairDataset(src_mono, src_mono.sizes, self.task.src_dict, src_mono, src_mono.sizes, self.task.src_dict, left_pad_source=self.cfg.task.left_pad_source,
+                # left_pad_target=self.cfg.task.left_pad_target)
+
                 # Train on extracted sentences
+                # logger.info(f"src_mono len: {len(unsup_data)}")
+                # logger.info(f"src_mono.sizes: {unsup_data.sizes}")
+                # logger.info(f"pairData.sizes: {pairData.sizes}")
+                self.concat_data = RoundRobinZipDatasets(
+                    OrderedDict([('sup', pairData)] + [('unsup', unsup_data)]),
+                    eval_key=None
+                    )
+                # ConcatDataset([pairData, unsupData])
+                # RoundRobinZipDatasets(
+                    # OrderedDict([('sup', pairData)] + [('unsup', unsupData)]),
+                    # eval_key=None
+                    # )
+                #ConcatDataset([pairData, unsup_data])
+                self.concat_data.ordered_indices()
                 self.train(epoch)
                 if not self.faiss:
                     del src2tgt, tgt2src
@@ -1819,6 +1990,7 @@ class Comparable():
                 top_stats = snapshot.statistics('lineno')
                 
             if len(self.similar_pairs.pairs) > 0:
+                # print("batching and training")
                 logger.info("batching and training")
                 self.train(epoch, last=True)
 
@@ -1864,69 +2036,74 @@ class Comparable():
         # Check if enough parallel sentences were collected
         # is_epoch_end = False
         if last is False:
-            while self.similar_pairs.contains_batch():
+            # while self.similar_pairs.contains_batch():
                 # print("IT has batch.....")
                 # try:
-                itrs = self.similar_pairs.yield_batch()
-                itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
-                itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
-                if self.cfg.common.tpu:
-                    itr = utils.tpu_data_loader(itr)
-                self.progress = progress_bar.progress_bar(
-                    itr,
-                    log_format=self.cfg.common.log_format,
-                    log_file=self.cfg.common.log_file,
-                    log_interval=self.log_interval,
-                    epoch=epoch,
-                    aim_repo=(
-                        self.cfg.common.aim_repo
-                        if distributed_utils.is_master(self.cfg.distributed_training)
-                        else None
-                    ),
-                    aim_run_hash=(
-                        self.cfg.common.aim_run_hash
-                        if distributed_utils.is_master(self.cfg.distributed_training)
-                        else None
-                    ),
-                    aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
-                    tensorboard_logdir=(
-                        self.cfg.common.tensorboard_logdir
-                        if distributed_utils.is_master(self.cfg.distributed_training)
-                        else None
-                    ),
-                    default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
-                    wandb_project=(
-                        self.cfg.common.wandb_project
-                        if distributed_utils.is_master(self.cfg.distributed_training)
-                        else None
-                    ),
-                    wandb_run_name=os.environ.get(
-                        "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
-                    ),
-                    azureml_logging=(
-                        self.cfg.common.azureml_logging
-                        if distributed_utils.is_master(self.cfg.distributed_training)
-                        else False
-                    ),
-                )
-                self.progress.update_config(_flatten_config(self.cfg))
-                # logger.info(f"Start iterating over samples")
-                for i, samples in enumerate(self.progress):
-                    with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
-                        "train_step-%d" % i
-                    ):
-                        # print("Size of the samples = ",len(samples))
-                        log_output = self.trainer.train_step(samples)
-                        if log_output is not None: # not OOM, overflow, ...
-                             # log mid-epoch stats
-                            num_updates = self.trainer.get_num_updates()
-                            if num_updates % self.log_interval == 0:
-                                stats = get_training_stats(metrics.get_smoothed_values("train_inner"))
-                                self.progress.log(stats, tag="train_inner", step=num_updates)
-                                
-                                # reset mid-epoch stats after each log interval
-                                # the end-of-epoch stats will still be preserved
-                                metrics.reset_meters('train_inner')
+            itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0)
+            # itrs = self.similar_pairs.yield_batch()
+            itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
+            itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
+            if self.cfg.common.tpu:
+                itr = utils.tpu_data_loader(itr)
+            self.progress = progress_bar.progress_bar(
+                itr,
+                log_format=self.cfg.common.log_format,
+                log_file=self.cfg.common.log_file,
+                log_interval=self.log_interval,
+                epoch=epoch,
+                aim_repo=(
+                    self.cfg.common.aim_repo
+                    if distributed_utils.is_master(self.cfg.distributed_training)
+                    else None
+                ),
+                aim_run_hash=(
+                    self.cfg.common.aim_run_hash
+                    if distributed_utils.is_master(self.cfg.distributed_training)
+                    else None
+                ),
+                aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
+                tensorboard_logdir=(
+                    self.cfg.common.tensorboard_logdir
+                    if distributed_utils.is_master(self.cfg.distributed_training)
+                    else None
+                ),
+                default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
+                wandb_project=(
+                    self.cfg.common.wandb_project
+                    if distributed_utils.is_master(self.cfg.distributed_training)
+                    else None
+                ),
+                wandb_run_name=os.environ.get(
+                    "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
+                ),
+                azureml_logging=(
+                    self.cfg.common.azureml_logging
+                    if distributed_utils.is_master(self.cfg.distributed_training)
+                    else False
+                ),
+            )
+            self.progress.update_config(_flatten_config(self.cfg))
+            # logger.info(f"Start iterating over samples")
+            for i, samples in enumerate(self.progress):
+                with metrics.aggregate("train_inner"), torch.autograd.profiler.record_function(
+                    "train_step-%d" % i
+                ):
+                    # logger.info("Size of the samples = ",len(samples))
+                    # logger.info("Size of unsup samples = ",len(unsup_samples))
+
+                    # logger.info(f"unsup sample[i]: {unsup_samples[0]}")
+
+                    log_output = self.trainer.train_step(samples)
+                    if log_output is not None: # not OOM, overflow, ...
+                            # log mid-epoch stats
+                        num_updates = self.trainer.get_num_updates()
+                        if num_updates % self.log_interval == 0:
+                            stats = get_training_stats(metrics.get_smoothed_values("train_inner"))
+                            self.progress.log(stats, tag="train_inner", step=num_updates)
+                            
+                            # reset mid-epoch stats after each log interval
+                            # the end-of-epoch stats will still be preserved
+                            metrics.reset_meters('train_inner')
                 # end_of_epoch = not itr.has_next()
                 # is_epoch_end = end_of_epoch
         else:
@@ -1991,7 +2168,7 @@ class Comparable():
         # return is_epoch_end #end_of_epoch
     
     
-    def validate(self, epoch, subsets):
+    def validate(self, epoch, itr):
         """Evaluate the model on the validation set(s) and return the losses."""
 
         if self.cfg.dataset.fixed_validation_seed is not None:
@@ -2000,78 +2177,73 @@ class Comparable():
 
         self.trainer.begin_valid_epoch(epoch)
         valid_losses = []
-        for subset_idx, subset in enumerate(subsets):
-            logger.info('begin validation on "{}" subset'.format(subset))
+        # for subset_idx, subset in enumerate(subsets):
+            # logger.info(' "{}" subset'.format(subset))
 
             # Initialize data iterator
-            itr = self.trainer.get_valid_iterator(subset).next_epoch_itr(
-                shuffle=False, set_dataset_epoch=False  # use a fixed valid set
-            )
-            if self.cfg.common.tpu:
-                itr = utils.tpu_data_loader(itr)
-            # print(f"self.cfg.distributed_training: {self.cfg.distributed_training}")
-            progress = progress_bar.progress_bar(
-                itr,
-                log_format=self.cfg.common.log_format,
-                log_interval=self.cfg.common.log_interval,
-                epoch=epoch,
-                prefix=f"valid on '{subset}' subset",
-                aim_repo=(
-                    self.cfg.common.aim_repo
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                aim_run_hash=(
-                    self.cfg.common.aim_run_hash
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
-                tensorboard_logdir=(
-                    self.cfg.common.tensorboard_logdir
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
-                wandb_project=(
-                    self.cfg.common.wandb_project
-                    if distributed_utils.is_master(self.cfg.distributed_training)
-                    else None
-                ),
-                wandb_run_name=os.environ.get(
-                    "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
-                ),
-            )
+            # itr = self.trainer.get_valid_iterator(subset).next_epoch_itr(
+            #     shuffle=False, set_dataset_epoch=False  # use a fixed valid set
+            # )
+        if self.cfg.common.tpu:
+            itr = utils.tpu_data_loader(itr)
+        # print(f"self.cfg.distributed_training: {self.cfg.distributed_training}")
+        progress = progress_bar.progress_bar(
+            itr,
+            log_format=self.cfg.common.log_format,
+            log_interval=self.cfg.common.log_interval,
+            epoch=epoch,
+            prefix=f"valid on 'validation' subset",
+            aim_repo=(
+                self.cfg.common.aim_repo
+                if distributed_utils.is_master(self.cfg.distributed_training)
+                else None
+            ),
+            aim_run_hash=(
+                self.cfg.common.aim_run_hash
+                if distributed_utils.is_master(self.cfg.distributed_training)
+                else None
+            ),
+            aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
+            tensorboard_logdir=(
+                self.cfg.common.tensorboard_logdir
+                if distributed_utils.is_master(self.cfg.distributed_training)
+                else None
+            ),
+            default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
+            wandb_project=(
+                self.cfg.common.wandb_project
+                if distributed_utils.is_master(self.cfg.distributed_training)
+                else None
+            ),
+            wandb_run_name=os.environ.get(
+                "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
+            ),
+        )
 
-            # create a new root metrics aggregator so validation metrics
-            # don't pollute other aggregators (e.g., train meters)
-            with metrics.aggregate(new_root=True) as agg:
-                for i, sample in enumerate(progress):
-                    if (
-                        self.cfg.dataset.max_valid_steps is not None
-                        and i > self.cfg.dataset.max_valid_steps
-                    ):
-                        break
-                    self.trainer.valid_step(sample)
+        # create a new root metrics aggregator so validation metrics
+        # don't pollute other aggregators (e.g., train meters)
+        with metrics.aggregate(new_root=True) as agg:
+            for i, sample in enumerate(progress):
+                if (
+                    self.cfg.dataset.max_valid_steps is not None
+                    and i > self.cfg.dataset.max_valid_steps
+                ):
+                    break
+                self.trainer.valid_step(sample)
 
-            # log validation stats
-            # only tracking the best metric on the 1st validation subset
-            # logger.info(f"subset_idx: {subset_idx}")
-            tracking_best = True
-            #subset_idx == 0
-            stats = get_valid_stats(self.cfg, self.trainer, agg.get_smoothed_values(), tracking_best)
+        # log validation stats
+        # only tracking the best metric on the 1st validation subset
+        tracking_best = True #subset_idx == 0
+        stats = get_valid_stats(self.cfg, self.trainer, agg.get_smoothed_values(), tracking_best)
 
-            if hasattr(self.task, "post_validate"):
-                # logger.info(f"post_validate = True")
-                self.task.post_validate(self.trainer.get_model(), stats, agg)
+        if hasattr(self.task, "post_validate"):
+            self.task.post_validate(self.trainer.get_model(), stats, agg)
 
-            # logger.info(f"stats in {subset} subset: {stats}")
-            progress.print(stats, tag=subset, step=self.trainer.get_num_updates())
+        progress.print(stats, tag='valid', step=self.trainer.get_num_updates())
 
-            # logger.info(f"self.cfg.checkpoint.best_checkpoint_metric: {self.cfg.checkpoint.best_checkpoint_metric}")
-            # logger.info(f"stats[self.cfg.checkpoint.best_checkpoint_metric]: {stats[self.cfg.checkpoint.best_checkpoint_metric]}")
+        # logger.info(f"stats: {stats}")
 
-            valid_losses.append(stats[self.cfg.checkpoint.best_checkpoint_metric])
+        valid_losses.append(stats[self.cfg.checkpoint.best_checkpoint_metric])
         return valid_losses
 
     def save_comp_chkp(self, epoch):
@@ -2093,6 +2265,7 @@ def get_valid_stats(
             checkpoint_utils.save_checkpoint.best,
             stats[cfg.checkpoint.best_checkpoint_metric],
         )
+    # logger.info(f"stats in get_valid_stats: {stats}")
     return stats
 
 def get_training_stats(stats):

@@ -74,7 +74,10 @@ if __name__ == "__main__":
         trainer.train()
         trainer.evaluate()
         print(trainer.predict(encoded_dataset["test"]))
-        trainer.save_model("/netscratch/jalota/checkpoints/binaryClassification_balanced_bt_og/")
+        savepath = f"{args.out_dir}/saved_model/"
+        Path(savepath).mkdir(parents=True, exist_ok=True)
+        trainer.save_model(savepath)
+        # "/netscratch/jalota/checkpoints/binaryClassification_balanced_bt_og/"
 
     else:
         Path(args.out_dir).mkdir(parents=True, exist_ok=True)
