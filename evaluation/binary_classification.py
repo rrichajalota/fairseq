@@ -1,37 +1,55 @@
 import torch
-from datasets import load_dataset, load_metric
+from datasets import load_dataset, load_metric, ClassLabel
 from transformers import AutoTokenizer, BertForSequenceClassification
 import argparse
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import csv
 from transformers import AutoModelForSequenceClassification, TrainingArguments, Trainer
-from datasets import disable_caching
+from datasets import disable_caching, Dataset
 disable_caching()
 import logging
 logging.disable(logging.INFO)
 
-tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased', do_lower_case=False) # True
-model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=2)
+tokenizer = AutoTokenizer.from_pretrained('bert-base-cased', do_lower_case=False, use_fast=True) # True
+model = BertForSequenceClassification.from_pretrained('bert-base-cased', num_labels=2)
+
+labels = ClassLabel(names=['0', '1'])
 
 def preprocess_function(examples):
-    return tokenizer(examples['text'], truncation=True, padding='max_length', max_length=512)
+    result = tokenizer(examples['text'], truncation=True, padding='max_length', max_length=512)
+    result['labels'] = [labels.str2int(str(label)) if label is not None else None for label in examples["label"]]
+
+    return result
+
+def tokenize_text(examples):
+    result = tokenizer(str(examples["text"]),truncation=True,  max_length=512, padding='max_length', return_overflowing_tokens=True)
+
+    sample_map = result.pop("overflow_to_sample_mapping")
+    for key, values in examples.items():
+        result[key] = [values[i] for i in sample_map]
+    return result
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='run binary classifer')
-    parser.add_argument("--train", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/train/train_bt_bal.tsv") # based on *.tok.norm.true.txt - equal examples in both files!
-    parser.add_argument("--dev", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/dev/dev_bt.tsv")  # based on translated.tok.norm.true.txt and original.tok.norm.true.txt -- equal examples in both files! 
-    parser.add_argument("--test", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/test/test_bt_bal.tsv") # based on translated.tok.norm.true.txt and original.tok.norm.true.txt - equal examples in both files!
+    parser.add_argument("--train", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/train/train_bt_bal.tsv") # based on *.tok.norm.true.txt - equal examples in both files!
+    parser.add_argument("--dev", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/dev/dev_bt.tsv")  # based on translated.tok.norm.true.txt and original.tok.norm.true.txt -- equal examples in both files! 
+    parser.add_argument("--test", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/test_bt_bal.tsv") # based on translated.tok.norm.true.txt and original.tok.norm.true.txt - equal examples in both files!
     parser.add_argument("--model", default=None)
-    parser.add_argument("--out_dir", default="/netscratch/jalota/results/binaryClassification_balanced_bt_og")
+    parser.add_argument("--out_dir", default="/netscratch/anonymous/results/binaryClassification_balanced_bt_og")
     args = parser.parse_args()
     # https://discuss.huggingface.co/t/using-trainer-at-inference-time/9378/7
 
     print(args.test)
     print(args.model)
 
-    dataset = load_dataset("csv", delimiter="\t", column_names=['text', 'label'], data_files={"train": args.train, "test": args.test, "dev": args.dev}, streaming=True)
+    if args.model:
+        test_df = pd.read_csv(args.test, delimiter="\t", names=['text', 'label'], quoting=csv.QUOTE_NONE)
+        test_dataset = Dataset.from_pandas(test_df)
+    else:
+        dataset = load_dataset("csv", delimiter="\t", column_names=['text', 'label'], data_files={"train": args.train, "test": args.test, "dev": args.dev}) # streaming=True
     batch_size = 16
     metric_name = "accuracy" # "f1" 
     metric = load_metric(metric_name)
@@ -54,8 +72,8 @@ if __name__ == "__main__":
         learning_rate=2e-5,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        num_train_epochs=30,
-        max_steps=80000,
+        num_train_epochs=3,
+        max_steps=1000,
         weight_decay=0.01,
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
@@ -77,13 +95,17 @@ if __name__ == "__main__":
         savepath = f"{args.out_dir}/saved_model/"
         Path(savepath).mkdir(parents=True, exist_ok=True)
         trainer.save_model(savepath)
-        # "/netscratch/jalota/checkpoints/binaryClassification_balanced_bt_og/"
+        # "/netscratch/anonymous/checkpoints/binaryClassification_balanced_bt_og/"
 
     else:
         Path(args.out_dir).mkdir(parents=True, exist_ok=True)
-        encoded_dataset = dataset.map(lambda x: tokenizer(x["text"], truncation=True, padding='max_length', max_length=512), batched=True, batch_size=2000)
+        # for motra -- uncomment the line below with lambda x 
+        # encoded_dataset = test_dataset.map(lambda x: tokenizer(str(x["text"]), truncation=True, padding='max_length', max_length=512), batched=True, batch_size=2000)
         # encoded_dataset = dataset.map(preprocess_function, batched=True)
+        encoded_dataset = test_dataset.map(tokenize_text, batched=True, batch_size=100)
+        encoded_dataset = encoded_dataset.filter(lambda example: example['label'] is not None)
         #dataset["test"].map(preprocess_function, batched=True)
+        # print(f"encoded_dataset['test']['label']: {encoded_dataset['test']['label']}")
         model = BertForSequenceClassification.from_pretrained(args.model)
         
         # arguments for Trainer
@@ -101,7 +123,7 @@ if __name__ == "__main__":
                     args = test_args, 
                     compute_metrics = compute_metrics)
 
-        test_results = trainer.predict(encoded_dataset["test"])
+        test_results = trainer.predict(encoded_dataset) # ["test"]
         print(test_results)
 
 

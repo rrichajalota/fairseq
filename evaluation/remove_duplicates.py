@@ -6,9 +6,9 @@ import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='generate test data for binary classification from fairseq-generate output')
-    parser.add_argument("--file", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/test/generated/gen_test_59030.tsv")
-    parser.add_argument("--og_file", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/test/test.tsv")
-    parser.add_argument("--out_dir", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/test/generated/")
+    parser.add_argument("--file", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/generated/gen_test_59030.tsv")
+    parser.add_argument("--og_file", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/test.tsv")
+    parser.add_argument("--out_dir", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/generated/")
     args = parser.parse_args()
 
     seen = set()

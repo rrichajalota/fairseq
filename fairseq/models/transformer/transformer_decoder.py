@@ -279,7 +279,9 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                 - the decoder's features of shape `(batch, tgt_len, embed_dim)`
                 - a dictionary with any model-specific outputs
         """
-        bs, slen = prev_output_tokens.size()
+        # print(f"prev_output_tokens.size(): {prev_output_tokens.size()}")
+        if len(prev_output_tokens.size()) == 2:
+            bs, slen = prev_output_tokens.size()
         if alignment_layer is None:
             alignment_layer = self.num_layers - 1
 
@@ -290,22 +292,28 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         if encoder_out is not None and len(encoder_out["encoder_padding_mask"]) > 0:
             padding_mask = encoder_out["encoder_padding_mask"][0]
 
-        # embed positions
         positions = None
-        if self.embed_positions is not None:
-            positions = self.embed_positions(
-                prev_output_tokens, incremental_state=incremental_state
-            )
 
-        if incremental_state is not None:
-            prev_output_tokens = prev_output_tokens[:, -1:]
-            if positions is not None:
-                positions = positions[:, -1:]
+        if len(prev_output_tokens.size()) == 2:
 
-        # Prevent torchscript exporting issue for dynamic quant embedding
-        prev_output_tokens = prev_output_tokens.contiguous()
-        # embed tokens and positions
-        x = self.embed_scale * self.embed_tokens(prev_output_tokens)
+            # embed positions
+            if self.embed_positions is not None:
+                positions = self.embed_positions(
+                    prev_output_tokens, incremental_state=incremental_state
+                )
+
+            if incremental_state is not None:
+                prev_output_tokens = prev_output_tokens[:, -1:]
+                if positions is not None:
+                    positions = positions[:, -1:]
+
+            # Prevent torchscript exporting issue for dynamic quant embedding
+            prev_output_tokens = prev_output_tokens.contiguous()
+            # embed tokens and positions
+            x = self.embed_scale * self.embed_tokens(prev_output_tokens)
+        
+        else:
+            x = self.embed_scale * prev_output_tokens
 
         if self.quant_noise is not None:
             x = self.quant_noise(x)

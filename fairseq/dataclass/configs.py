@@ -541,7 +541,7 @@ class DatasetConfig(FairseqDataclass):
         },
     )
     batch_size_valid: Optional[int] = field(
-        default=II("dataset.batch_size"),
+        default=500, # II("dataset.batch_size")
         metadata={
             "help": "batch size of the validation batch (defaults to --batch-size)",
             "argparse_alias": "--max-sentences-valid",
@@ -644,6 +644,13 @@ class ComparableConfig(FairseqDataclass):
     comparable: bool = field(
         default=False, metadata={"help": 'Use comparable data during training.'}
     )
+    temp: str = field(
+        default="exp0",
+        metadata={"help": """temporary folder in /netscratch/jalota/pickle/ where internal representations will be saved"""}
+    )
+    only_unsupervised: bool = field(
+        default=False, metadata={"help": 'runs only unsupervised training and and validation without self-supervision'}
+    )
     max_sentences: int = field(
         default=80, metadata={"help": 'Number of sentences in a batch'}
     )
@@ -655,6 +662,10 @@ class ComparableConfig(FairseqDataclass):
     threshold: float = field(
         default=float('-inf'),
         metadata={"help": "Decision threshold for keeping a similar pair."}
+    )
+    use_threshold: bool = field(
+        default=False,
+        metadata={"help": """When passed, threshold is used along with the dual representation filtering"""}
     )
     threshold_dynamics: str = field(
         default="static",
@@ -840,7 +851,7 @@ class ComparableConfig(FairseqDataclass):
         }
     )
     retrieval: str = field(
-        default='max',
+        default='intersect',
         metadata={
             "help":"Retrieval strategy ['fwd', 'bwd', 'max', 'intersect']"
         }

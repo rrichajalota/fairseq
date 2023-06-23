@@ -29,7 +29,8 @@ from fairseq.data import (
 from fairseq.data.indexed_dataset import get_available_dataset_impl
 from fairseq.dataclass import ChoiceEnum, FairseqDataclass
 from fairseq.tasks import FairseqTask, register_task
-
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 EVAL_BLEU_ORDER = 4
 
@@ -237,7 +238,12 @@ class TranslationConfig(FairseqDataclass):
             "help": 'generation args for Unsupervised Learning, e.g., \'{"beam": 4, "lenpen": 0.6}\', as JSON string'
         },
     )
-
+    start_unsup: int = field(
+        default=400, metadata={"help": "start unsupervised training from xx updates onwards."}
+    )
+    only_unsupervised: bool = field(
+        default=False, metadata={"help": "whether to perform only unsupervised training"}
+    )
     # options for reporting BLEU during validation
     eval_bleu: bool = field(
         default=False, metadata={"help": "evaluation with BLEU scores"}
@@ -295,6 +301,8 @@ class TranslationTask(FairseqTask):
         super().__init__(cfg)
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
+        self.start_unsup = cfg.start_unsup
+        self.only_unsupervised = cfg.only_unsupervised
 
     @classmethod
     def setup_task(cls, cfg: TranslationConfig, **kwargs):
@@ -419,16 +427,18 @@ class TranslationTask(FairseqTask):
         model.train()
         model.set_num_updates(update_num)
         unsup = False
-        if update_num > 1000: # warm-up updates before unsupervised training starts - half of warm updates set in the config
+        # logger.info(f"self.only_unsupervised: {self.only_unsupervised}")
+        if update_num >= self.start_unsup: # warm-up updates before unsupervised training starts - half of warm updates set in the config
             unsup = True
         with torch.autograd.profiler.record_function("forward"):
             with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
-                loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=unsup, src_dict=self.src_dict)
+                loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=unsup, src_dict=self.src_dict, only_unsupervised=self.only_unsupervised)
         
         if ignore_grad:
             loss *= 0
         with torch.autograd.profiler.record_function("backward"):
             optimizer.backward(loss)
+        # plot_grad_flow(model.named_parameters().cpu())
         return loss, sample_size, logging_output
 
     

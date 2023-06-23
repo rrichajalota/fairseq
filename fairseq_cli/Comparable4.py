@@ -1,7 +1,6 @@
 """
 Classes and methods used for training and extraction of parallel pairs
 from a comparable dataset.
-Authors: Alabi Jesujoba, Rricha Jalota
 """
 import tracemalloc
 #import gc

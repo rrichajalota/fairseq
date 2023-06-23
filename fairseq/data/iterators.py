@@ -591,7 +591,7 @@ class GroupedIterator(CountingIterator):
             )
         else:
             total_num_itrs = int(math.ceil(len(iterable) / float(chunk_size)))
-            logger.info(f"grouped total_num_itrs = {total_num_itrs}")
+            # logger.info(f"grouped total_num_itrs = {total_num_itrs}")
 
         itr = _chunk_iterator(iterable, chunk_size, skip_remainder_batch)
         super().__init__(

@@ -30,6 +30,8 @@ logger = logging.getLogger("fairseq_cli.traincomp")
 
 import numpy as np
 import torch
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 from omegaconf import DictConfig, OmegaConf
 
 from fairseq import checkpoint_utils, options, quantization_utils, tasks, utils
@@ -94,6 +96,7 @@ def main(cfg: FairseqConfig) -> None:
 
     # Setup task, e.g., translation, language modeling, etc.
     task = tasks.setup_task(cfg.task)
+    logger.info(f"model.arch: {cfg.model.arch}")
     # cfg.task.src_dict.add_symbol("<mask>")
     # cfg.task.tgt_dict.add_symbol("<mask>")
 
@@ -102,14 +105,16 @@ def main(cfg: FairseqConfig) -> None:
     # Build model and criterion
     if cfg.distributed_training.ddp_backend == "fully_sharded":
         with fsdp_enable_wrap(cfg.distributed_training):
-            model = fsdp_wrap(task.build_model(cfg.model))
+            model = fsdp_wrap(task.build_model(cfg)) # .model
     else:
-        model = task.build_model(cfg.model)
+        model = task.build_model(cfg) # .model
     criterion = task.build_criterion(cfg.criterion)
+    # generator = task.build_generator(cfg.generation)
     logger.info(model)
     logger.info("task: {}".format(task.__class__.__name__))
     logger.info("model: {}".format(model.__class__.__name__))
     logger.info("criterion: {}".format(criterion.__class__.__name__))
+    # logger.info("generator: {}".format(generator.__class__.__name__))
     logger.info(
         "num. shared model params: {:,} (num. trained: {:,})".format(
             sum(

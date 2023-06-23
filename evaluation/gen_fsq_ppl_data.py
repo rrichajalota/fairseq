@@ -11,22 +11,19 @@ if __name__ == "__main__":
     """
     parser = argparse.ArgumentParser(description='generate test data for binary classification from fairseq-generate output')
     parser.add_argument("--file", default="/home/anonymous/gen_w_threshold_translated_test.txt")
-    parser.add_argument("--out_dir", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/generated/")
-    parser.add_argument("--name", default="pred_test.tsv")
+    parser.add_argument("--out_dir", default="/netscratch/anonymous/test_perplexity/")
+    parser.add_argument("--name", default="test")
+    parser.add_argument("--exp", default="712684")
     args = parser.parse_args()
     contains_dup = False
-    # if "bt_test" in args.file: 
-    #     contains_dup = True
+    
+    path = args.out_dir + args.exp 
 
-    # gen_modifiedComparable_translated_test.txt
-    # gen_no_threshold.txt
-    # gen_w_threshold_translated_test.txt
-
-    Path(args.out_dir).mkdir(parents=True, exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
 
     with open(args.file, encoding="utf-8") as f:
         lines = f.readlines()
-        with open(args.out_dir+args.name, "w") as of:
+        with open(f"{path}/{args.name}", "w") as of:
             if not contains_dup:
                 count = 0
                 for i, line in enumerate(lines):
@@ -38,7 +35,7 @@ if __name__ == "__main__":
                         # if tr.strip() == "!" or tr.strip() == "co-rapporteur ." or tr.strip() == "Thank you very much for your attention .":
                         #     print(tr)
                         #     continue
-                        of.write(f"{line}\t1")
+                        of.write(f"{line}")
                         of.write("\n")
                         count += 1
                     else:

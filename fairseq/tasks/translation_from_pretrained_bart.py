@@ -6,8 +6,10 @@
 import torch
 from fairseq import utils
 from fairseq.data import LanguagePairDataset
-
+import json
 import logging
+from fairseq.data import encoders
+from argparse import Namespace
 
 from . import register_task
 from .translation import TranslationTask, load_langpair_dataset
@@ -54,7 +56,7 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
 
     def __init__(self, args, src_dict, tgt_dict):
         super().__init__(args, src_dict, tgt_dict)
-        self.langs = args.langs.split(",")
+        # self.langs = args.langs.split(",")
         logger.info(f"len(src_dict): {len(src_dict)}")
         logger.info(f"len(tgt_dict): {len(tgt_dict)}")
         for d in [src_dict, tgt_dict]:
@@ -99,32 +101,32 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
             append_source_id=True,
         )
 
-    def build_generator(self, models, args, **unused):
-        if getattr(cfg, "score_reference", False):
-            from fairseq.sequence_scorer import SequenceScorer
+    # def build_generator(self, models, args, **unused):
+    #     if getattr(cfg, "score_reference", False):
+    #         from fairseq.sequence_scorer import SequenceScorer
 
-            return SequenceScorer(
-                self.target_dictionary,
-                eos=self.tgt_dict.index("[{}]".format(self.cfg.target_lang)),
-            )
-        else:
-            from fairseq.sequence_generator import SequenceGenerator
+    #         return SequenceScorer(
+    #             self.target_dictionary,
+    #             eos=self.tgt_dict.index("[{}]".format(self.cfg.target_lang)),
+    #         )
+    #     else:
+    #         from fairseq.sequence_generator import SequenceGenerator
 
-            return SequenceGenerator(
-                models,
-                self.target_dictionary,
-                beam_size=getattr(args, "beam", 5),
-                max_len_a=getattr(args, "max_len_a", 0),
-                max_len_b=getattr(args, "max_len_b", 200),
-                min_len=getattr(args, "min_len", 1),
-                normalize_scores=(not getattr(args, "unnormalized", False)),
-                len_penalty=getattr(args, "lenpen", 1),
-                unk_penalty=getattr(args, "unkpen", 0),
-                temperature=getattr(args, "temperature", 1.0),
-                match_source_len=getattr(args, "match_source_len", False),
-                no_repeat_ngram_size=getattr(args, "no_repeat_ngram_size", 0),
-                eos=self.tgt_dict.index("[{}]".format(self.args.target_lang)),
-            )
+    #         return SequenceGenerator(
+    #             models,
+    #             self.target_dictionary,
+    #             beam_size=getattr(args, "beam", 5),
+    #             max_len_a=getattr(args, "max_len_a", 0),
+    #             max_len_b=getattr(args, "max_len_b", 200),
+    #             min_len=getattr(args, "min_len", 1),
+    #             normalize_scores=(not getattr(args, "unnormalized", False)),
+    #             len_penalty=getattr(args, "lenpen", 1),
+    #             unk_penalty=getattr(args, "unkpen", 0),
+    #             temperature=getattr(args, "temperature", 1.0),
+    #             match_source_len=getattr(args, "match_source_len", False),
+    #             no_repeat_ngram_size=getattr(args, "no_repeat_ngram_size", 0),
+    #             eos=self.tgt_dict.index("[{}]".format(self.args.target_lang)),
+    #         )
 
     def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
         src_lang_id = self.source_dictionary.index("[{}]".format(self.args.source_lang))
@@ -142,3 +144,17 @@ class TranslationFromPretrainedBARTTask(TranslationTask):
             constraints=constraints,
         )
         return dataset
+
+    # def build_model(self, cfg, from_checkpoint=False):
+    #     model = super().build_model(cfg, from_checkpoint)
+    #     if self.cfg.eval_bleu:
+    #         detok_args = json.loads(self.cfg.eval_bleu_detok_args)
+    #         self.tokenizer = encoders.build_tokenizer(
+    #             Namespace(tokenizer=self.cfg.eval_bleu_detok, **detok_args)
+    #         )
+
+    #         gen_args = json.loads(self.cfg.eval_bleu_args)
+    #         self.sequence_generator = self.build_generator(
+    #             [model], Namespace(**gen_args)
+    #         )
+    #     return model

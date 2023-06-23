@@ -1,7 +1,6 @@
 """
 Classes and methods used for training and extraction of parallel pairs
 from a comparable dataset.
-Authors: Alabi Jesujoba, Rricha Jalota
 """
 import tracemalloc
 #import gc
@@ -257,7 +256,7 @@ class PairBank():
         # Get as many examples as needed to fill a batch or a given limit
         random.shuffle(self.pairs)
         for ex in range(num_examples):
-            example = self.pairs.pop()
+            example = self.pairs.pop() # removes the pair from the list!!
             src_len = example.src_length.item()
             tgt_len = example.tgt_length.item()
             # print(f"example.src_length: {src_len}")
@@ -680,6 +679,7 @@ class Comparable():
         self.faiss_use_gpu = cfg.comparable.faiss_use_gpu
         self.faiss_output = cfg.comparable.faiss_output
         self.index=cfg.comparable.index
+        self.only_unsupervised = cfg.comparable.only_unsupervised 
         Path(self.comp_log).mkdir(parents=True, exist_ok=True)
         # print(f"args.cpu: {args.cpu}")
         if cfg.common.cpu == False:
@@ -736,7 +736,7 @@ class Comparable():
         """
         # print("extract parallel")
         for candidate in candidates:
-            candidate_pair = hash((str(candidate[0]), str(candidate[1])))
+            # candidate_pair = hash((str(candidate[0]), str(candidate[1])))
             # For dual representation systems...
             # print("Dual representation checking")
             if candidate_pool:
@@ -764,7 +764,6 @@ class Comparable():
                 
                 elif use_threshold or self.in_candidate_pool(candidate, candidate_pool):
                 # Apply threshold (single-representation systems only)
-
                     src = candidate[0]
                     tgt = candidate[1]
                     score = candidate[2]
@@ -1424,19 +1423,7 @@ class Comparable():
         logger.info("example hypothesis: " + hyps[0])
         # self.task.src_dict.string(src)
         logger.info(f"input reference: {self.task.src_dict.string(removePadding(sample['net_input']['src_tokens']))}")
-        # sequence_generator = SequenceGenerator(
-        #             [self.model],
-        #             tgt_dict=self.task.tgt_dict,
-        #             beam_size=1,
-        #             max_len_a=512,
-        #             max_len_b=512,
-        #         )
-
-        # return sequence_generator.generate(
-        #     [self.model],
-        #     sample,
-        #     bos_token=bos_token,
-        # )
+       
         return gen_out
 
     
@@ -1464,7 +1451,7 @@ class Comparable():
                 logger.info(f"trainingSetSrc type: {type(trainingSetSrc)}")
 
                 src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes, src_vocab=self.task.src_dict, tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-                logger.info(f"src mono type: {type(src_mono)}")
+                # logger.info(f"src mono type: {type(src_mono)}")
                 # in monolingualDataset, sample['target] is None. 
 
                 #src_dict (~fairseq.data.Dictionary): the dictionary of backtranslated
@@ -1778,7 +1765,7 @@ class Comparable():
             unsup_data = None
             cur_article = 0
             for ap, article_pair in enumerate(comp_list):
-                print(f"on article {ap}")
+                logger.info(f"on article {ap}")
                 cur_article += 1
                 articles = article_pair.split(' ')
                 # print(f"articles: {articles}")
@@ -1788,11 +1775,17 @@ class Comparable():
                     continue
                 #load the dataset from the files for both source and target
                 src_mono, tgt_mono = self.getdata(articles)
+                # trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
+                #                                          dataset_impl='raw', combine=False,
+                #                                          default='cached')
+                # src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+                #                       src_vocab=self.task.src_dict,
+                #                       tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
                 unsup_data = src_mono
                 # Prepare iterator objects for current src/tgt document
-                print(f"self.task.src_dict: {self.task.src_dict}")
-                print(f"self.cfg.max_source_positions: {self.cfg.task.max_source_positions}")
-                print(f"get iterator")
+                # print(f"self.task.src_dict: {self.task.src_dict}")
+                # print(f"self.cfg.max_source_positions: {self.cfg.task.max_source_positions}")
+                # print(f"get iterator")
                 
                 src_article = self._get_iterator(src_mono, dictn=self.task.src_dict, max_position=self.cfg.task.max_source_positions, epoch=epoch, fix_batches_to_gpus=False)
                 tgt_article = self._get_iterator(tgt_mono, dictn=self.task.tgt_dict, max_position=self.cfg.task.max_target_positions, epoch=epoch, fix_batches_to_gpus=False)
@@ -1815,19 +1808,19 @@ class Comparable():
                         # C_e and C_h
                         '''it1, it2 = itertools.tee(src_article)
                         it3, it4 = itertools.tee(tgt_article)'''
-                        print(f"src article, rep=embed")
+                        logger.info(f"src article, rep=embed")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_embeds += self.get_article_coves(it1, representation='embed', mean=False, side='src',
-                                                         use_phrase=self.use_phrase)
-                        print(f"src article, rep=memory")
+                                                        use_phrase=self.use_phrase)
+                        logger.info(f"src article, rep=memory")
                         it1 = src_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         src_sents += self.get_article_coves(it1, representation='memory', mean=False, side='src')
                         
-                        print(f"tgt article, rep=embed")
+                        logger.info(f"tgt article, rep=embed")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_embeds += self.get_article_coves(it3, representation='embed', mean=False, side='tgt',
-                                                         use_phrase=self.use_phrase)
-                        print(f"tgt article, rep=memory")
+                                                        use_phrase=self.use_phrase)
+                        logger.info(f"tgt article, rep=memory")
                         it3 = tgt_article.next_epoch_itr(shuffle=False, fix_batches_to_gpus=False)
                         tgt_sents += self.get_article_coves(it3, representation='memory', mean=False, side='tgt')
 
@@ -1854,9 +1847,6 @@ class Comparable():
                 # Score src and tgt sentences
                 print("In all we have got ", len(src_sents), "source sentences and ", len(tgt_sents), "target")
 
-                # print(f"src_sents: {src_sents[:4]}")
-                
-                # get src2gt , tgt2src 
                 try:
                     logger.info(f"self.faiss: {self.faiss}")
                     if self.faiss:
@@ -1908,8 +1898,7 @@ class Comparable():
                             # Filter candidates (primary filter), such that only those which are top candidates in 
                             # both src2tgt and tgt2src direction pass.
                             # ...and C_e
-                            comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,
-                                                                                tgt_embeds)
+                            comparison_pool, cand_embed = self.get_comparison_pool(src_embeds,tgt_embeds)
                             # comparison_pool: unique set of hashed (src_sent_x, tgt_sent_y) pairs 
                             # cand_embed: candidates generated from embedding representations 
                             #             [(src_sent_x, tgt_sent_y, score_xy)]
@@ -1950,7 +1939,10 @@ class Comparable():
                     eval_key=None
                     )
                 self.concat_data.ordered_indices()
+
                 self.train(epoch)
+                self.reset_pairbank()
+
                 if not self.faiss:
                     del src2tgt, tgt2src
                 #gc.collect()
@@ -1978,6 +1970,12 @@ class Comparable():
         metrics.reset_meters('train')
         end_of_epoch = True
         return num_updates, end_of_epoch
+
+    def reset_pairbank(self):
+        self.similar_pairs.srcs = []
+        self.similar_pairs.tgts = []
+        self.similar_pairs.src_lens = []
+        self.similar_pairs.tgt_lens = []
     '''
     @metrics.aggregate('train')
     def trainRest(self, epoch):
@@ -2002,11 +2000,12 @@ class Comparable():
     '''
 
     @metrics.aggregate('train')
-    def train(self, epoch, last=False):
+    def train(self, epoch, itrs=None, last=False):
         # Check if enough parallel sentences were collected
         # is_epoch_end = False
         if last is False:
-            itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0)
+            if itrs is None:
+                itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0)
             itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
             itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
             if self.cfg.common.tpu:
@@ -2064,70 +2063,7 @@ class Comparable():
                             
                             # reset mid-epoch stats after each log interval
                             # the end-of-epoch stats will still be preserved
-                            metrics.reset_meters('train_inner')
-                # end_of_epoch = not itr.has_next()
-                # is_epoch_end = end_of_epoch
-        # else:
-        #     # numberofex = self.similar_pairs.get_num_examples()
-        #     itrs = self.similar_pairs.yield_batch()
-        #     itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
-        #     itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
-        #     if self.cfg.common.tpu:
-        #         itr = utils.tpu_data_loader(itr)
-        #     self.progress = progress_bar.progress_bar(
-        #         itr,
-        #         log_format=self.cfg.common.log_format,
-        #         log_file=self.cfg.common.log_file,
-        #         log_interval=self.log_interval,
-        #         epoch=epoch,
-        #         aim_repo=(
-        #             self.cfg.common.aim_repo
-        #             if distributed_utils.is_master(self.cfg.distributed_training)
-        #             else None
-        #         ),
-        #         aim_run_hash=(
-        #             self.cfg.common.aim_run_hash
-        #             if distributed_utils.is_master(self.cfg.distributed_training)
-        #             else None
-        #         ),
-        #         aim_param_checkpoint_dir=self.cfg.checkpoint.save_dir,
-        #         tensorboard_logdir=(
-        #             self.cfg.common.tensorboard_logdir
-        #             if distributed_utils.is_master(self.cfg.distributed_training)
-        #             else None
-        #         ),
-        #         default_log_format=("tqdm" if not self.cfg.common.no_progress_bar else "simple"),
-        #         wandb_project=(
-        #             self.cfg.common.wandb_project
-        #             if distributed_utils.is_master(self.cfg.distributed_training)
-        #             else None
-        #         ),
-        #         wandb_run_name=os.environ.get(
-        #             "WANDB_NAME", os.path.basename(self.cfg.checkpoint.save_dir)
-        #         ),
-        #         azureml_logging=(
-        #             self.cfg.common.azureml_logging
-        #             if distributed_utils.is_master(self.cfg.distributed_training)
-        #             else False
-        #         ),
-        #     )
-        #     self.progress.update_config(_flatten_config(self.cfg))
-        #     logger.info("Start iterating over samples")
-        #     for i, samples in enumerate(self.progress):
-        #         with metrics.aggregate('train_inner'):
-        #             log_output = self.trainer.train_step(samples)
-        #             num_updates = self.trainer.get_num_updates()
-        #             if log_output is None:
-        #                 continue
-        #         # log mid-epoch stats
-        #         stats = get_training_stats(metrics.get_smoothed_values('train_inner'))
-        #         self.progress.print(stats, tag='train_inner', step=num_updates)
-        #         self.progress.log(stats, tag='train_inner', step=num_updates)
-        #         metrics.reset_meters('train_inner')
-        #     # end_of_epoch = not itr.has_next()
-        #     # is_epoch_end = end_of_epoch
-        # # return is_epoch_end #end_of_epoch
-    
+                            metrics.reset_meters('train_inner')       
     
     def validate(self, epoch, itr):
         """Evaluate the model on the validation set(s) and return the losses."""

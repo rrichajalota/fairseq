@@ -44,6 +44,7 @@ def get_training_parser(default_task="translation"):
     add_checkpoint_args(parser)
     add_comparable_args(parser)
     print("parser")
+    add_generation_args(parser)
     add_ema_args(parser)
     return parser
 

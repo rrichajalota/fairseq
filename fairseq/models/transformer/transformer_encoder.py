@@ -61,7 +61,7 @@ class TransformerEncoderBase(FairseqEncoder):
         self.max_source_positions = cfg.max_source_positions
 
         self.embed_tokens = embed_tokens
-        print(f"embed_tokens: {embed_tokens}")
+        # print(f"embed_tokens: {embed_tokens}")
 
         self.embed_scale = 1.0 if cfg.no_scale_embedding else math.sqrt(embed_dim)
 
@@ -210,20 +210,26 @@ class TransformerEncoderBase(FairseqEncoder):
                   Only populated if *return_all_hiddens* is True.
         """
         # compute padding mask
-        encoder_padding_mask = src_tokens.eq(self.padding_idx)
-        has_pads = (
-            torch.tensor(src_tokens.device.type == "xla") or encoder_padding_mask.any()
-        )
-        # Torchscript doesn't handle bool Tensor correctly, so we need to work around.
-        if torch.jit.is_scripting():
-            has_pads = torch.tensor(1) if has_pads else torch.tensor(0)
+        has_pads = torch.tensor(0)
+        if len(src_tokens.size()) == 2:
+            encoder_padding_mask = src_tokens.eq(self.padding_idx)
+            has_pads = (
+                torch.tensor(src_tokens.device.type == "xla") or encoder_padding_mask.any()
+            )
+            # Torchscript doesn't handle bool Tensor correctly, so we need to work around.
+            if torch.jit.is_scripting():
+                has_pads = torch.tensor(1) if has_pads else torch.tensor(0)
 
-        x, encoder_embedding = self.forward_embedding(src_tokens, token_embeddings)
+            x, encoder_embedding = self.forward_embedding(src_tokens, token_embeddings)
+        
+        else:
+            x = src_tokens # BxTxemb_dim
 
         # account for padding while computing the representation
-        x = x * (
-            1 - encoder_padding_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x)
-        )
+        if len(src_tokens.size()) == 2:
+            x = x * (
+                1 - encoder_padding_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x)
+            )
 
         # B x T x C -> T x B x C
         x = x.transpose(0, 1)
@@ -258,20 +264,25 @@ class TransformerEncoderBase(FairseqEncoder):
         # `forward` so we use a dictionary instead.
         # TorchScript does not support mixed values so the values are all lists.
         # The empty list is equivalent to None.
-        src_lengths = (
-            src_tokens.ne(self.padding_idx)
-            .sum(dim=1, dtype=torch.int32)
-            .reshape(-1, 1)
-            .contiguous()
-        )
+
+        if len(src_tokens.size()) == 2:
+            src_lengths = (
+                src_tokens.ne(self.padding_idx)
+                .sum(dim=1, dtype=torch.int32)
+                .reshape(-1, 1)
+                .contiguous()
+            )
+            return {
+                "encoder_out": [x],  # T x B x C
+                "encoder_padding_mask": [encoder_padding_mask],  # B x T
+                "encoder_embedding": [encoder_embedding],  # B x T x C
+                "encoder_states": encoder_states,  # List[T x B x C]
+                "fc_results": fc_results,  # List[T x B x C]
+                "src_tokens": [],
+                "src_lengths": [src_lengths],
+            }
         return {
             "encoder_out": [x],  # T x B x C
-            "encoder_padding_mask": [encoder_padding_mask],  # B x T
-            "encoder_embedding": [encoder_embedding],  # B x T x C
-            "encoder_states": encoder_states,  # List[T x B x C]
-            "fc_results": fc_results,  # List[T x B x C]
-            "src_tokens": [],
-            "src_lengths": [src_lengths],
         }
 
     @torch.jit.export

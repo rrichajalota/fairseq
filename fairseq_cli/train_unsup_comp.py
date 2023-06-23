@@ -87,13 +87,13 @@ def get_valid_iterator(cfg, dataset, trainer, task, disable_iterator_cache=False
 
 def main(cfg: FairseqConfig) -> None:
     if isinstance(cfg, argparse.Namespace):
-        print(f"convert namespace")
+        # print(f"convert namespace")
         cfg = convert_namespace_to_omegaconf(cfg)
 
     utils.import_user_module(cfg.common)
-    print(f"added user module")
+    # print(f"added user module")
     add_defaults(cfg)
-    print(f"added defaults")
+    # print(f"added defaults")
 
     if (
         distributed_utils.is_master(cfg.distributed_training)
@@ -176,17 +176,19 @@ def main(cfg: FairseqConfig) -> None:
 
     # Load valid dataset (we load training data below, based on the latest checkpoint)
     # We load the valid dataset AFTER building the model
+    train_dataset = None
     if not cfg.dataset.disable_validation:
         data_utils.raise_if_valid_subsets_unintentionally_ignored(cfg)
         
         if cfg.comparable.comparable:
             paths = utils.split_paths(cfg.task.data)
             assert len(paths) > 0
-            logger.info(f"paths: {paths}")
+            # logger.info(f"paths: {paths}")
             src, tgt = cfg.task.source_lang, cfg.task.target_lang
             data_path = paths[0]
-            logger.info(f"data_path: {data_path}")
-            vaild_dataset = load_validation_data(data_path,src, tgt,src_dict=task.src_dict, dataset_impl='raw')
+            # logger.info(f"data_path: {data_path}")
+            train_dataset = load_validation_data(data_path, src, tgt, src_dict=task.src_dict, dataset_impl=cfg.dataset.dataset_impl, split='train')
+            vaild_dataset = load_validation_data(data_path,src, tgt,src_dict=task.src_dict, dataset_impl=cfg.dataset.dataset_impl)
 
         elif cfg.dataset.combine_valid_subsets:
             task.load_dataset("valid", combine=True, epoch=1)
@@ -274,20 +276,32 @@ def main(cfg: FairseqConfig) -> None:
                     "than or equal to minimum learning rate "
                     f"(--stop-min-lr={cfg.optimization.stop_min_lr})"
                 )
-                break
+                break 
+            
+            if cfg.comparable.only_unsupervised:
+                unsup_itr = comp.task.get_batch_iterator(train_dataset, max_sentences=comp.batch_size, epoch=0)
 
-            # train for one epoch
-            print(f"begin epoch")
-            comp.task.begin_epoch(epoch, comp.trainer.get_model()) 
-            #  _itr.next_epoch_idx
-            # valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
-            # if should_stop:
-            #     break
-            # print(f"epoch_itr.next_epoch_id: {epoch_itr.next_epoch_id}")
-            # print(f"epoch_itr.epoch: {epoch_itr.epoch}")
-            # Extract parallel data and train
-            num_updates, end_of_epoch = comp.extract_and_train(cfg.comparable.comparable_data, epoch) #_itr.next_epoch_idx
-            # num_updates, end_of_epoch = comp.unsupervised_training(cfg.comparable.comparable_data, epoch)
+                comp.trainer.begin_epoch(unsup_itr.epoch)
+
+                comp.train(epoch=unsup_itr.epoch, itrs=unsup_itr)
+                end_of_epoch = True
+
+                logger.info("end of epoch {} (average epoch stats below)".format(epoch))
+
+                num_updates = comp.trainer.get_num_updates()
+
+                stats = get_training_stats(metrics.get_smoothed_values('train'))
+                comp.progress.print(stats, tag='train', step=num_updates)
+                # reset epoch-level meters
+                metrics.reset_meters('train')
+            else:
+                # train for one epoch
+                logger.info(f"begin epoch")
+                comp.task.begin_epoch(epoch, comp.trainer.get_model())
+
+                # Extract parallel data and train
+                num_updates, end_of_epoch = comp.extract_and_train(cfg.comparable.comparable_data, epoch) 
+            
             max_update = cfg.optimization.max_update or math.inf
             should_stop = False
 
@@ -342,16 +356,7 @@ def main(cfg: FairseqConfig) -> None:
 
                 valid_itr = get_valid_iterator(cfg, vaild_dataset, trainer, task).next_epoch_itr(
                 shuffle=False, set_dataset_epoch=False  # use a fixed valid set
-            )
-            # _itr.next_epoch_idx
-            # if (not cfg.dataset.disable_validation
-            #     and cfg.checkpoint.save_interval_updates > 0
-            #     and num_updates % cfg.checkpoint.save_interval_updates == 0
-            #     and num_updates > 0
-            # ):
-            #    valid_losses = comp.validate(epoch_itr.next_epoch_idx, valid_subsets)
-            # else:
-            #     valid_losses = [None] 
+                ) 
 
             should_stop |= should_stop_early(cfg, valid_losses[0])
 
@@ -370,13 +375,6 @@ def main(cfg: FairseqConfig) -> None:
             lr = trainer.lr_step(epoch, valid_losses[0])
             epoch += 1
 
-            # epoch_itr = trainer.get_train_iterator(
-            #     epoch,
-            #     # sharded data: get train iterator for next epoch
-            #     load_dataset=task.has_sharded_data("train"),
-            #     # don't cache epoch iterators for sharded datasets
-            #     disable_iterator_cache=task.has_sharded_data("train"),
-            # )
         train_meter.stop()
         logger.info("done training in {:.1f} seconds".format(train_meter.sum))
 
@@ -982,11 +980,11 @@ def get_valid_stats(
 def cli_main(
     modify_parser: Optional[Callable[[argparse.ArgumentParser], None]] = None
 ) -> None:
-    print(f"get parser")
+    # print(f"get parser")
     parser = options.get_training_parser()
-    print(f"parser: {parser}")
+    # print(f"parser: {parser}")
     args = options.parse_args_and_arch(parser, modify_parser=modify_parser)
-    print(f"args: {args}")
+    logger.info(f"args: {args}")
 
     cfg = convert_namespace_to_omegaconf(args)
 

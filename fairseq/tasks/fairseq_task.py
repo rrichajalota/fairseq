@@ -165,7 +165,7 @@ class FairseqTask(object):
         return self.datasets[split]
 
     def filter_indices_by_size(
-        self, indices, dataset, max_positions=None, ignore_invalid_inputs=False
+        self, indices, dataset, max_positions=None, ignore_invalid_inputs=True
     ):
         """
         Filter examples that are too large
@@ -307,8 +307,8 @@ class FairseqTask(object):
         reuse_dataloader = getattr(self.cfg, "reuse_dataloader", True)
         persistent_workers = getattr(self.cfg, "persistent_workers", True)
         rebuild_batches = getattr(self.cfg, "rebuild_batches", False)
-        logger.info(f"reuse_dataloader = {reuse_dataloader}")
-        logger.info(f"rebuild_batches = {rebuild_batches}")
+        # logger.info(f"reuse_dataloader = {reuse_dataloader}")
+        # logger.info(f"rebuild_batches = {rebuild_batches}")
 
         if rebuild_batches:
             logger.info("batches will be rebuilt for each epoch")
@@ -529,6 +529,10 @@ class FairseqTask(object):
         with torch.autograd.profiler.record_function("forward"):
             with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
                 loss, sample_size, logging_output = criterion(model, sample)
+
+                # add unsupervised criterion 
+        
+        
         if ignore_grad:
             loss *= 0
         with torch.autograd.profiler.record_function("backward"):

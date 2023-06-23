@@ -80,14 +80,17 @@ def _main(cfg: DictConfig, output_file):
     use_cuda = torch.cuda.is_available() and not cfg.common.cpu
 
     # Load dataset splits
+    # print(f"cfg.task: {cfg.task}")
     task = tasks.setup_task(cfg.task)
 
     # Set dictionaries
     try:
         src_dict = getattr(task, "source_dictionary", None)
+        logger.info(f"src: {len(src_dict)}")
     except NotImplementedError:
         src_dict = None
     tgt_dict = task.target_dictionary
+    logger.info(f"task.target_dictionary: {len(task.target_dictionary)}")
 
     overrides = ast.literal_eval(cfg.common_eval.model_overrides)
 

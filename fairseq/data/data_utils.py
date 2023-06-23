@@ -102,6 +102,7 @@ def load_indexed_dataset(
                 raise e
 
         dataset_impl_k = dataset_impl
+        # print(f'dataset_impl_k: {dataset_impl_k}')
         if dataset_impl_k is None:
             dataset_impl_k = indexed_dataset.infer_dataset_impl(path_k)
         dataset = indexed_dataset.make_dataset(
@@ -110,6 +111,7 @@ def load_indexed_dataset(
             fix_lua_indexing=True,
             dictionary=dictionary,
         )
+        # print(f"dataset: {dataset}")
         if dataset is None:
             break
         logger.info("loaded {:,} examples from: {}".format(len(dataset), path_k))
