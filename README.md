@@ -48,7 +48,7 @@ All the requirements are listed in `environment.yml` and can be installed using 
 ### Preprocessing Data for Style Transfer
 An example for preprocessing the data before training
 ```
-cd new/fairseq/fairseq_cli
+cd fairseq_cli
 python3 preprocess.py --destdir /netscratch/anonymous/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/ \
   --source-lang tr \
   --target-lang og \
@@ -63,8 +63,6 @@ python3 preprocess.py --destdir /netscratch/anonymous/datasets/motra-sst/ppd_w_e
 Use `traincomp.py` to train the system. An example run on how to train SSNMT for Translationese-to-Original Style Transfer using Joint Training is shown below.
 
 ```
-cd new/fairseq
-
 python3 traincomp.py /netscratch/anonymous/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/ \
   --arch transformer \
   --share-all-embeddings --checkpoint-activations \
@@ -109,5 +107,7 @@ python3 traincomp.py /netscratch/anonymous/datasets/motra-sst/ppd_w_europarl-mot
 Run `train.py -h` for more information.
 
 ### Evaluation 
+
+All the scripts for evaluation can be found under the `evaluation/` folder 
  
 ![Model](fairseq.gif)
