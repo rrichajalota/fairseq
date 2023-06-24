@@ -109,5 +109,55 @@ Run `train.py -h` for more information.
 ### Evaluation 
 
 All the scripts for evaluation can be found under the `evaluation/` folder 
+
+1. Get the style-transferred outputs a) once with --remove-bpe and b) once without (to compute average perplexities using Fairseq's pretrained TransformerLM).
+```
+python3 generate.py /netscratch/anonymous/datasets/data-bin/europarl-motra/subword-nmt-10k/europarl/test_bal/ \
+--task translation \
+--path <path-to-checkpoint>/checkpoint_best.pt \
+--results-path <path> \
+--beam 5 --source-lang tr --target-lang og --dataset-impl raw 
+```
+2. Generate intermediate data files.
+```
+python evaluation/gen_test_data.py --file /netscratch/anonymous/results/generations/unsup/motra-old/712551/generate-test.txt --out_dir /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/unsup-generated/ --name pred_712551.tsv
+
+# combine og file with pred file
+cat /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/og.tsv /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/unsup-generated/pred_712551.tsv > /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/gen_tsvs/gen_712551.tsv
+
+# shuffle the test file
+shuf -o /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/gen_tsvs/gen_712551.tsv < /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/gen_tsvs/gen_712551.tsv
+
+python evaluation/extract_ref_hyp.py --file /netscratch/anonymous/results/generations/unsup/motra-old/712551/generate-test.txt --name 712551.tsv
+
+python new/fairseq/evaluation/gen_fsq_ppl_data.py --file /netscratch/anonymous/results/generations/unsup/motra-old/712551_ppl/generate-test.txt --out_dir /netscratch/anonymous/test_perplexity/ --exp 712551
+```
+
+3. Evaluate LM perplexity
+
+Note: copy dict.txt from the preprocessed FAIRSEQ_DATA to  
+
+```
+python3 eval_lm.py /netscratch/anonymous/test_perplexity/712551/ --path /netscratch/anonymous/checkpoints/transformer_lm_en_finetuned/checkpoint_best.pt --quiet --output-word-stats --gen-subset test --max-sentences 500 --skip-invalid-size-inputs-valid-test --dataset-impl raw --fp16 --sample-break-mode eos --context-window 50
+```
+
+4. Meausre BERT-Score
+```
+python3 evaluation/compute_bertscore.py --file /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/src_hyp/712551.tsv --model roberta-base
+```
+
+5. Run Translationese Classifier
+```
+python3 evaluation/binary_classification.py --model /netscratch/anonymous/checkpoints/binaryClassification_balanced/ --test /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/gen_tsvs/gen_712551.tsv
+```
+
+6. Run Qualitative Analysis
+```
+python3 evaluation/qualitative_analysis.py --file /netscratch/anonymous/datasets/motra-preprocessed/en_de/test/src_hyp/712551.tsv
+```
+
+
+
+
  
 ![Model](fairseq.gif)
