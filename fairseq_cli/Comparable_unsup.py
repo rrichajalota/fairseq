@@ -330,7 +330,7 @@ class BatchCreator():
             src_examples, src_lengths, self.task.src_dict,
             tgt_examples, tgt_lengths, self.task.tgt_dict,
             left_pad_source=self.cfg.task.left_pad_source,
-            left_pad_target=self.cfg.task.left_pad_target
+            left_pad_target=self.cfg.task.left_pad_target,
         )
         # max_source_positions=self.cfg.task.max_source_positions,
         # max_target_positions=self.cfg.task.max_target_positions,
@@ -641,7 +641,8 @@ class Comparable():
         self.task = self.trainer.task
         self.encoder = self.trainer.get_model().encoder
         # print(f"self.encoder: {self.encoder}")
-        self.batch_size = cfg.comparable.max_sentences
+        self.batch_size = cfg.dataset.batch_size
+        # cfg.comparable.max_sentences
         self.batcher = BatchCreator(task, cfg)
         self.similar_pairs = PairBank(self.batcher, cfg)
         self.unsup_itr = None
@@ -1332,11 +1333,11 @@ class Comparable():
         if max_positions is not None:
             indices = filter_by_size(indices, sent, max_positions, raise_exception=(not True), )
         # create mini-batches with given size constraints
-        print(f"self.cfg.comparable.max_sentences: {self.cfg.comparable.max_sentences}")
-        max_sentences = self.cfg.comparable.max_sentences  # 30
-        print(f"max_sentences: {max_sentences}")
-        print(f"self.cfg.dataset.num_workers: {self.cfg.dataset.num_workers}")
-        print(f"sent.num_tokens: {sent.num_tokens}")
+        # print(f"self.cfg.comparable.max_sentences: {self.cfg.comparable.max_sentences}")
+        max_sentences = self.batch_size #self.cfg.comparable.max_sentences  # 30
+        # print(f"max_sentences: {max_sentences}")
+        # print(f"self.cfg.dataset.num_workers: {self.cfg.dataset.num_workers}")
+        # print(f"sent.num_tokens: {sent.num_tokens}")
 
         batch_sampler = batch_by_size(indices, sent.num_tokens, max_sentences=max_sentences, required_batch_size_multiple=self.cfg.dataset.required_batch_size_multiple, )
         # print(f"tuple(batch_sampler): {tuple(batch_sampler)}")
@@ -1369,17 +1370,29 @@ class Comparable():
             cove = torch.sum(seq_ex, dim=0)
         return cove
 
-    def get_source_monolingual_data(self, articles):
+    # def get_source_monolingual_data(self, articles):
+    #     trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
+    #                                                      dataset_impl='raw', combine=False,
+    #                                                      default='cached')
+    #     src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+    #                                   src_vocab=self.task.src_dict,
+    #                                   tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+    #     src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
+    #                                   src_vocab=self.task.src_dict,
+    #                                   tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+    #     return src_mono
+    
+    def get_unsupervised_data(self, articles):
         trainingSetSrc = load_indexed_dataset(articles[0], self.task.src_dict,
                                                          dataset_impl='raw', combine=False,
                                                          default='cached')
         src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
                                       src_vocab=self.task.src_dict,
-                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-        src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
-                                      src_vocab=self.task.src_dict,
-                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False, fixed_pad_length=512, perform_sampling=True, num_samples=40000)
+        del trainingSetSrc
+        # perform_sampling=True, num_samples=20000
         return src_mono
+        
 
     def getdata(self, articles):
         # logger.info(f"self.cfg.dataset.dataset_impl: raw")
@@ -1394,10 +1407,10 @@ class Comparable():
         # convert the read files to Monolingual dataset to make padding easy
         src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
                                       src_vocab=self.task.src_dict,
-                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False, fixed_pad_length=512)
         tgt_mono = MonolingualDataset(dataset=trainingSetTgt, sizes=trainingSetTgt.sizes,
                                       src_vocab=self.task.tgt_dict,
-                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False, fixed_pad_length=512)
 
         del trainingSetSrc, trainingSetTgt
         # print("Monolingual data")
@@ -1781,7 +1794,7 @@ class Comparable():
                 # src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
                 #                       src_vocab=self.task.src_dict,
                 #                       tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False)
-                unsup_data = src_mono
+                unsup_data = self.get_unsupervised_data(articles)
                 # Prepare iterator objects for current src/tgt document
                 # print(f"self.task.src_dict: {self.task.src_dict}")
                 # print(f"self.cfg.max_source_positions: {self.cfg.task.max_source_positions}")
@@ -1938,7 +1951,9 @@ class Comparable():
                     OrderedDict([('sup', pairData)] + [('unsup', unsup_data)]),
                     eval_key=None
                     )
-                self.concat_data.ordered_indices()
+                # indices = self.concat_data.ordered_indices()
+
+                # self.concat_data.filter_indices_by_size(indices=indices, max_positions=512)
 
                 self.train(epoch)
                 self.reset_pairbank()
@@ -2005,7 +2020,7 @@ class Comparable():
         # is_epoch_end = False
         if last is False:
             if itrs is None:
-                itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0)
+                itrs = self.task.get_batch_iterator(self.concat_data, max_sentences=self.batch_size, epoch=0, max_positions=self.cfg.task.max_source_positions)
             itr = itrs.next_epoch_itr(shuffle=True, fix_batches_to_gpus=self.cfg.distributed_training.fix_batches_to_gpus)
             itr = GroupedIterator(itr, self.update_freq[-1], skip_remainder_batch=self.cfg.optimization.skip_remainder_batch)
             if self.cfg.common.tpu:

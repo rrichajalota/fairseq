@@ -47,7 +47,11 @@ def collate_tokens(
 ):
     """Convert a list of 1d tensors into a padded 2d tensor."""
     size = max(v.size(0) for v in values)
+    if size < 512 and pad_to_length is not None:
+        pad_to_length = size
     size = size if pad_to_length is None else max(size, pad_to_length)
+    if size >= 512:
+        logger.info(f"size!: {size}")
     if pad_to_multiple != 1 and size % pad_to_multiple != 0:
         size = int(((size - 0.1) // pad_to_multiple + 1) * pad_to_multiple)
 
@@ -161,6 +165,7 @@ def collect_filtered(function, iterable, filtered):
 
 
 def _filter_by_size_dynamic(indices, size_fn, max_positions, raise_exception=False):
+    # logger.info(f"size_fn: {size_fn}")
     def compare_leq(a, b):
         return a <= b if not isinstance(a, tuple) else max(a) <= b
 
@@ -211,6 +216,8 @@ def filter_by_size(indices, dataset, max_positions, raise_exception=False):
         "Use `FairseqDataset::filter_indices_by_size` instead.",
         stacklevel=2,
     )
+    # logger.info(f"max_positions: {max_positions}")
+    # logger.info(f"dataset: {dataset}")
     if isinstance(max_positions, float) or isinstance(max_positions, int):
         if hasattr(dataset, "sizes") and isinstance(dataset.sizes, np.ndarray):
             ignored = indices[dataset.sizes[indices] > max_positions].tolist()
@@ -355,6 +362,7 @@ def batch_by_size(
                 max_sentences,
                 bsz_mult,
             )
+        #logger.info(f"b: {b}")
 
         if bsz_mult > 1 and len(b[-1]) % bsz_mult != 0:
             b = b[:-1]

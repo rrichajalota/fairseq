@@ -38,6 +38,7 @@ if __name__ == "__main__":
                         # if tr.strip() == "!" or tr.strip() == "co-rapporteur ." or tr.strip() == "Thank you very much for your attention .":
                         #     print(tr)
                         #     continue
+                        # if len(line.split()) < 510:
                         of.write(f"{line}\t1")
                         of.write("\n")
                         count += 1

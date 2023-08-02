@@ -5,14 +5,16 @@
 
 import logging
 from collections import OrderedDict
-from typing import Dict, Sequence
-
+from typing import Dict, Sequence, Callable, Dict, List
 import numpy as np
 
-from . import FairseqDataset, LanguagePairDataset
+from . import FairseqDataset, LanguagePairDataset, MonolingualDataset
 
 logger = logging.getLogger(__name__)
 
+def uniform_sampler(x):
+    # Sample from uniform distribution
+    return np.random.choice(x, 1).item()
 
 class RoundRobinZipDatasets(FairseqDataset):
     """Zip multiple :class:`~fairseq.data.FairseqDataset` instances together.
@@ -27,7 +29,8 @@ class RoundRobinZipDatasets(FairseqDataset):
             this instance to pass-through batches from *datasets[eval_key]*.
     """
 
-    def __init__(self, datasets, eval_key=None):
+    def __init__(self, datasets, eval_key=None, 
+                 sampling_func: Callable[[List], int] = None,):
         super().__init__()
         if isinstance(datasets, dict):
             datasets = OrderedDict(datasets)
@@ -38,6 +41,9 @@ class RoundRobinZipDatasets(FairseqDataset):
 
         self.datasets = datasets
         self.eval_key = eval_key
+        if sampling_func is None:
+            sampling_func = uniform_sampler
+        self.sampling_func = sampling_func
 
         self.longest_dataset_key = max(datasets, key=lambda k: len(datasets[k]))
         self.longest_dataset = datasets[self.longest_dataset_key]
@@ -72,6 +78,9 @@ class RoundRobinZipDatasets(FairseqDataset):
         if len(samples) == 0:
             return None
         if self.eval_key is None:
+            # selected_key = self.sampling_func(list(self.datasets.keys()))
+            # selected_samples = [sample[selected_key] for sample in samples]
+            
             return OrderedDict(
                 [
                     (key, dataset.collater([sample[key] for sample in samples]))
@@ -120,6 +129,8 @@ class RoundRobinZipDatasets(FairseqDataset):
 
         def _deep_until_language_pair(dataset):
             if isinstance(dataset, LanguagePairDataset):
+                return dataset
+            if isinstance(dataset, MonolingualDataset):
                 return dataset
             if hasattr(dataset, "tgt_dataset"):
                 return _deep_until_language_pair(dataset.tgt_dataset)

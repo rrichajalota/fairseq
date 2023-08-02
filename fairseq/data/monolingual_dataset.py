@@ -6,8 +6,15 @@
 import numpy as np
 import torch
 
+from typing import Callable, Dict, List
 from . import FairseqDataset, data_utils
 
+
+def uniform_sampler(x, k=50000):
+    # Sample from uniform distribution
+    if len(x) < k:
+        return x
+    return np.random.choice(x, k,replace=False).item()
 
 def collate(samples, pad_idx, eos_idx, fixed_pad_length=None, pad_to_bsz=None):
     if len(samples) == 0:
@@ -83,6 +90,8 @@ class MonolingualDataset(FairseqDataset):
         pad_to_bsz=None,
         src_lang_idx=None,
         tgt_lang_idx=None,
+        perform_sampling=False,
+        num_samples=1000,
     ):
         self.dataset = dataset
         self.sizes = np.array(sizes)
@@ -95,6 +104,11 @@ class MonolingualDataset(FairseqDataset):
         self.pad_to_bsz = pad_to_bsz
         self.src_lang_idx = src_lang_idx
         self.tgt_lang_idx = tgt_lang_idx
+        # if sampling_func is None:
+        #     sampling_func = uniform_sampler
+        self.sampling_func = uniform_sampler
+        self.perform_sampling = perform_sampling
+        self.num_samples = num_samples # num samples to sample if perform_sampling is True!
 
         assert targets is None or all(
             t in {"self", "future", "past"} for t in targets
@@ -217,13 +231,26 @@ class MonolingualDataset(FairseqDataset):
                   target sentence of shape `(bsz, tgt_len)`. Padding will appear
                   on the right.
         """
+        if self.perform_sampling:
+            selected_samples = self.sampling_func(samples, self.num_samples)
+        else:
+            selected_samples = samples
+
         return collate(
-            samples,
+            selected_samples,
             self.vocab.pad(),
             self.vocab.eos(),
             self.fixed_pad_length,
             self.pad_to_bsz,
         )
+
+        # return collate(
+        #     samples,
+        #     self.vocab.pad(),
+        #     self.vocab.eos(),
+        #     self.fixed_pad_length,
+        #     self.pad_to_bsz,
+        # )
 
     def num_tokens(self, index):
         """Return the number of tokens in a sample. This value is used to
@@ -251,3 +278,23 @@ class MonolingualDataset(FairseqDataset):
 
     def prefetch(self, indices):
         self.dataset.prefetch(indices)
+
+    def filter_indices_by_size(self, indices, max_sizes):
+        """Filter a list of sample indices. Remove those that are longer
+            than specified in max_sizes.
+
+        Args:
+            indices (np.array): original array of sample indices
+            max_sizes (int or list[int] or tuple[int]): max sample size,
+                can be defined separately for src and tgt (then list or tuple)
+
+        Returns:
+            np.array: filtered sample array
+            list: list of removed indices
+        """
+        if not isinstance(max_sizes, int):
+            max_sizes = max_sizes[0]
+            
+        return data_utils.filter_by_size(
+            indices=indices, dataset=self.dataset, max_positions=max_sizes
+        ), []

@@ -67,7 +67,15 @@ class LMContextWindowDataset(FairseqDataset):
             if extra > 0:
                 self.prev_tokens = self.prev_tokens[extra:]
             pads = np.full(self.context_window - len(self.prev_tokens), pad)
+            # if toks[i].get_device() != -1:
+            #     toks[i] = toks[i].cpu().data # move the tensor to cpu
+            # print(f"self.prev_tokens: {self.prev_tokens}")
+            # print(f"toks[i]: {toks[i]}")
             new_toks[i] = np.concatenate([self.prev_tokens, toks[i].numpy(), pads])
+            # print(f"new_toks[i]: {new_toks[i]}")
+            # print(f"tgt[i]: {tgt[i]}")
+            tgt[i] = tgt[i].cpu().data #.numpy()
+            # print(f"tgt[i]: {tgt[i]}")
             new_tgt[
                 i, len(self.prev_tokens) : len(self.prev_tokens) + len(tgt[i])
             ] = tgt[i]

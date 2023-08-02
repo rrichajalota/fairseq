@@ -14,9 +14,11 @@ from fairseq import metrics, utils
 from fairseq.criterions import register_criterion
 from torch.nn.functional import gumbel_softmax
 from torch.distributions import Categorical
+from torch.utils.data import Dataset
+from fairseq.data import LMContextWindowDataset, MonolingualDataset
 import evaluate
 import random
-from fairseq.lm_perplexity import LanguageModel
+from fairseq.lm_perplexity import LanguageModel, LanguageModelValidation
 
 from fairseq.criterions.label_smoothed_cross_entropy import (
     LabelSmoothedCrossEntropyCriterion,
@@ -35,6 +37,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger("fairseq.criterion.UnsupervisedAugmentedCrossEntropyLoss")
 
+
+class torchDataset(Dataset):
+    def __init__(self, data_list):
+        self.data_list = data_list
+
+    def __getitem__(self, index):
+        return self.data_list[index]
+
+    def __len__(self):
+        return len(self.data_list)
 
 def cross_entropy(pred, soft_targets):
     # logger.info(f"pred.size(): {pred.size()}")
@@ -83,6 +95,27 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterionConfig(
         default=0.5,
         metadata={"help": "supervised loss weightage"},
     )
+    pretrained_lm: str = field(
+        default="/netscratch/jalota/checkpoints/transformer_en_hansard/",
+        metadata={
+            "help": "pretrained fairseq LM model to evaluate PPL during unsupervised training."
+        },
+    )
+    pretrained_lm_dict_path: str = field(
+        default="/netscratch/jalota/datasets/data-bin/canadianHansard/lm/",
+        metadata={
+            "help": "dict path for pretrained fairseq LM model to evaluate PPL during unsupervised training."
+        },
+    )
+    lm_context_window: int = field(
+        default=5, metadata={"help": "context window size for evaluating PPL"}
+    )
+    bertscore_model: str = field(
+        default="roberta-base",
+        metadata={
+            "help": "which model to use for evaluating semantic similarity. for EN: roberta-base, DE: t5-base"
+        },
+    )
 
 
 @register_criterion(
@@ -99,40 +132,53 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
         label_smoothing,
         ignore_prefix_size,
         report_accuracy,
-        lm_weight=0.5,
+        lm_weight=1,
         cosine_weight=1,
-        unsupervised_weight=0.5,
+        unsupervised_weight=1,
         supervised_weight=1,
-        bert_model='t5-base',
-        tau_gumbel_softmax=1.0, #TODO: change to 0.1 to enforce sparsity
+        bertscore_model='roberta-base',
+        lm_context_window=5,
+        pretrained_lm_dict_path="/netscratch/jalota/datasets/data-bin/canadianHansard/lm/",
+        pretrained_lm="/netscratch/jalota/checkpoints/transformer_en_hansard/",
+        tau_gumbel_softmax=0.1,
         hard_gumbel_softmax=False,
         eps_gumbel_softmax=1e-10,
         soft_bert_score=False
     ):
-        # 'microsoft/deberta-v3-base'
+        # 'microsoft/deberta-v3-base' t5-base
+        # roberta-base for EN
         super().__init__(
             task, sentence_avg, label_smoothing, ignore_prefix_size, report_accuracy
         )
         self.lm_weight = torch.tensor(1)
         self.cosine_weight = torch.tensor(1)
-        self.unsupervised_weight = torch.tensor(1.0)
-        self.supervised_weight = torch.tensor(1.0)
+        self.unsupervised_weight = torch.tensor(0.3)
+        self.supervised_weight = torch.tensor(0.7)
         self.perplexity = Perplexity()
         self.cosine_sim = CosineSimilarity()
         self.mse_loss = MSELoss(reduction='mean')
-        self.bertscore_model = bert_model
+        self.bertscore_model = bertscore_model
 
         self.tau_gumbel_softmax = tau_gumbel_softmax
         self.hard_gumbel_softmax = hard_gumbel_softmax
         self.eps_gumbel_softmax = eps_gumbel_softmax
-
+        self.pretrained_lm = pretrained_lm
+        self.pretrained_lm_dict_path = pretrained_lm_dict_path
+        self.lm_context_window = lm_context_window
+        
         # self.bert_scorer = BERTScorer(self.bert_model, soft_bert_score=soft_bert_score)  # , device='cpu')
         # self.pad_token_id = self.bert_scorer._tokenizer.convert_tokens_to_ids('[PAD]')
+        # hansard: /netscratch/jalota/checkpoints/transformer_en_hansard/
+        # hansard_data: /netscratch/jalota/datasets/data-bin/canadianHansard/lm/
+        # de: /netscratch/jalota/checkpoints/transformer_lm_de_finetuned/
+        # de_data: /netscratch/jalota/datasets/motra-sst/de/unsup_setup_raw/lm_finetuning/
         self.bertscore = evaluate.load("bertscore")
-        self.lm = LanguageModel(path='/netscratch/jalota/checkpoints/transformer_lm_de_finetuned/',tgt_dict=task.tgt_dict)
+        self.lm = LanguageModel(path=self.pretrained_lm,tgt_dict=task.tgt_dict,data_name_or_path=self.pretrained_lm_dict_path)
+        self.val_lm = LanguageModelValidation(path=self.pretrained_lm,tgt_dict=task.tgt_dict, context_window=self.lm_context_window,data_name_or_path=self.pretrained_lm_dict_path)
         # /netscratch/jalota/datasets/motra-sst/de/unsup_setup_raw/lm_finetuning/
         # DE: /netscratch/jalota/checkpoints/transformer_lm_de_finetuned/
         # EN: /netscratch/jalota/checkpoints/transformer_lm_en_finetuned/
+        # data_name_or_path='/netscratch/jalota/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/lm_finetune/'
 
         #load("perplexity", module_type="measurement")
         
@@ -148,6 +194,7 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
             sample_size = (
                 sample['sup']["target"].size(0) if self.sentence_avg else sample['sup']["ntokens"]
             )
+            # logger.info(f'sample["sup"]["net_input"]["prev_output_tokens"]: {sample["sup"]["net_input"]["prev_output_tokens"]}')
             ## take the mean of loss and nll_loss here and convert them from log base e to 2
             loss = loss_sum / sample_size / math.log(2)
             nll_loss = nll_loss_sum / sample['sup']["ntokens"] / math.log(2)
@@ -184,42 +231,79 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
                 ).replace("<pad>", "").rstrip()
                 
             with torch.no_grad():
+                if any(sample["net_input"]["src_lengths"]) > 510:
+                    logger.info(f'sample["net_input"]["src_lengths"]: {sample["net_input"]["src_lengths"]}')
                 gen_out = seqeunce_generator.generate(
                         [model], sample, prefix_tokens=None, constraints=None)
+
+                # logger.info(f"gen_out: {gen_out}")
                 hyps, hyps_tok = [], []
                 for i in range(len(gen_out)):
-                    s = decode(gen_out[i][0]["tokens"]).strip()
-                    if len(s) > 0:
-                        hyps_tok.append(s)
+                    # s = decode(gen_out[i][0]["tokens"]).strip()
+                    # if len(s) > 0:
+                    #     hyps_tok.append(s)
                     hyps.append(gen_out[i][0]["tokens"]) 
 
-                hyps = collate_tokens(hyps, src_dict.pad(), src_dict.eos(), left_pad=False, pad_to_length=None,pad_to_bsz=None)
+                msize = max(v.size(0) for v in hyps) 
+                msize = msize if msize <= 512 else 512
+                # logger.info(f"msize: {msize}")
+
+                hyps = collate_tokens(hyps, src_dict.pad(), src_dict.eos(), move_eos_to_beginning=False, left_pad=False, pad_to_length=512,pad_to_bsz=None)
+
+                batch_size = len(hyps)
 
             if not train:
                 # calculate bertscore and PPL straight-away! 
                 refs_list = []
+                hyps_tok = []
                 refs = sample['net_input']['src_tokens']
                 for i in range(len(refs)):
                     s = decode(refs[i]).strip()
-                    refs_list.append(s)
+                    hs = decode(gen_out[i][0]["tokens"]).strip()
+                    if len(s.split()) > 2 and len(hs.split()) > 1:
+                        hyps_tok.append(hs)
+                        refs_list.append(s)
+                        
+                    # refs_list.append(s)
 
-                # logger.info(f"refs_list: {refs_list[0:3]}")
-                # logger.info(f"hyps_tok: {hyps_tok[0:3]}")
+                # logger.info(f"len(refs_list): {len(refs_list)}")
+                # logger.info(f"len(hyps_tok): {len(hyps_tok)}")
+
+                # logger.info(f"refs_list: {refs_list}")
+                # logger.info(f"hyps_tok: {hyps_tok}")
 
                 sim_loss, _ = self.compute_bertLoss(hyps_tok, refs_list) 
 
-                ppl_results = self.perplexity.compute(data=hyps_tok, model_id='/netscratch/jalota/checkpoints/gpt2-finetuned-motra-de-40epochs/', batch_size=len(hyps_tok), add_start_token=True)
+                # ppl_results = self.perplexity.compute(data=hyps_tok, model_id='/netscratch/jalota/checkpoints/gpt2-finetuned-motra/', batch_size=len(hyps_tok), add_start_token=True)
+                hyps_cpu, gen_sizes = [], []
+                for h in hyps:
+                    # if h.size(0) <= 512:
+                    hyps_cpu.append(h.cpu())
+                    gen_sizes.append(msize)
+
+                # hyps = [h.cpu() for h in hyps]
+                # logger.info(f"len(hyps_cpu): {len(hyps_cpu)}")
+                # logger.info(f"gen_sizes: {gen_sizes}")
+
+                genData = torchDataset(data_list=hyps_cpu)
+                # gen_sizes = [msize for _ in range(len(genData))]
+                gen_data = MonolingualDataset(genData, gen_sizes, src_vocab=tgt_dict, fixed_pad_length=512)
+
+                ppl_results = self.val_lm.get_lm_perplexity(gen_data, batch_size)
+
+                # logger.info(f"ppl: {ppl_results['mean_perplexity']}")
                 # gpt2-finetuned-motra-de-40epochs/ - DE
                 # gpt2-finetuned-motra/ - EN
 
-                mean_per_word_entropy = math.log2(ppl_results['mean_perplexity'])
+                mean_per_word_entropy = ppl_results['loss']
+                # math.log2(ppl_results['mean_perplexity'])
 
                 unsupervised_loss = 1.0 * sim_loss + 1.0 * mean_per_word_entropy
                 loss += self.unsupervised_weight * unsupervised_loss 
                 logging_output["loss"] = loss
                 logging_output["sim_loss"] = sim_loss
                 logging_output["mean_per_word_entropy"] = mean_per_word_entropy
-                logging_output["lm_ppl"] = ppl_results['mean_perplexity']
+                logging_output["lm_ppl"] = ppl_results['perplexity']
                 logging_output["unsupervised_loss"] = unsupervised_loss
 
             else:
@@ -277,12 +361,15 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
         batch_size, max_seq_len, vocab_size = preds_tensor.size()
         emb_size = emb_matrix.size()[-1]
 
-        preds_tensor_embs = torch.mm(preds_tensor.contiguous().view(-1, vocab_size), emb_matrix)
-        preds_tensor_embs = preds_tensor_embs.view(-1, max_seq_len, emb_size)
+        with torch.autocast("cuda"):
+            preds_tensor_embs = torch.mm(preds_tensor.contiguous().view(-1, vocab_size), emb_matrix)
+            preds_tensor_embs = preds_tensor_embs.view(-1, max_seq_len, emb_size)
 
-        with torch.no_grad():
-            source_emb = model.encoder.forward(sample['net_input']['src_tokens'].cuda())
-            preds_enc_emb = model.encoder.forward(preds_tensor_embs.cuda())
+            # logger.info(f"preds_tensor_embs: {preds_tensor_embs.dtype}")
+
+            with torch.no_grad():
+                source_emb = model.encoder.forward(sample['net_input']['src_tokens'])
+                preds_enc_emb = model.encoder.forward(preds_tensor_embs)
 
         source_sent_repr = torch.sum(source_emb['encoder_out'][0], dim=0)
         output_sent_repr = torch.sum(preds_enc_emb['encoder_out'][0], dim=0)
@@ -329,15 +416,18 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
                     tgt_dict.eos(),
                     left_pad=False,
                     move_eos_to_beginning=True,
-                    pad_to_length=None,
+                    pad_to_length=512,
                     pad_to_multiple=1
                 )
         # logger.info(f"prev_output_tokens: {prev_output_tokens}")
+
+        # logger.info(f"tgt_dict.eos():{tgt_dict.eos()}")
                 
         src_lengths = sample["net_input"]["src_lengths"]
         src_tokens = sample["net_input"]["src_tokens"]
+        # logger.info(f"src_lengths: {src_lengths}")
                 
-                # sort by descending src lengths 
+        # sort by descending src lengths 
         src_lengths, sort_order = src_lengths.sort(descending=True)
                 
         sample['id'] = sample['id'].index_select(0, sort_order)
@@ -348,6 +438,8 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
         return sample
     
     def compute_bertLoss(self, preds_list, refs_list, reduce=True):
+        # logger.info(f"len(refs_list): {len(refs_list)}")
+        # logger.info(f"len(preds_list): {len(preds_list)}")
         results = self.bertscore.compute(predictions=preds_list, references=refs_list, model_type=self.bertscore_model)
         avg_f1 = sum(results['f1'])/len(results['f1'])
         bert_loss = 1-avg_f1
@@ -377,8 +469,11 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
             gen_out_emb = model.encoder.forward(hyps)
 
             source_sent_repr = torch.sum(source_emb['encoder_out'][0], dim=0)
+            # logger.info(f"source_sent_repr: {source_sent_repr}")
             
             output_sent_repr = torch.sum(gen_out_emb['encoder_out'][0], dim=0).cuda()
+
+            # logger.info(f"output_sent_repr: {output_sent_repr}")
             target_labels = torch.ones(source_sent_repr.shape[0], dtype=source_sent_repr.dtype).cuda()
             # cosineLoss = torch.nn.CosineEmbeddingLoss(reduction='mean') 
             # cos_sim_loss = cosineLoss(source_sent_repr, output_sent_repr, target_labels)
@@ -412,9 +507,9 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
         metrics.log_derived(
             "ppl", lambda meters: utils.get_perplexity(meters["nll_loss"].avg)
         )
-        metrics.log_derived(
-            "lm_ppl", lm_ppl, unsup_nsentences, round=3
-        )
+        # metrics.log_derived(
+        #     "lm_ppl", lm_ppl, unsup_nsentences,
+        # )
         metrics.log_scalar(
             "sim_loss", sim_loss, unsup_nsentences, round=3
         )

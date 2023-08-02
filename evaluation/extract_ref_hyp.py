@@ -7,7 +7,7 @@ from pathlib import Path
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='extract reference and hypothesis from model generation')
     parser.add_argument("--file", default="/netscratch/anonymous/results/generations/unsup/motra-old/699517/generate-test.txt")
-    parser.add_argument("--out_dir", default="/netscratch/anonymous/datasets/motra-preprocessed/en_de/test/src_hyp/")
+    parser.add_argument("--out_dir", default="/netscratch/jalota/datasets/motra-preprocessed/en_de/test/src_hyp/")
     parser.add_argument("--name", default="699517.tsv")
     args = parser.parse_args()
     contains_dup = False

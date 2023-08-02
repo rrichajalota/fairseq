@@ -10,8 +10,8 @@ if __name__ == "__main__":
     sed '1,56d' gen.txt > new_gen.txt
     """
     parser = argparse.ArgumentParser(description='generate test data for binary classification from fairseq-generate output')
-    parser.add_argument("--file", default="/home/anonymous/gen_w_threshold_translated_test.txt")
-    parser.add_argument("--out_dir", default="/netscratch/anonymous/test_perplexity/")
+    parser.add_argument("--file", default="/home/jalota/gen_w_threshold_translated_test.txt")
+    parser.add_argument("--out_dir", default="/netscratch/jalota/test_perplexity/")
     parser.add_argument("--name", default="test")
     parser.add_argument("--exp", default="712684")
     args = parser.parse_args()

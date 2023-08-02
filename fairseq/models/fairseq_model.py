@@ -79,7 +79,7 @@ class BaseFairseqModel(nn.Module):
         log_probs: bool,
         sample: Optional[Dict[str, Tensor]] = None,
     ):
-        """Scriptable helper function for get_normalized_probs in ~BaseFairseqModel"""
+        """Scriptable helper function for get_normalized_probs in ~BaseFairseqModel""" 
         if hasattr(self, "decoder"):
             return self.decoder.get_normalized_probs(net_output, log_probs, sample)
         elif torch.is_tensor(net_output):

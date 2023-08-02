@@ -4,8 +4,8 @@ from typing import List
 import pandas as pd
 
 allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'] # or any other types
-# nlp = spacy.load('en_core_web_trf')
-nlp = spacy.load('de_dep_news_trf')
+nlp = spacy.load('en_core_web_trf')
+# nlp = spacy.load('de_dep_news_trf')
 
 def token_filter(token):    
     return (token.pos_ in allowed_postags) & (not (token.is_punct | token.is_space | 

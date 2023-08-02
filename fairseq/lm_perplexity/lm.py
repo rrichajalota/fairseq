@@ -21,6 +21,7 @@ logger = logging.getLogger("fairseq.lm_perplexity.lm")
 
 # model_args = Namespace(tokens_per_sample=512, data="/netscratch/jalota/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/lm_finetune/", arch="transformer_lm", activation_fn='relu', dropout=0.1, attention_dropout= 0.0, activation_dropout= 0.0, relu_dropout= 0.0, decoder_embed_dim= 512, decoder_output_dim= 512, decoder_input_dim= 512, decoder_ffn_embed_dim= 2048, decoder_layers= 6, decoder_attention_heads= 8, decoder_normalize_before= False, no_decoder_final_norm= False, adaptive_softmax_cutoff=None, adaptive_softmax_dropout=0.0, adaptive_softmax_factor=4.0, no_token_positional_embeddings=False, share_decoder_input_output_embed=True, character_embeddings= False, character_filters='[(1, 64), (2, 128), (3, 192), (4, 256), (5, 256), (6, 256), (7, 256)]', character_embedding_dim=4, char_embedder_highway_layers=2, adaptive_input= False, adaptive_input_factor= 4.0, adaptive_input_cutoff= None, tie_adaptive_weights=False, tie_adaptive_proj= False, decoder_learned_pos= False, layernorm_embedding= False, no_scale_embedding= False, checkpoint_activations= False, offload_activations= False, decoder_layerdrop= 0.0, decoder_layers_to_keep= None, quant_noise_pq= 0.0, quant_noise_pq_block_size=8, quant_noise_scalar= 0.0, min_params_to_wrap=100000000, base_layers= 0, base_sublayers=1, base_shuffle=1, scale_fc=False, scale_attn=False, scale_heads=False, scale_resids= False, decoder_xformers_att_config=None, add_bos_token= False, max_target_positions= None, tpu= False)
 # /netscratch/jalota/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/lm_finetune/
+# /netscratch/jalota/datasets/motra-sst/de/unsup_setup_raw/lm_finetuning/
 class LanguageModel:
     """
     Transformer LanguageModel to compute perplexity or cross entropy. 
@@ -29,7 +30,7 @@ class LanguageModel:
             self,
             path=None,
             checkpoint_file='checkpoint_best.pt',
-            data_name_or_path='/netscratch/jalota/datasets/motra-sst/de/unsup_setup_raw/lm_finetuning/',
+            data_name_or_path='/netscratch/jalota/datasets/motra-sst/ppd_w_europarl-motra-10k_no_dups/en_es_de/unsup_setup/lm_finetune/',
             device = None,
             tgt_dict=None
     ):
@@ -50,7 +51,7 @@ class LanguageModel:
         self._emb_matrix = None
         # we want to keep the weights of the pretrained model frozen
         for name, param in self._model.named_parameters():
-            logger.info(f"name: {name}")
+            # logger.info(f"name: {name}")
             if 'embed_tokens.weight' in name:
                 emb_matrix = param
                 self._emb_matrix = emb_matrix
@@ -137,7 +138,7 @@ class LanguageModel:
 
         lm_out = self._model(preds_tensor_embs) 
 
-        # logger.info(f"lm_out: {lm_out[0].size()}")
+        # logger.info(f"lm_out: {lm_out}")
         return lm_out 
 
         

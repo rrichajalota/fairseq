@@ -652,7 +652,7 @@ class ComparableConfig(FairseqDataclass):
         default=False, metadata={"help": 'runs only unsupervised training and and validation without self-supervision'}
     )
     max_sentences: int = field(
-        default=80, metadata={"help": 'Number of sentences in a batch'}
+        default=1200, metadata={"help": 'Number of sentences in a batch'}
     )
     sim_measure: str = field(
         default="margin",

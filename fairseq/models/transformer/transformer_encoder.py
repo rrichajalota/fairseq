@@ -140,7 +140,7 @@ class TransformerEncoderBase(FairseqEncoder):
         if self.quant_noise is not None:
             x = self.quant_noise(x)
         return x, embed
-
+    
     def forward(
         self,
         src_tokens,
@@ -226,7 +226,7 @@ class TransformerEncoderBase(FairseqEncoder):
             x = src_tokens # BxTxemb_dim
 
         # account for padding while computing the representation
-        if len(src_tokens.size()) == 2:
+        if len(src_tokens.size()) == 2 and has_pads:
             x = x * (
                 1 - encoder_padding_mask.unsqueeze(-1).type_as(x) * has_pads.type_as(x)
             )
