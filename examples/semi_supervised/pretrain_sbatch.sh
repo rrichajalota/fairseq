@@ -2,13 +2,13 @@
 
 #SBATCH --nodes=1               # Number of nodes or servers. See: http://koeln.kl.dfki.de:3000/d/slurm-resources/resources?orgId=1&refresh=15s
 #SBATCH --ntasks-per-node=1     # Number of task in each node, we want 1 
-#SBATCH --cpus-per-task=48     # We want 4 cores for this job.
-#SBATCH --mem-per-cpu=8gb     # each core to have 16 Gb RAM
+#SBATCH --cpus-per-task=52     # We want 4 cores for this job.
+#SBATCH --mem-per-cpu=6gb     # each core to have 16 Gb RAM
 #SBATCH --gres=gpu:4            # We want 4 GPUs in each node for this job.
 #SBATCH --time=10-0:00         # Run this task no longer than 10 days. 
 #SBATCH --job-name=v2_pretrain_bart_thrd1_cpu2
 #SBATCH --partition=V100-32GB,RTXA6000,RTX3090,A100-40GB,A100-80GB,A100-PCI,V100-16GB,RTX2080Ti
-#SBATCH --output=logs/v2_pretrain_transformer_gpu1_thrd1_cpu12%A.logs
+#SBATCH --output=logs/v2_pretrain_transformer_gpu4_thrd1_cpu52%A.logs
 
 echo "#############################"
 date
@@ -26,7 +26,7 @@ echo "Using: `which python`"
 echo -e "#############################\n"
 
 NGPUS=4; # number of gpu
-NCPUS_PER_TASK=48; # number of cpu per task
+NCPUS_PER_TASK=52; # number of cpu per task
 # MEM=50000 # memory increase this if needed
 
 srun -v \
