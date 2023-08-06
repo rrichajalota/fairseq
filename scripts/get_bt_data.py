@@ -5,13 +5,15 @@ pivot2m = EasyNMT('m2m_100_418M') # mbart50_m2en
 # process_pool = en2es.start_multi_process_pool(['cuda', 'cuda'])
 # pp = es2en.start_multi_process_pool(['cuda', 'cuda'])
 # /netscratch/jalota/datasets/haifa-hansard/dev/original.txt
-with open("/netscratch/jalota/datasets/motra-preprocessed/de_all/train/og_bal.tok") as f:
+# de: /netscratch/jalota/datasets/motra-preprocessed/de_all/train/og_bal.tok
+# /netscratch/jalota/datasets/haifa-hansard/fairseq-pp/
+with open("/netscratch/jalota/datasets/haifa-hansard/dev/og_bal_filtered") as f:
   lines = f.readlines()
   # es_translations = en2es.translate(lines, target_lang='es')
   count = 0
   es_trans = []
-  with open("/netscratch/jalota/datasets/motra-preprocessed/de_all/train/de2en.txt", "w") as fo:
-    for translation in m2pivot.translate_stream(lines, show_progress_bar=True, chunk_size=80, source_lang='de', target_lang='en'):
+  with open("/netscratch/jalota/datasets/haifa-hansard/dev/fr_og_bal_filtered.txt", "w") as fo:
+    for translation in m2pivot.translate_stream(lines, show_progress_bar=True, chunk_size=80, source_lang='en', target_lang='fr'):
       count +=1 
       print(count)
       # es_trans.append(translation)
@@ -27,11 +29,11 @@ with open("/netscratch/jalota/datasets/motra-preprocessed/de_all/train/og_bal.to
   # en_translations_multi_p = es2en.translate_multi_process(pp, es_translations_multi_p, source_lang='es', target_lang='en', show_progress_bar=True)
   # es2en.stop_multi_process_pool(pp)
   # en_trans = []
-with open("/netscratch/jalota/datasets/motra-preprocessed/de_all/train/de2en.txt") as f:
+with open("/netscratch/jalota/datasets/haifa-hansard/dev/fr_og_bal_filtered.txt") as f:
   lines = f.readlines()
   count = 0
-  with open("/netscratch/jalota/datasets/motra-preprocessed/de_all/train/bt_de.txt", "w") as foo:
-    for translation in pivot2m.translate_stream(lines, show_progress_bar=True, chunk_size=80, source_lang='en', target_lang='de'):
+  with open("/netscratch/jalota/datasets/haifa-hansard/dev/bt_og_bal_filtered.txt", "w") as foo:
+    for translation in pivot2m.translate_stream(lines, show_progress_bar=True, chunk_size=80, source_lang='fr', target_lang='en'):
       count +=1 
       print(count)
       foo.write(translation)

@@ -16,6 +16,7 @@ from argparse import Namespace
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional
+import datetime
 
 import torch
 import torch.distributed as dist
@@ -293,7 +294,9 @@ def distributed_init(cfg: FairseqConfig):
                 init_method=cfg.distributed_training.distributed_init_method,
                 world_size=cfg.distributed_training.distributed_world_size,
                 rank=cfg.distributed_training.distributed_rank,
+                timeout=datetime.timedelta(seconds=18000)   
             )
+            # timeout increased to 5 hours from 30 mins due to ERROR: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=1121, OpType=ALLREDUCE, Timeout(ms)=1800000) ran for 1802283 milliseconds before timing out.
             logger.info(
                 "initialized host {} as rank {}".format(
                     socket.gethostname(),

@@ -96,13 +96,13 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterionConfig(
         metadata={"help": "supervised loss weightage"},
     )
     pretrained_lm: str = field(
-        default="/netscratch/jalota/checkpoints/transformer_en_hansard/",
+        default="/netscratch/jalota/checkpoints/transformer_lm_hansard_eos/",
         metadata={
             "help": "pretrained fairseq LM model to evaluate PPL during unsupervised training."
         },
     )
     pretrained_lm_dict_path: str = field(
-        default="/netscratch/jalota/datasets/data-bin/canadianHansard/lm/",
+        default="/netscratch/jalota/datasets/data-bin/canadianHansard/lm_subword-nmt-12k/",
         metadata={
             "help": "dict path for pretrained fairseq LM model to evaluate PPL during unsupervised training."
         },
@@ -138,8 +138,8 @@ class UnsupervisedAugmentedLabelSmoothedCrossEntropyCriterion(
         supervised_weight=1,
         bertscore_model='roberta-base',
         lm_context_window=5,
-        pretrained_lm_dict_path="/netscratch/jalota/datasets/data-bin/canadianHansard/lm/",
-        pretrained_lm="/netscratch/jalota/checkpoints/transformer_en_hansard/",
+        pretrained_lm_dict_path="/netscratch/jalota/datasets/data-bin/canadianHansard/lm_subword-nmt-12k/",
+        pretrained_lm="/netscratch/jalota/checkpoints/transformer_lm_hansard_eos/",
         tau_gumbel_softmax=0.1,
         hard_gumbel_softmax=False,
         eps_gumbel_softmax=1e-10,

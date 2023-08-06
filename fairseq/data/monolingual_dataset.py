@@ -91,7 +91,7 @@ class MonolingualDataset(FairseqDataset):
         src_lang_idx=None,
         tgt_lang_idx=None,
         perform_sampling=False,
-        num_samples=1000,
+        num_samples=40000,
     ):
         self.dataset = dataset
         self.sizes = np.array(sizes)

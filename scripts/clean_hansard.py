@@ -7,7 +7,7 @@ if __name__ == '__main__':
     parser.add_argument("--split", default='train')
     parser.add_argument("--name", default="pp_uniq_og", help="without extension")
     args = parser.parse_args()
-    clean = False # for MOTRA True for Hansard
+    clean = True # for MOTRA ; True for Hansard
     count = 0
     
     with open(args.inp) as f:
@@ -16,7 +16,7 @@ if __name__ == '__main__':
             for line in f.readlines():
                 wds = line.split()
                 if clean:
-                    if len(wds) > 3 and len(wds) < 505:
+                    if len(wds) > 4 and len(wds) < 505:
                         fo.write(f"{line}")
                 else:
                     if len(wds) > 505:

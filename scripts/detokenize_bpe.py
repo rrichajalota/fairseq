@@ -1,7 +1,7 @@
 import argparse
 
 def detokenize_bpe_string(bpe_string):
-    return bpe_string.replace("@@ ", "")
+    return bpe_string.replace("@@ ", "").replace("\n", "")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='extract comparable corpus from Haifa Hansard')
@@ -14,4 +14,4 @@ if __name__ == '__main__':
         with open(f"{args.out}/{args.name}", "w") as fo:
         # with open(args.out, "w") as fo:
             for line in f.readlines():
-                fo.write(f"{detokenize_bpe_string(line)}")
+                fo.write(f"{detokenize_bpe_string(line)}\t0\n")

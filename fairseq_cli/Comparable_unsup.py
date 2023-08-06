@@ -357,7 +357,7 @@ def knn_v2(x, y, k, use_gpu, index='flat'):
     return knnGPU_v2(x, y, k, index) if use_gpu else knnCPU(x, y, k, index)
 
 
-def knnGPU_v2(x, y, k, index='flat', faiss_verbose=True, batch_size=100000, train_size=1170000, use_float16=True):
+def knnGPU_v2(x, y, k, index='flat', faiss_verbose=True, batch_size=20000, train_size=1170000, use_float16=True):
     ngpus = faiss.get_num_gpus()
     dim = 512 #x.shape[1]
     string_factory = "OPQ16_64,IVF30000,PQ16"
@@ -426,7 +426,7 @@ def knnGPU_v2(x, y, k, index='flat', faiss_verbose=True, batch_size=100000, trai
 
     # Add vectors
     logger.info("Adding {} vectors to the faiss index".format(len(y)))
-    gpu_batch_size=200000
+    gpu_batch_size=20000
     for i in tqdm(range(0, len(y), gpu_batch_size)):
         vecs = y[i : i + batch_size]
         vecs = vecs.type(torch.float32).cpu() # convert to float32 to move to cpu! 
@@ -1388,7 +1388,7 @@ class Comparable():
                                                          default='cached')
         src_mono = MonolingualDataset(dataset=trainingSetSrc, sizes=trainingSetSrc.sizes,
                                       src_vocab=self.task.src_dict,
-                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False, fixed_pad_length=512, perform_sampling=True, num_samples=40000)
+                                      tgt_vocab=None, shuffle=False, add_eos_for_other_targets=False, fixed_pad_length=512, perform_sampling=False, num_samples=40000)
         del trainingSetSrc
         # perform_sampling=True, num_samples=20000
         return src_mono

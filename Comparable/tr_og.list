@@ -1,1 +1,2 @@
-/netscratch/jalota/datasets/motra-preprocessed/en_de/train/bpe.tr /netscratch/jalota/datasets/motra-preprocessed/en_de/train/bpe.og
+/netscratch/jalota/datasets/motra-preprocessed/en_de/train/europarl-motra-10k-no-dups/bpe.tr /netscratch/jalota/datasets/motra-preprocessed/en_de/train/europarl-motra-10k-no-dups/bpe.og
+/netscratch/jalota/datasets/motra-preprocessed/en_es/train/europarl-motra-10k-no-dups/bpe.tr /netscratch/jalota/datasets/motra-preprocessed/en_es/train/europarl-motra-10k-no-dups/bpe.og
