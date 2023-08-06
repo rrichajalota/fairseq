@@ -401,66 +401,66 @@ class TranslationTask(FairseqTask):
             )
         return model
 
-    def train_step(
-        self, sample, model, criterion, optimizer, update_num, ignore_grad=False
-    ):
-        """
-        Do forward and backward, and return the loss as computed by *criterion*
-        for the given *model* and *sample*.
+    # def train_step(
+    #     self, sample, model, criterion, optimizer, update_num, ignore_grad=False
+    # ):
+    #     """
+    #     Do forward and backward, and return the loss as computed by *criterion*
+    #     for the given *model* and *sample*.
 
-        Args:
-            sample (dict): the mini-batch. The format is defined by the
-                :class:`~fairseq.data.FairseqDataset`.
-            model (~fairseq.models.BaseFairseqModel): the model
-            criterion (~fairseq.criterions.FairseqCriterion): the criterion
-            optimizer (~fairseq.optim.FairseqOptimizer): the optimizer
-            update_num (int): the current update
-            ignore_grad (bool): multiply loss by 0 if this is set to True
+    #     Args:
+    #         sample (dict): the mini-batch. The format is defined by the
+    #             :class:`~fairseq.data.FairseqDataset`.
+    #         model (~fairseq.models.BaseFairseqModel): the model
+    #         criterion (~fairseq.criterions.FairseqCriterion): the criterion
+    #         optimizer (~fairseq.optim.FairseqOptimizer): the optimizer
+    #         update_num (int): the current update
+    #         ignore_grad (bool): multiply loss by 0 if this is set to True
 
-        Returns:
-            tuple:
-                - the loss
-                - the sample size, which is used as the denominator for the
-                  gradient
-                - logging outputs to display while training
-        """
-        model.train()
-        model.set_num_updates(update_num)
-        unsup = False
-        # logger.info(f"self.only_unsupervised: {self.only_unsupervised}")
-        if update_num >= self.start_unsup: # warm-up updates before unsupervised training starts - half of warm updates set in the config
-            unsup = True
-        with torch.autograd.profiler.record_function("forward"):
-            with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
-                loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=unsup, src_dict=self.src_dict, only_unsupervised=self.only_unsupervised)
+    #     Returns:
+    #         tuple:
+    #             - the loss
+    #             - the sample size, which is used as the denominator for the
+    #               gradient
+    #             - logging outputs to display while training
+    #     """
+    #     model.train()
+    #     model.set_num_updates(update_num)
+    #     unsup = False
+    #     # logger.info(f"self.only_unsupervised: {self.only_unsupervised}")
+    #     if update_num >= self.start_unsup: # warm-up updates before unsupervised training starts - half of warm updates set in the config
+    #         unsup = True
+    #     with torch.autograd.profiler.record_function("forward"):
+    #         with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
+    #             loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=unsup, src_dict=self.src_dict, only_unsupervised=self.only_unsupervised)
         
-        if ignore_grad:
-            loss *= 0
-        with torch.autograd.profiler.record_function("backward"):
-            optimizer.backward(loss)
-        # plot_grad_flow(model.named_parameters().cpu())
-        return loss, sample_size, logging_output
+    #     if ignore_grad:
+    #         loss *= 0
+    #     with torch.autograd.profiler.record_function("backward"):
+    #         optimizer.backward(loss)
+    #     # plot_grad_flow(model.named_parameters().cpu())
+    #     return loss, sample_size, logging_output
 
-    
-    def valid_step(self, sample, model, criterion):
-        model.eval()
-        with torch.no_grad():
-            loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=True, src_dict=self.src_dict, train=False)
-        return loss, sample_size, logging_output
     
     # def valid_step(self, sample, model, criterion):
-    #     loss, sample_size, logging_output = super().valid_step(sample, model, criterion)
-    #     if self.cfg.eval_bleu:
-    #         bleu = self._inference_with_bleu(self.sequence_generator, sample, model)
-    #         logging_output["_bleu_sys_len"] = bleu.sys_len
-    #         logging_output["_bleu_ref_len"] = bleu.ref_len
-    #         # we split counts into separate entries so that they can be
-    #         # summed efficiently across workers using fast-stat-sync
-    #         assert len(bleu.counts) == EVAL_BLEU_ORDER
-    #         for i in range(EVAL_BLEU_ORDER):
-    #             logging_output["_bleu_counts_" + str(i)] = bleu.counts[i]
-    #             logging_output["_bleu_totals_" + str(i)] = bleu.totals[i]
+    #     model.eval()
+    #     with torch.no_grad():
+    #         loss, sample_size, logging_output = criterion(model, sample, self.sequence_generator, self.tgt_dict, unsup=True, src_dict=self.src_dict, train=False)
     #     return loss, sample_size, logging_output
+    
+    def valid_step(self, sample, model, criterion):
+        loss, sample_size, logging_output = super().valid_step(sample, model, criterion)
+        if self.cfg.eval_bleu:
+            bleu = self._inference_with_bleu(self.sequence_generator, sample, model)
+            logging_output["_bleu_sys_len"] = bleu.sys_len
+            logging_output["_bleu_ref_len"] = bleu.ref_len
+            # we split counts into separate entries so that they can be
+            # summed efficiently across workers using fast-stat-sync
+            assert len(bleu.counts) == EVAL_BLEU_ORDER
+            for i in range(EVAL_BLEU_ORDER):
+                logging_output["_bleu_counts_" + str(i)] = bleu.counts[i]
+                logging_output["_bleu_totals_" + str(i)] = bleu.totals[i]
+        return loss, sample_size, logging_output
 
     def reduce_metrics(self, logging_outputs, criterion):
         super().reduce_metrics(logging_outputs, criterion)
